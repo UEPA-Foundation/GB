@@ -10,7 +10,33 @@ pub struct Cpu {
     pub sp: u16,
     pub pc: u16,
 }
+
+impl Cpu {
+    pub fn decode(&mut self, mem: &[u8]) {
+        let opcode: Option<OpCode> = num::FromPrimitive::from_u8(mem[self.pc as usize]);
+        match opcode {
+            Some(OpCode::NOP) => {}
+            Some(OpCode::CB) => {
+                self.pc += 1;
+                self.decode_cb(mem);
+            }
+            Some(_) => {}
+            None => {}
+        }
+        self.pc += 1;
+    }
+
+    fn decode_cb(&self, mem: &[u8]) {
+        let opcode: Option<OpcodeCB> = num::FromPrimitive::from_u8(mem[self.pc as usize]);
+        match opcode {
+            Some(_) => {}
+            None => {}
+        }
+    }
+}
+
 #[allow(non_camel_case_types)]
+#[derive(FromPrimitive)]
 pub enum OpCode {
     // Best OPs
     NOP = 0x00,
@@ -283,6 +309,7 @@ pub enum OpCode {
 }
 
 #[allow(non_camel_case_types)]
+#[derive(FromPrimitive)]
 pub enum OpcodeCB {
     // Rotate left
     RL_B = 0x10,
