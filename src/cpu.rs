@@ -186,46 +186,145 @@ pub fn srl_hl(gb: &mut GameBoy, opcode: Opcode) {}
 // Load Instructions
 
 macro_rules! ld {
-    ($targ: ident, hl) => {
-        |gb: &mut GameBoy, _: Opcode| gb.cpu.$targ = gb.mem[gb.cpu.rd_hl() as usize]
+    (d $targ: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            paste::paste! {
+                gb.cpu.pc += 1;
+                let r16 = gb.cpu.[<rd_ $targ>]();
+                gb.mem[r16 as usize] = gb.mem[gb.cpu.pc as usize];
+            }
+        }
     };
-    (hl, $orig: ident) => {
-        |gb: &mut GameBoy, _: Opcode| gb.mem[gb.cpu.rd_hl() as usize] = gb.cpu.$orig
+
+    ($targ: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.pc += 1;
+            gb.cpu.$targ = gb.mem[gb.cpu.pc as usize];
+        }
     };
+
+    ($targ: ident, d $orig: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            paste::paste! {
+                let r16 = gb.cpu.[<rd_ $orig>]();
+                gb.cpu.$targ = gb.mem[r16 as usize];
+            }
+        }
+    };
+
+    (d $targ: ident, $orig: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            paste::paste! {
+                let r16 = gb.cpu.[<rd_ $targ>]();
+                gb.mem[r16 as usize] = gb.cpu.$orig;
+            }
+        }
+    };
+
     ($targ: ident, $orig: ident) => {
         |gb: &mut GameBoy, _: Opcode| gb.cpu.$targ = gb.cpu.$orig
     };
 }
 
-pub fn ld_r8_n8(gb: &mut GameBoy, opcode: Opcode) {}
+fn ld_hli_a(gb: &mut GameBoy, _: Opcode) {
+    let hl = gb.cpu.rd_hl() as usize;
+    gb.cpu.a = gb.mem[hl];
+    gb.mem[hl] += 1;
+}
 
-pub fn ld_r16_n16(gb: &mut GameBoy, opcode: Opcode) {}
+fn ld_a_hli(gb: &mut GameBoy, _: Opcode) {
+    let hl = gb.cpu.rd_hl() as usize;
+    gb.mem[hl] = gb.cpu.a;
+    gb.mem[hl] += 1;
+}
 
-pub fn ld_hl_n8(gb: &mut GameBoy, opcode: Opcode) {}
+fn ld_hld_a(gb: &mut GameBoy, _: Opcode) {
+    let hl = gb.cpu.rd_hl() as usize;
+    gb.cpu.a = gb.mem[hl];
+    gb.mem[hl] -= 1;
+}
 
-pub fn ld_r16_a(gb: &mut GameBoy, opcode: Opcode) {}
+fn ld_a_hld(gb: &mut GameBoy, _: Opcode) {
+    let hl = gb.cpu.rd_hl() as usize;
+    gb.mem[hl] = gb.cpu.a;
+    gb.mem[hl] -= 1;
+}
 
-pub fn ld_n16_a(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! ld16 {
+    (sp) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            let lsb = gb.mem[(gb.cpu.pc as usize) + 1] as u16;
+            let msb = gb.mem[(gb.cpu.pc as usize) + 2] as u16;
+            gb.cpu.sp = msb << 8 + lsb;
+            gb.cpu.pc += 2;
+        }
+    };
 
-pub fn ldh_n16_a(gb: &mut GameBoy, opcode: Opcode) {}
+    ($targ: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            paste::paste! {
+                let lsb = gb.mem[(gb.cpu.pc as usize) + 1] as u16;
+                let msb = gb.mem[(gb.cpu.pc as usize) + 2] as u16;
+                gb.cpu.[<wr_ $targ>](msb << 8 + lsb);
+                gb.cpu.pc += 2;
+            }
+        }
+    };
+}
 
-pub fn ldh_c_a(gb: &mut GameBoy, opcode: Opcode) {}
+fn ld_n16_sp(gb: &mut GameBoy, _: Opcode) {
+    let addr = {
+        let lsb = gb.mem[(gb.cpu.pc as usize) + 1] as usize;
+        let msb = gb.mem[(gb.cpu.pc as usize) + 2] as usize;
+        msb << 8 + lsb
+    };
+    let bytes = u16::to_le_bytes(gb.cpu.sp);
+    gb.mem[addr] = bytes[0];
+    gb.mem[addr] = bytes[1];
+    gb.cpu.pc += 2;
+}
 
-pub fn ld_a_r16(gb: &mut GameBoy, opcode: Opcode) {}
+pub fn ldh_n8_a(gb: &mut GameBoy, _: Opcode) {
+    gb.cpu.pc += 1;
+    let addr = 0xFF00 + (gb.mem[gb.cpu.pc as usize] as usize);
+    gb.mem[addr] = gb.cpu.a;
+}
 
-pub fn ld_a_n16(gb: &mut GameBoy, opcode: Opcode) {}
+pub fn ldh_c_a(gb: &mut GameBoy, _: Opcode) {
+    let addr = 0xFF00 + (gb.cpu.c as usize) as usize;
+    gb.mem[addr] = gb.cpu.a;
+}
 
-pub fn ldh_a_n16(gb: &mut GameBoy, opcode: Opcode) {}
+pub fn ld_n16_a(gb: &mut GameBoy, _: Opcode) {
+    let addr = {
+        let lsb = gb.mem[(gb.cpu.pc as usize) + 1] as usize;
+        let msb = gb.mem[(gb.cpu.pc as usize) + 2] as usize;
+        msb << 8 + lsb
+    };
+    gb.mem[addr] = gb.cpu.a;
+    gb.cpu.pc += 2;
+}
 
-pub fn ldh_a_c(gb: &mut GameBoy, opcode: Opcode) {}
+pub fn ldh_a_n8(gb: &mut GameBoy, _: Opcode) {
+    gb.cpu.pc += 1;
+    let addr = 0xFF00 + (gb.mem[gb.cpu.pc as usize] as usize);
+    gb.cpu.a = gb.mem[addr];
+}
 
-pub fn ld_hli_a(gb: &mut GameBoy, opcode: Opcode) {}
+pub fn ldh_a_c(gb: &mut GameBoy, _: Opcode) {
+    let addr = 0xFF00 + (gb.cpu.c as usize) as usize;
+    gb.cpu.a = gb.mem[addr];
+}
 
-pub fn ld_hld_a(gb: &mut GameBoy, opcode: Opcode) {}
-
-pub fn ld_a_hli(gb: &mut GameBoy, opcode: Opcode) {}
-
-pub fn ld_a_hld(gb: &mut GameBoy, opcode: Opcode) {}
+pub fn ld_a_n16(gb: &mut GameBoy, _: Opcode) {
+    let addr = {
+        let lsb = gb.mem[(gb.cpu.pc as usize) + 1] as usize;
+        let msb = gb.mem[(gb.cpu.pc as usize) + 2] as usize;
+        msb << 8 + lsb
+    };
+    gb.mem[addr] = gb.cpu.a;
+    gb.cpu.pc += 2;
+}
 
 // Stack Operations
 
@@ -236,10 +335,6 @@ pub fn add_sp_e8(gb: &mut GameBoy, opcode: Opcode) {}
 pub fn dec_sp(gb: &mut GameBoy, opcode: Opcode) {}
 
 pub fn inc_sp(gb: &mut GameBoy, opcode: Opcode) {}
-
-pub fn ld_sp_n16(gb: &mut GameBoy, opcode: Opcode) {}
-
-pub fn ld_n16_sp(gb: &mut GameBoy, opcode: Opcode) {}
 
 pub fn ld_hl_sp_e8(gb: &mut GameBoy, opcode: Opcode) {}
 
@@ -300,38 +395,38 @@ pub fn undefined(gb: &mut GameBoy, opcode: Opcode) {}
 
 #[rustfmt::skip]
 pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
-/*           X0           X1           X2           X3           X4           X5           X6           X7           */
-/*           X8           X9           Xa           Xb           Xc           Xd           Xe           Xf           */
-/* 0X */     nop,         ld_r16_n16,  ld_r16_a,    inc_r16,     inc_r8,      dec_r8,      ld_r8_n8,    rlca,
-             ld_n16_sp,   add_hl_r16,  ld_a_r16,    dec_r16,     inc_r8,      dec_r8,      ld_r8_n8,    rrca,
-/* 1X */     stop,        ld_r16_n16,  ld_r16_a,    inc_r16,     inc_r8,      dec_r8,      ld_r8_n8,    rla,
-             jr_e8,       add_hl_r16,  ld_a_r16,    dec_r16,     inc_r8,      dec_r8,      ld_r8_n8,    rra,
-/* 2X */     jr_cc_e8,    ld_r16_n16,  ld_hld_a,    inc_r16,     inc_r8,      dec_r8,      ld_r8_n8,    daa,
-             jr_cc_e8,    add_hl_r16,  ld_a_hli,    dec_r16,     inc_r8,      dec_r8,      ld_r8_n8,    cpl,
-/* 3X */     jr_cc_e8,    ld_sp_n16,   ld_hli_a,    inc_sp,      inc_hl,      dec_hl,      ld_hl_n8,    scf,
-             jr_cc_e8,    add_hl_sp,   ld_a_hld,    dec_sp,      inc_r8,      dec_r8,      ld_r8_n8,    ccf,
-/* 4X */     nop,         ld!(b, c),   ld!(b, d),   ld!(b, e),   ld!(b, h),   ld!(b, l),   ld!(b, hl),  ld!(b, a),
-             ld!(c, b),   nop,         ld!(c, d),   ld!(c, e),   ld!(b, h),   ld!(b, l),   ld!(b, hl),  ld!(b, a),
-/* 5X */     ld!(d, b),   ld!(d, c),   nop,         ld!(d, e),   ld!(d, h),   ld!(d, l),   ld!(d, hl),  ld!(d, a),
-             ld!(e, b),   ld!(e, c),   ld!(e, d),   nop,         ld!(e, h),   ld!(e, l),   ld!(e, hl),  ld!(e, a),
-/* 6X */     ld!(h, b),   ld!(h, c),   ld!(h, d),   ld!(h, e),   nop,         ld!(h, l),   ld!(h, hl),  ld!(h, a),
-             ld!(l, b),   ld!(l, c),   ld!(l, d),   ld!(l, e),   ld!(l, h),   nop,         ld!(h, hl),  ld!(h, a),
-/* 7X */     ld!(hl, b),  ld!(hl, c),  ld!(hl, d),  ld!(hl, e),  ld!(hl, h),  ld!(hl, l),  halt,        ld!(hl, a),
-             ld!(a, b),   ld!(a, c),   ld!(a, d),   ld!(a, e),   ld!(a, h),   ld!(a, h),   ld!(a, hl),  nop,
-/* 8X */     add_a_r8,    add_a_r8,    add_a_r8,    add_a_r8,    add_a_r8,    add_a_r8,    add_a_hl,    add_a_r8,
-             adc_a_r8,    adc_a_r8,    adc_a_r8,    adc_a_r8,    adc_a_r8,    adc_a_r8,    adc_a_hl,    adc_a_r8,
-/* 9X */     sub_a_r8,    sub_a_r8,    sub_a_r8,    sub_a_r8,    sub_a_r8,    sub_a_r8,    sub_a_hl,    sub_a_r8,
-             sbc_a_r8,    sbc_a_r8,    sbc_a_r8,    sbc_a_r8,    sbc_a_r8,    sbc_a_r8,    sbc_a_hl,    sbc_a_r8,
-/* aX */     and_a_r8,    and_a_r8,    and_a_r8,    and_a_r8,    and_a_r8,    and_a_r8,    and_a_hl,    and_a_r8,
-             xor_a_r8,    xor_a_r8,    xor_a_r8,    xor_a_r8,    xor_a_r8,    xor_a_r8,    xor_a_hl,    xor_a_r8,
-/* bX */     or_a_r8,     or_a_r8,     or_a_r8,     or_a_r8,     or_a_r8,     or_a_r8,     or_a_hl,     or_a_r8,
-             cp_a_r8,     cp_a_r8,     cp_a_r8,     cp_a_r8,     cp_a_r8,     cp_a_r8,     cp_a_hl,     cp_a_r8,
-/* cX */     ret_cc,      pop_r16,     jp_cc_n16,   jp_n16,      call_cc_n16, push_r16,    add_a_n8,    rst_vec,
-             ret_cc,      ret,         jp_cc_n16,   cb_prefix,   call_cc_n16, call_n16,    adc_a_n8,    rst_vec,
-/* dX */     ret_cc,      pop_r16,     jp_cc_n16,   undefined,   call_cc_n16, push_r16,    sub_a_n8,    rst_vec,
-             ret_cc,      reti,        jp_cc_n16,   undefined,   call_cc_n16, undefined,   sbc_a_n8,    rst_vec,
-/* eX */     ldh_n16_a,   pop_r16,     ldh_c_a,     undefined,   undefined,   push_r16,    and_a_n8,    rst_vec,
-             add_sp_e8,   jp_hl,       ld_n16_a,    undefined,   undefined,   undefined,   xor_a_n8,    rst_vec,
-/* fX */     ldh_a_n16,   pop_af,      ldh_a_c,     di,          undefined,   push_af,     or_a_n8,     rst_vec,
-             ld_hl_sp_e8, ld_sp_hl,    ld_a_n16,    ei,          undefined,   undefined,   cp_a_n8,     rst_vec,
+/*            X0            X1            X2            X3            X4            X5            X6            X7            */
+/*            X8            X9            Xa            Xb            Xc            Xd            Xe            Xf            */
+/* 0X */      nop,          ld16!(bc),    ld!(d bc, a), inc_r16,      inc_r8,       dec_r8,       ld!(b),       rlca,
+              ld_n16_sp,    add_hl_r16,   ld!(a, d bc), dec_r16,      inc_r8,       dec_r8,       ld!(c),       rrca,
+/* 1X */      stop,         ld16!(de),    ld!(d de, a), inc_r16,      inc_r8,       dec_r8,       ld!(d),       rla,
+              jr_e8,        add_hl_r16,   ld!(a, d de), dec_r16,      inc_r8,       dec_r8,       ld!(e),       rra,
+/* 2X */      jr_cc_e8,     ld16!(hl),    ld_hli_a,     inc_r16,      inc_r8,       dec_r8,       ld!(h),       daa,
+              jr_cc_e8,     add_hl_r16,   ld_a_hli,     dec_r16,      inc_r8,       dec_r8,       ld!(l),       cpl,
+/* 3X */      jr_cc_e8,     ld16!(sp),    ld_hld_a,     inc_sp,       inc_hl,       dec_hl,       ld!(d hl),    scf,
+              jr_cc_e8,     add_hl_sp,    ld_a_hld,     dec_sp,       inc_r8,       dec_r8,       ld!(a),       ccf,
+/* 4X */      nop,          ld!(b, c),    ld!(b, d),    ld!(b, e),    ld!(b, h),    ld!(b, l),    ld!(b, d hl), ld!(b, a),
+              ld!(c, b),    nop,          ld!(c, d),    ld!(c, e),    ld!(b, h),    ld!(b, l),    ld!(b, d hl), ld!(b, a),
+/* 5X */      ld!(d, b),    ld!(d, c),    nop,          ld!(d, e),    ld!(d, h),    ld!(d, l),    ld!(d, d hl), ld!(d, a),
+              ld!(e, b),    ld!(e, c),    ld!(e, d),    nop,          ld!(e, h),    ld!(e, l),    ld!(e, d hl), ld!(e, a),
+/* 6X */      ld!(h, b),    ld!(h, c),    ld!(h, d),    ld!(h, e),    nop,          ld!(h, l),    ld!(h, d hl), ld!(h, a),
+              ld!(l, b),    ld!(l, c),    ld!(l, d),    ld!(l, e),    ld!(l, h),    nop,          ld!(h, d hl), ld!(h, a),
+/* 7X */      ld!(d hl, b), ld!(d hl, c), ld!(d hl, d), ld!(d hl, e), ld!(d hl, h), ld!(d hl, l), halt,         ld!(d hl, a),
+              ld!(a, b),    ld!(a, c),    ld!(a, d),    ld!(a, e),    ld!(a, h),    ld!(a, h),    ld!(a, d hl), nop,
+/* 8X */      add_a_r8,     add_a_r8,     add_a_r8,     add_a_r8,     add_a_r8,     add_a_r8,     add_a_hl,     add_a_r8,
+              adc_a_r8,     adc_a_r8,     adc_a_r8,     adc_a_r8,     adc_a_r8,     adc_a_r8,     adc_a_hl,     adc_a_r8,
+/* 9X */      sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_hl,     sub_a_r8,
+              sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_hl,     sbc_a_r8,
+/* aX */      and_a_r8,     and_a_r8,     and_a_r8,     and_a_r8,     and_a_r8,     and_a_r8,     and_a_hl,     and_a_r8,
+              xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_hl,     xor_a_r8,
+/* bX */      or_a_r8,      or_a_r8,      or_a_r8,      or_a_r8,      or_a_r8,      or_a_r8,      or_a_hl,      or_a_r8,
+              cp_a_r8,      cp_a_r8,      cp_a_r8,      cp_a_r8,      cp_a_r8,      cp_a_r8,      cp_a_hl,      cp_a_r8,
+/* cX */      ret_cc,       pop_r16,      jp_cc_n16,    jp_n16,       call_cc_n16,  push_r16,     add_a_n8,     rst_vec,
+              ret_cc,       ret,          jp_cc_n16,    cb_prefix,    call_cc_n16,  call_n16,     adc_a_n8,     rst_vec,
+/* dX */      ret_cc,       pop_r16,      jp_cc_n16,    undefined,    call_cc_n16,  push_r16,     sub_a_n8,     rst_vec,
+              ret_cc,       reti,         jp_cc_n16,    undefined,    call_cc_n16,  undefined,    sbc_a_n8,     rst_vec,
+/* eX */      ldh_n8_a,     pop_r16,      ldh_c_a,      undefined,    undefined,    push_r16,     and_a_n8,     rst_vec,
+              add_sp_e8,    jp_hl,        ld_n16_a,     undefined,    undefined,    undefined,    xor_a_n8,     rst_vec,
+/* fX */      ldh_a_n8,     pop_af,       ldh_a_c,      di,           undefined,    push_af,      or_a_n8,      rst_vec,
+              ld_hl_sp_e8,  ld_sp_hl,     ld_a_n16,     ei,           undefined,    undefined,    cp_a_n8,      rst_vec,
 ];
