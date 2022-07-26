@@ -421,11 +421,43 @@ macro_rules! inc {
     };
 }
 
-pub fn or_a_r8(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! or {
+    () => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.pc += 1;
+            let val: u8 = gb.mem[gb.cpu.pc as usize];
 
-pub fn or_a_hl(gb: &mut GameBoy, opcode: Opcode) {}
+            gb.cpu.a |= val;
 
-pub fn or_a_n8(gb: &mut GameBoy, opcode: Opcode) {}
+            gb.cpu.f = 0;
+            if gb.cpu.a == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
+
+    ($r8: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.a |= gb.cpu.$r8;
+
+            gb.cpu.f = 0;
+            if gb.cpu.a == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
+
+    (d hl) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.a |= gb.mem[gb.cpu.rd_hl() as usize];
+
+            gb.cpu.f = 0;
+            if gb.cpu.a == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
+}
 
 pub fn sbc_a_r8(gb: &mut GameBoy, opcode: Opcode) {}
 
@@ -768,7 +800,7 @@ pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
               sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_hl,     sbc_a_r8,
 /* AX */      and!(b),      and!(c),      and!(d),      and!(e),      and!(h),      and!(l),      and!(d hl),   and!(a),
               xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_hl,     xor_a_r8,
-/* BX */      or_a_r8,      or_a_r8,      or_a_r8,      or_a_r8,      or_a_r8,      or_a_r8,      or_a_hl,      or_a_r8,
+/* BX */      or!(b),       or!(c),       or!(d),       or!(e),       or!(h),       or!(l),       or!(d hl),    or!(a),
               cp!(b),       cp!(c),       cp!(d),       cp!(e),       cp!(h),       cp!(l),       cp!(d hl),    cp!(a),
 /* CX */      ret_cc,       pop_r16,      jp_cc_n16,    jp_n16,       call_cc_n16,  push_r16,     add!(),       rst_vec,
               ret_cc,       ret,          jp_cc_n16,    cb_prefix,    call_cc_n16,  call_n16,     adc!(),       rst_vec,
@@ -776,7 +808,7 @@ pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
               ret_cc,       reti,         jp_cc_n16,    undefined,    call_cc_n16,  undefined,    sbc_a_n8,     rst_vec,
 /* EX */      ldh_n8_a,     pop_r16,      ldh_c_a,      undefined,    undefined,    push_r16,     and!(),       rst_vec,
               add_sp_e8,    jp_hl,        ld_n16_a,     undefined,    undefined,    undefined,    xor_a_n8,     rst_vec,
-/* fX */      ldh_a_n8,     pop_af,       ldh_a_c,      di,           undefined,    push_af,      or_a_n8,      rst_vec,
+/* fX */      ldh_a_n8,     pop_af,       ldh_a_c,      di,           undefined,    push_af,      or!(),      rst_vec,
               ld_hl_sp_e8,  ld_sp_hl,     ld_a_n16,     ei,           undefined,    undefined,    cp!(),      rst_vec,
 ];
 
