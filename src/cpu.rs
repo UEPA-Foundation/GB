@@ -162,17 +162,23 @@ pub fn srl_hl(gb: &mut GameBoy, opcode: Opcode) {}
 
 // Load Instructions
 
-pub fn ld_r8_r8(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! ld {
+    ($targ: ident, hl) => {
+        |gb: &mut GameBoy, _: Opcode| gb.cpu.$targ = gb.mem[gb.cpu.rd_hl() as usize]
+    };
+    (hl, $orig: ident) => {
+        |gb: &mut GameBoy, _: Opcode| gb.mem[gb.cpu.rd_hl() as usize] = gb.cpu.$orig
+    };
+    ($targ: ident, $orig: ident) => {
+        |gb: &mut GameBoy, _: Opcode| gb.cpu.$targ = gb.cpu.$orig
+    };
+}
 
 pub fn ld_r8_n8(gb: &mut GameBoy, opcode: Opcode) {}
 
 pub fn ld_r16_n16(gb: &mut GameBoy, opcode: Opcode) {}
 
-pub fn ld_hl_r8(gb: &mut GameBoy, opcode: Opcode) {}
-
 pub fn ld_hl_n8(gb: &mut GameBoy, opcode: Opcode) {}
-
-pub fn ld_r8_hl(gb: &mut GameBoy, opcode: Opcode) {}
 
 pub fn ld_r16_a(gb: &mut GameBoy, opcode: Opcode) {}
 
@@ -281,14 +287,14 @@ pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
              jr_cc_e8,    add_hl_r16,  ld_a_hli,    dec_r16,     inc_r8,      dec_r8,      ld_r8_n8,    cpl,
 /* 3X */     jr_cc_e8,    ld_sp_n16,   ld_hli_a,    inc_sp,      inc_hl,      dec_hl,      ld_hl_n8,    scf,
              jr_cc_e8,    add_hl_sp,   ld_a_hld,    dec_sp,      inc_r8,      dec_r8,      ld_r8_n8,    ccf,
-/* 4X */     nop,         ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    ld_r8_hl,    ld_r8_r8,
-             ld_r8_r8,    nop,         ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    ld_r8_hl,    ld_r8_r8,
-/* 5X */     ld_r8_r8,    ld_r8_r8,    nop,         ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    ld_r8_hl,    ld_r8_r8,
-             ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    nop,         ld_r8_r8,    ld_r8_r8,    ld_r8_hl,    ld_r8_r8,
-/* 6X */     ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    nop,         ld_r8_r8,    ld_r8_hl,    ld_r8_r8,
-             ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    nop,         ld_r8_hl,    ld_r8_r8,
-/* 7X */     ld_hl_r8,    ld_hl_r8,    ld_hl_r8,    ld_hl_r8,    ld_hl_r8,    ld_hl_r8,    halt,        ld_hl_r8,
-             ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    ld_r8_r8,    ld_r8_hl,    nop,
+/* 4X */     nop,         ld!(b, c),   ld!(b, d),   ld!(b, e),   ld!(b, h),   ld!(b, l),   ld!(b, hl),  ld!(b, a),
+             ld!(c, b),   nop,         ld!(c, d),   ld!(c, e),   ld!(b, h),   ld!(b, l),   ld!(b, hl),  ld!(b, a),
+/* 5X */     ld!(d, b),   ld!(d, c),   nop,         ld!(d, e),   ld!(d, h),   ld!(d, l),   ld!(d, hl),  ld!(d, a),
+             ld!(e, b),   ld!(e, c),   ld!(e, d),   nop,         ld!(e, h),   ld!(e, l),   ld!(e, hl),  ld!(e, a),
+/* 6X */     ld!(h, b),   ld!(h, c),   ld!(h, d),   ld!(h, e),   nop,         ld!(h, l),   ld!(h, hl),  ld!(h, a),
+             ld!(l, b),   ld!(l, c),   ld!(l, d),   ld!(l, e),   ld!(l, h),   nop,         ld!(h, hl),  ld!(h, a),
+/* 7X */     ld!(hl, b),  ld!(hl, c),  ld!(hl, d),  ld!(hl, e),  ld!(hl, h),  ld!(hl, l),  halt,        ld!(hl, a),
+             ld!(a, b),   ld!(a, c),   ld!(a, d),   ld!(a, e),   ld!(a, h),   ld!(a, h),   ld!(a, hl),  nop,
 /* 8X */     add_a_r8,    add_a_r8,    add_a_r8,    add_a_r8,    add_a_r8,    add_a_r8,    add_a_hl,    add_a_r8,
              adc_a_r8,    adc_a_r8,    adc_a_r8,    adc_a_r8,    adc_a_r8,    adc_a_r8,    adc_a_hl,    adc_a_r8,
 /* 9X */     sub_a_r8,    sub_a_r8,    sub_a_r8,    sub_a_r8,    sub_a_r8,    sub_a_r8,    sub_a_hl,    sub_a_r8,
