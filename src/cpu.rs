@@ -1,5 +1,10 @@
 use crate::gameboy::{GameBoy, Opcode};
 
+const Z_FLAG: u8 = 0b10000000;
+const N_FLAG: u8 = 0b01000000;
+const H_FLAG: u8 = 0b00100000;
+const C_FLAG: u8 = 0b00010000;
+
 pub struct Cpu {
     pub a: u8, // Accumulator
     pub f: u8, // Flags
@@ -46,6 +51,66 @@ impl Cpu {
         self.h = (val >> 8) as u8;
         self.l = (val & 0x00FF) as u8;
     }
+
+    #[inline(always)]
+    pub fn z_flag(&mut self) -> bool {
+        self.f & Z_FLAG != 0
+    }
+
+    #[inline(always)]
+    pub fn n_flag(&mut self) -> bool {
+        self.f & N_FLAG != 0
+    }
+
+    #[inline(always)]
+    pub fn h_flag(&mut self) -> bool {
+        self.f & H_FLAG != 0
+    }
+
+    #[inline(always)]
+    pub fn c_flag(&mut self) -> bool {
+        self.f & C_FLAG != 0
+    }
+
+    #[inline(always)]
+    pub fn set_z(&mut self) {
+        self.f |= Z_FLAG
+    }
+
+    #[inline(always)]
+    pub fn set_n(&mut self) {
+        self.f |= N_FLAG
+    }
+
+    #[inline(always)]
+    pub fn set_h(&mut self) {
+        self.f |= H_FLAG
+    }
+
+    #[inline(always)]
+    pub fn set_c(&mut self) {
+        self.f |= C_FLAG
+    }
+
+    #[inline(always)]
+    pub fn reset_z(&mut self) {
+        self.f &= !Z_FLAG
+    }
+
+    #[inline(always)]
+    pub fn reset_n(&mut self) {
+        self.f &= !N_FLAG
+    }
+
+    #[inline(always)]
+    pub fn reset_h(&mut self) {
+        self.f &= !H_FLAG
+    }
+
+    #[inline(always)]
+    pub fn reset_c(&mut self) {
+        self.f &= !C_FLAG
+    }
 }
 
 impl GameBoy {
@@ -69,11 +134,73 @@ pub fn adc_a_hl(gb: &mut GameBoy, opcode: Opcode) {}
 
 pub fn adc_a_n8(gb: &mut GameBoy, opcode: Opcode) {}
 
-pub fn add_a_r8(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! add {
+    () => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.pc += 1;
+            let val: u8 = gb.mem[gb.cpu.pc as usize];
 
-pub fn add_a_hl(gb: &mut GameBoy, opcode: Opcode) {}
+            let old_a: u8 = gb.cpu.a;
+            gb.cpu.a = u8::wrapping_add(gb.cpu.a, val);
 
-pub fn add_a_n8(gb: &mut GameBoy, opcode: Opcode) {}
+            gb.cpu.f = 0;
+            if gb.cpu.a == 0
+            {
+                gb.cpu.set_z();
+            }
+            if (old_a & 0x0F) + (val & 0x0F) > 0x0F
+            {
+                gb.cpu.set_h();
+            }
+            if gb.cpu.a < old_a 
+            {
+                gb.cpu.set_c();
+            }
+        }
+    };
+
+    ($r8: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            let old_a: u8 = gb.cpu.a;
+            gb.cpu.a = u8::wrapping_add(gb.cpu.a, gb.cpu.$r8);
+
+            gb.cpu.f = 0;
+            if gb.cpu.a == 0
+            {
+                gb.cpu.set_z();
+            }
+            if (old_a & 0x0F) + (gb.cpu.$r8 & 0x0F) > 0x0F
+            {
+                gb.cpu.set_h();
+            }
+            if gb.cpu.a < old_a 
+            {
+                gb.cpu.set_c();
+            }
+        }
+    };
+
+    (d hl) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            let old_a: u8 = gb.cpu.a;
+            gb.cpu.a = u8::wrapping_add(gb.cpu.a, gb.mem[gb.cpu.rd_hl() as usize]);
+
+            gb.cpu.f = 0;
+            if gb.cpu.a == 0
+            {
+                gb.cpu.set_z();
+            }
+            if (old_a & 0x0F) + (gb.mem[gb.cpu.rd_hl() as usize] & 0x0F) > 0x0F
+            {
+                gb.cpu.set_h();
+            }
+            if gb.cpu.a < old_a 
+            {
+                gb.cpu.set_c();
+            }
+        }
+    };
+}
 
 pub fn and_a_r8(gb: &mut GameBoy, opcode: Opcode) {}
 
@@ -413,20 +540,58 @@ pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
               ld!(l, b),    ld!(l, c),    ld!(l, d),    ld!(l, e),    ld!(l, h),    nop,          ld!(h, d hl), ld!(h, a),
 /* 7X */      ld!(d hl, b), ld!(d hl, c), ld!(d hl, d), ld!(d hl, e), ld!(d hl, h), ld!(d hl, l), halt,         ld!(d hl, a),
               ld!(a, b),    ld!(a, c),    ld!(a, d),    ld!(a, e),    ld!(a, h),    ld!(a, h),    ld!(a, d hl), nop,
-/* 8X */      add_a_r8,     add_a_r8,     add_a_r8,     add_a_r8,     add_a_r8,     add_a_r8,     add_a_hl,     add_a_r8,
+/* 8X */      add!(b),     add!(c),     add!(d),     add!(e),     add!(h),     add!(l),     add!(d hl),     add!(a),
               adc_a_r8,     adc_a_r8,     adc_a_r8,     adc_a_r8,     adc_a_r8,     adc_a_r8,     adc_a_hl,     adc_a_r8,
 /* 9X */      sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_hl,     sub_a_r8,
               sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_hl,     sbc_a_r8,
-/* aX */      and_a_r8,     and_a_r8,     and_a_r8,     and_a_r8,     and_a_r8,     and_a_r8,     and_a_hl,     and_a_r8,
+/* AX */      and_a_r8,     and_a_r8,     and_a_r8,     and_a_r8,     and_a_r8,     and_a_r8,     and_a_hl,     and_a_r8,
               xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_hl,     xor_a_r8,
-/* bX */      or_a_r8,      or_a_r8,      or_a_r8,      or_a_r8,      or_a_r8,      or_a_r8,      or_a_hl,      or_a_r8,
+/* BX */      or_a_r8,      or_a_r8,      or_a_r8,      or_a_r8,      or_a_r8,      or_a_r8,      or_a_hl,      or_a_r8,
               cp_a_r8,      cp_a_r8,      cp_a_r8,      cp_a_r8,      cp_a_r8,      cp_a_r8,      cp_a_hl,      cp_a_r8,
-/* cX */      ret_cc,       pop_r16,      jp_cc_n16,    jp_n16,       call_cc_n16,  push_r16,     add_a_n8,     rst_vec,
+/* CX */      ret_cc,       pop_r16,      jp_cc_n16,    jp_n16,       call_cc_n16,  push_r16,     add!(),     rst_vec,
               ret_cc,       ret,          jp_cc_n16,    cb_prefix,    call_cc_n16,  call_n16,     adc_a_n8,     rst_vec,
-/* dX */      ret_cc,       pop_r16,      jp_cc_n16,    undefined,    call_cc_n16,  push_r16,     sub_a_n8,     rst_vec,
+/* DX */      ret_cc,       pop_r16,      jp_cc_n16,    undefined,    call_cc_n16,  push_r16,     sub_a_n8,     rst_vec,
               ret_cc,       reti,         jp_cc_n16,    undefined,    call_cc_n16,  undefined,    sbc_a_n8,     rst_vec,
-/* eX */      ldh_n8_a,     pop_r16,      ldh_c_a,      undefined,    undefined,    push_r16,     and_a_n8,     rst_vec,
+/* EX */      ldh_n8_a,     pop_r16,      ldh_c_a,      undefined,    undefined,    push_r16,     and_a_n8,     rst_vec,
               add_sp_e8,    jp_hl,        ld_n16_a,     undefined,    undefined,    undefined,    xor_a_n8,     rst_vec,
 /* fX */      ldh_a_n8,     pop_af,       ldh_a_c,      di,           undefined,    push_af,      or_a_n8,      rst_vec,
               ld_hl_sp_e8,  ld_sp_hl,     ld_a_n16,     ei,           undefined,    undefined,    cp_a_n8,      rst_vec,
+];
+
+#[rustfmt::skip]
+pub const OPCODES_CB: [fn(&mut GameBoy, u8); 256] = [
+/*           X0           X1           X2           X3           X4           X5           X6           X7           */
+/*           X8           X9           XA           XB           XC           XD           XE           XF           */
+/* 0X */     rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_hl,      rlc_r8,
+             rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_hl,      rrc_r8,
+/* 1X */     rl_r8,       rl_r8,       rl_r8,       rl_r8,       rl_r8,       rl_r8,       rl_hl,       rl_r8,
+             rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_hl,       rr_r8,
+/* 2X */     sla_r8,      sla_r8,      sla_r8,      sla_r8,      sla_r8,      sla_r8,      sla_hl,      sla_r8,
+             sra_r8,      sra_r8,      sra_r8,      sra_r8,      sra_r8,      sra_r8,      sra_hl,      sra_r8,
+/* 3X */     swap_r8,     swap_r8,     swap_r8,     swap_r8,     swap_r8,     swap_r8,     swap_hl,     swap_r8,
+             srl_r8,      srl_r8,      srl_r8,      srl_r8,      srl_r8,      srl_r8,      srl_hl,      srl_r8,
+/* 4X */     bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
+             bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
+/* 5X */     bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
+             bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
+/* 6X */     bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
+             bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
+/* 7X */     bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
+             bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
+/* 8X */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
+             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
+/* 9X */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
+             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
+/* AX */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
+             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
+/* BX */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
+             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
+/* CX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
+             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
+/* DX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
+             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
+/* EX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
+             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
+/* FX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
+             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
 ];
