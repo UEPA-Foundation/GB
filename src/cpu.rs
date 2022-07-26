@@ -126,7 +126,9 @@ impl GameBoy {
 
 pub fn cb_prefix(gb: &mut GameBoy, _: Opcode) {
     gb.cpu.pc += 1;
-    todo!()
+    let opcode_cb = gb.mem[gb.cpu.pc as usize];
+    let handler = OPCODES_CB[opcode_cb as usize];
+    handler(gb, opcode_cb);
 }
 
 // 8-bit Arithmetic and Logic
