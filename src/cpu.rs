@@ -342,14 +342,6 @@ pub fn cp_a_hl(gb: &mut GameBoy, opcode: Opcode) {}
 
 pub fn cp_a_n8(gb: &mut GameBoy, opcode: Opcode) {}
 
-pub fn dec_r8(gb: &mut GameBoy, opcode: Opcode) {}
-
-pub fn dec_hl(gb: &mut GameBoy, opcode: Opcode) {}
-
-pub fn inc_r8(gb: &mut GameBoy, opcode: Opcode) {}
-
-pub fn inc_hl(gb: &mut GameBoy, opcode: Opcode) {}
-
 pub fn or_a_r8(gb: &mut GameBoy, opcode: Opcode) {}
 
 pub fn or_a_hl(gb: &mut GameBoy, opcode: Opcode) {}
@@ -376,11 +368,29 @@ pub fn xor_a_n8(gb: &mut GameBoy, opcode: Opcode) {}
 
 // 16-bit Arithmetic Instructions
 
+macro_rules! inc16 {
+    ($r16: ident) => {
+        paste::paste! {
+            |gb: &mut GameBoy, _: Opcode| {
+                let val = u16::wrapping_add(gb.cpu.[<rd_ $r16>](), 1);
+                gb.cpu.[<wr_ $r16>](val);
+            }
+        }
+    }
+}
+
+macro_rules! dec16 {
+    ($r16: ident) => {
+        paste::paste! {
+            |gb: &mut GameBoy, _: Opcode| {
+                let val = u16::wrapping_sub(gb.cpu.[<rd_ $r16>](), 1);
+                gb.cpu.[<wr_ $r16>](val);
+            }
+        }
+    }
+}
+
 pub fn add_hl_r16(gb: &mut GameBoy, opcode: Opcode) {}
-
-pub fn dec_r16(gb: &mut GameBoy, opcode: Opcode) {}
-
-pub fn inc_r16(gb: &mut GameBoy, opcode: Opcode) {}
 
 // Bit Operations Instructions
 
@@ -587,9 +597,13 @@ pub fn add_hl_sp(gb: &mut GameBoy, opcode: Opcode) {}
 
 pub fn add_sp_e8(gb: &mut GameBoy, opcode: Opcode) {}
 
-pub fn dec_sp(gb: &mut GameBoy, opcode: Opcode) {}
+pub fn dec_sp(gb: &mut GameBoy, opcode: Opcode) {
+    gb.cpu.sp = u16::wrapping_sub(gb.cpu.sp, 1);
+}
 
-pub fn inc_sp(gb: &mut GameBoy, opcode: Opcode) {}
+fn inc_sp(gb: &mut GameBoy, _: Opcode) {
+    gb.cpu.sp = u16::wrapping_add(gb.cpu.sp, 1);
+}
 
 pub fn ld_hl_sp_e8(gb: &mut GameBoy, opcode: Opcode) {}
 
@@ -652,12 +666,12 @@ pub fn undefined(gb: &mut GameBoy, opcode: Opcode) {}
 pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
 /*            X0            X1            X2            X3            X4            X5            X6            X7            */
 /*            X8            X9            Xa            Xb            Xc            Xd            Xe            Xf            */
-/* 0X */      nop,          ld16!(bc),    ld!(d bc, a), inc_r16,      inc!(b),      dec!(b),      ld!(b),       rlca,
-              ld_n16_sp,    add_hl_r16,   ld!(a, d bc), dec_r16,      inc!(c),      dec!(c),      ld!(c),       rrca,
-/* 1X */      stop,         ld16!(de),    ld!(d de, a), inc_r16,      inc!(d),      dec!(d),      ld!(d),       rla,
-              jr_e8,        add_hl_r16,   ld!(a, d de), dec_r16,      inc!(e),      dec!(e),      ld!(e),       rra,
-/* 2X */      jr_cc_e8,     ld16!(hl),    ld_hli_a,     inc_r16,      inc!(h),      dec!(h),      ld!(h),       daa,
-              jr_cc_e8,     add_hl_r16,   ld_a_hli,     dec_r16,      inc!(l),      dec!(l),      ld!(l),       cpl,
+/* 0X */      nop,          ld16!(bc),    ld!(d bc, a), inc16!(bc),   inc!(b),      dec!(b),      ld!(b),       rlca,
+              ld_n16_sp,    add_hl_r16,   ld!(a, d bc), dec16!(bc),   inc!(c),      dec!(c),      ld!(c),       rrca,
+/* 1X */      stop,         ld16!(de),    ld!(d de, a), inc16!(de),   inc!(d),      dec!(d),      ld!(d),       rla,
+              jr_e8,        add_hl_r16,   ld!(a, d de), dec16!(de),   inc!(e),      dec!(e),      ld!(e),       rra,
+/* 2X */      jr_cc_e8,     ld16!(hl),    ld_hli_a,     inc16!(hl),   inc!(h),      dec!(h),      ld!(h),       daa,
+              jr_cc_e8,     add_hl_r16,   ld_a_hli,     dec16!(hl),   inc!(l),      dec!(l),      ld!(l),       cpl,
 /* 3X */      jr_cc_e8,     ld16!(sp),    ld_hld_a,     inc_sp,       inc!(d hl),   dec!(d hl),   ld!(d hl),    scf,
               jr_cc_e8,     add_hl_sp,    ld_a_hld,     dec_sp,       inc!(a),      dec!(a),      ld!(a),       ccf,
 /* 4X */      nop,          ld!(b, c),    ld!(b, d),    ld!(b, e),    ld!(b, h),    ld!(b, l),    ld!(b, d hl), ld!(b, a),
