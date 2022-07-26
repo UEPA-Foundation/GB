@@ -143,16 +143,13 @@ macro_rules! adc {
             gb.cpu.a = u8::wrapping_add(gb.cpu.a, carry as u8);
 
             gb.cpu.f = 0;
-            if gb.cpu.a == 0
-            {
+            if gb.cpu.a == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            if (old_a & 0x0F) + (val & 0x0F) + carry as u8 > 0x0F
-            {
+            if (old_a & 0x0F) + (val & 0x0F) + carry as u8 > 0x0F {
                 gb.cpu.f |= H_FLAG;
             }
-            if gb.cpu.a < old_a || (gb.cpu.a == old_a && carry)
-            {
+            if gb.cpu.a < old_a || (gb.cpu.a == old_a && carry) {
                 gb.cpu.f |= C_FLAG;
             }
         }
@@ -167,16 +164,13 @@ macro_rules! adc {
             gb.cpu.a = u8::wrapping_add(gb.cpu.a, carry as u8);
 
             gb.cpu.f = 0;
-            if gb.cpu.a == 0
-            {
+            if gb.cpu.a == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            if (old_a & 0x0F) + (gb.cpu.$r8 & 0x0F) + carry as u8 > 0x0F
-            {
+            if (old_a & 0x0F) + (gb.cpu.$r8 & 0x0F) + carry as u8 > 0x0F {
                 gb.cpu.f |= H_FLAG;
             }
-            if gb.cpu.a < old_a || (gb.cpu.a == old_a && carry)
-            {
+            if gb.cpu.a < old_a || (gb.cpu.a == old_a && carry) {
                 gb.cpu.f |= C_FLAG;
             }
         }
@@ -191,23 +185,18 @@ macro_rules! adc {
             gb.cpu.a = u8::wrapping_add(gb.cpu.a, carry as u8);
 
             gb.cpu.f = 0;
-            if gb.cpu.a == 0
-            {
+            if gb.cpu.a == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            if (old_a & 0x0F) + (gb.mem[gb.cpu.rd_hl() as usize] & 0x0F) + carry as u8 > 0x0F
-            {
+            if (old_a & 0x0F) + (gb.mem[gb.cpu.rd_hl() as usize] & 0x0F) + carry as u8 > 0x0F {
                 gb.cpu.f |= H_FLAG;
             }
-            if gb.cpu.a < old_a || (gb.cpu.a == old_a && carry)
-            {
+            if gb.cpu.a < old_a || (gb.cpu.a == old_a && carry) {
                 gb.cpu.f |= C_FLAG;
             }
         }
     };
 }
-
-
 
 macro_rules! add {
     () => {
@@ -219,16 +208,13 @@ macro_rules! add {
             gb.cpu.a = u8::wrapping_add(gb.cpu.a, val);
 
             gb.cpu.f = 0;
-            if gb.cpu.a == 0
-            {
+            if gb.cpu.a == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            if (old_a & 0x0F) + (val & 0x0F) > 0x0F
-            {
+            if (old_a & 0x0F) + (val & 0x0F) > 0x0F {
                 gb.cpu.f |= H_FLAG;
             }
-            if gb.cpu.a < old_a 
-            {
+            if gb.cpu.a < old_a {
                 gb.cpu.f |= C_FLAG;
             }
         }
@@ -240,16 +226,13 @@ macro_rules! add {
             gb.cpu.a = u8::wrapping_add(gb.cpu.a, gb.cpu.$r8);
 
             gb.cpu.f = 0;
-            if gb.cpu.a == 0
-            {
+            if gb.cpu.a == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            if (old_a & 0x0F) + (gb.cpu.$r8 & 0x0F) > 0x0F
-            {
+            if (old_a & 0x0F) + (gb.cpu.$r8 & 0x0F) > 0x0F {
                 gb.cpu.f |= H_FLAG;
             }
-            if gb.cpu.a < old_a 
-            {
+            if gb.cpu.a < old_a {
                 gb.cpu.f |= C_FLAG;
             }
         }
@@ -261,28 +244,59 @@ macro_rules! add {
             gb.cpu.a = u8::wrapping_add(gb.cpu.a, gb.mem[gb.cpu.rd_hl() as usize]);
 
             gb.cpu.f = 0;
-            if gb.cpu.a == 0
-            {
+            if gb.cpu.a == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            if (old_a & 0x0F) + (gb.mem[gb.cpu.rd_hl() as usize] & 0x0F) > 0x0F
-            {
+            if (old_a & 0x0F) + (gb.mem[gb.cpu.rd_hl() as usize] & 0x0F) > 0x0F {
                 gb.cpu.f |= H_FLAG;
             }
-            if gb.cpu.a < old_a 
-            {
+            if gb.cpu.a < old_a {
                 gb.cpu.f |= C_FLAG;
             }
         }
     };
 }
 
-pub fn and_a_r8(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! and {
+    () => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.pc += 1;
+            let val: u8 = gb.mem[gb.cpu.pc as usize];
 
-pub fn and_a_hl(gb: &mut GameBoy, opcode: Opcode) {}
+            gb.cpu.a &= val;
 
-pub fn and_a_n8(gb: &mut GameBoy, opcode: Opcode) {}
+            gb.cpu.f = H_FLAG;
+            if gb.cpu.a == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
 
+    ($r8: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.a &= gb.mem[gb.cpu.rd_hl() as usize];
+
+            gb.cpu.f = H_FLAG;
+            if gb.cpu.a == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
+
+    (d hl) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.pc += 1;
+            let val: u8 = gb.mem[gb.cpu.pc as usize];
+
+            gb.cpu.a &= val;
+
+            gb.cpu.f = H_FLAG;
+            if gb.cpu.a == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
+}
 pub fn cp_a_r8(gb: &mut GameBoy, opcode: Opcode) {}
 
 pub fn cp_a_hl(gb: &mut GameBoy, opcode: Opcode) {}
@@ -619,15 +633,15 @@ pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
               adc!(b),      adc!(c),      adc!(d),      adc!(e),      adc!(h),      adc!(l),      adc!(d hl),   adc!(a),
 /* 9X */      sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_hl,     sub_a_r8,
               sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_hl,     sbc_a_r8,
-/* AX */      and_a_r8,     and_a_r8,     and_a_r8,     and_a_r8,     and_a_r8,     and_a_r8,     and_a_hl,     and_a_r8,
+/* AX */      and!(b),      and!(c),      and!(d),      and!(e),      and!(h),      and!(l),      and!(d hl),   and!(a),
               xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_hl,     xor_a_r8,
 /* BX */      or_a_r8,      or_a_r8,      or_a_r8,      or_a_r8,      or_a_r8,      or_a_r8,      or_a_hl,      or_a_r8,
               cp_a_r8,      cp_a_r8,      cp_a_r8,      cp_a_r8,      cp_a_r8,      cp_a_r8,      cp_a_hl,      cp_a_r8,
-/* CX */      ret_cc,       pop_r16,      jp_cc_n16,    jp_n16,       call_cc_n16,  push_r16,     add!(),     rst_vec,
-              ret_cc,       ret,          jp_cc_n16,    cb_prefix,    call_cc_n16,  call_n16,     adc!(),     rst_vec,
+/* CX */      ret_cc,       pop_r16,      jp_cc_n16,    jp_n16,       call_cc_n16,  push_r16,     add!(),       rst_vec,
+              ret_cc,       ret,          jp_cc_n16,    cb_prefix,    call_cc_n16,  call_n16,     adc!(),       rst_vec,
 /* DX */      ret_cc,       pop_r16,      jp_cc_n16,    undefined,    call_cc_n16,  push_r16,     sub_a_n8,     rst_vec,
               ret_cc,       reti,         jp_cc_n16,    undefined,    call_cc_n16,  undefined,    sbc_a_n8,     rst_vec,
-/* EX */      ldh_n8_a,     pop_r16,      ldh_c_a,      undefined,    undefined,    push_r16,     and_a_n8,     rst_vec,
+/* EX */      ldh_n8_a,     pop_r16,      ldh_c_a,      undefined,    undefined,    push_r16,     and!(),       rst_vec,
               add_sp_e8,    jp_hl,        ld_n16_a,     undefined,    undefined,    undefined,    xor_a_n8,     rst_vec,
 /* fX */      ldh_a_n8,     pop_af,       ldh_a_c,      di,           undefined,    push_af,      or_a_n8,      rst_vec,
               ld_hl_sp_e8,  ld_sp_hl,     ld_a_n16,     ei,           undefined,    undefined,    cp_a_n8,      rst_vec,
