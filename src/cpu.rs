@@ -354,8 +354,8 @@ macro_rules! cp {
 
 macro_rules! dec {
     ($r8: ident) => {
-        paste::paste! {
-            |gb: &mut GameBoy, _: Opcode| {
+         |gb: &mut GameBoy, _: Opcode| {
+            paste::paste! {
                 gb.cpu.$r8 = u8::wrapping_sub(gb.cpu.$r8, 1);
 
                 gb.cpu.f &= !(Z_FLAG | H_FLAG) | N_FLAG;
@@ -370,8 +370,8 @@ macro_rules! dec {
     };
 
     (d $r16: ident) => {
-        paste::paste! {
-            |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy, _: Opcode| {
+            paste::paste! {
                 let addr = gb.cpu.rd_hl() as usize;
                 let val = u8::wrapping_sub(gb.mem[addr], 1);
                 gb.mem[addr] = val;
@@ -390,8 +390,8 @@ macro_rules! dec {
 
 macro_rules! inc {
     ($r8: ident) => {
-        paste::paste! {
-            |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy, _: Opcode| {
+            paste::paste! {
                 gb.cpu.$r8 = u8::wrapping_add(gb.cpu.$r8, 1);
 
                 gb.cpu.f &= !(Z_FLAG | N_FLAG | H_FLAG);
@@ -406,8 +406,8 @@ macro_rules! inc {
     };
 
     (d $r16: ident) => {
-        paste::paste! {
-            |gb: &mut GameBoy, _: Opcode| {
+         |gb: &mut GameBoy, _: Opcode| {
+            paste::paste! {
                 let addr = gb.cpu.rd_hl() as usize;
                 let val = u8::wrapping_add(gb.mem[addr], 1);
                 gb.mem[addr] = val;
@@ -649,8 +649,8 @@ macro_rules! add16 {
     };
 
     ($r16: ident) => {
-        paste::paste! {
-            |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy, _: Opcode| {
+            paste::paste! {
                 let old_hl = gb.cpu.rd_hl();
                 let val = u16::wrapping_add(old_hl, gb.cpu.[<rd_ $r16>]());
                 gb.cpu.wr_hl(val);
@@ -669,8 +669,8 @@ macro_rules! add16 {
 
 macro_rules! dec16 {
     ($r16: ident) => {
-        paste::paste! {
-            |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy, _: Opcode| {
+            paste::paste! {
                 let val = u16::wrapping_sub(gb.cpu.[<rd_ $r16>](), 1);
                 gb.cpu.[<wr_ $r16>](val);
             }
@@ -680,8 +680,8 @@ macro_rules! dec16 {
 
 macro_rules! inc16 {
     ($r16: ident) => {
-        paste::paste! {
-            |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy, _: Opcode| {
+            paste::paste! {
                 let val = u16::wrapping_add(gb.cpu.[<rd_ $r16>](), 1);
                 gb.cpu.[<wr_ $r16>](val);
             }
