@@ -529,11 +529,65 @@ macro_rules! sbc {
     };
 }
 
-pub fn sub_a_r8(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! sub {
+    () => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.pc += 1;
+            let val: u8 = gb.mem[gb.cpu.pc as usize];
 
-pub fn sub_a_hl(gb: &mut GameBoy, opcode: Opcode) {}
+            let old_a: u8 = gb.cpu.a;
+            gb.cpu.a = u8::wrapping_sub(gb.cpu.a, val);
 
-pub fn sub_a_n8(gb: &mut GameBoy, opcode: Opcode) {}
+            gb.cpu.f = N_FLAG;
+            if gb.cpu.a == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+            if (old_a & 0x0F) < (val & 0x0F) as u8 {
+                gb.cpu.f |= H_FLAG;
+            }
+            if gb.cpu.a < val {
+                gb.cpu.f |= C_FLAG;
+            }
+        }
+    };
+
+    ($r8: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            let old_a: u8 = gb.cpu.a;
+            gb.cpu.a = u8::wrapping_sub(gb.cpu.a, gb.cpu.$r8);
+
+            gb.cpu.f = N_FLAG;
+            if gb.cpu.a == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+            if (old_a & 0x0F) < (gb.cpu.$r8 & 0x0F) as u8 {
+                gb.cpu.f |= H_FLAG;
+            }
+            if gb.cpu.a < gb.cpu.$r8 {
+                gb.cpu.f |= C_FLAG;
+            }
+        }
+    };
+
+    (d hl) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            let old_a: u8 = gb.cpu.a;
+            let addr: usize = gb.cpu.rd_hl() as usize;
+            gb.cpu.a = u8::wrapping_sub(gb.cpu.a, gb.mem[addr]);
+
+            gb.cpu.f = N_FLAG;
+            if gb.cpu.a == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+            if (old_a & 0x0F) < (gb.mem[addr] & 0x0F) {
+                gb.cpu.f |= H_FLAG;
+            }
+            if gb.cpu.a < gb.mem[addr] {
+                gb.cpu.f |= C_FLAG;
+            }
+        }
+    };
+}
 
 pub fn xor_a_r8(gb: &mut GameBoy, opcode: Opcode) {}
 
@@ -894,7 +948,7 @@ pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
               ld!(a, b),    ld!(a, c),    ld!(a, d),    ld!(a, e),    ld!(a, h),    ld!(a, h),    ld!(a, d hl), nop,
 /* 8X */      add!(b),      add!(c),      add!(d),      add!(e),      add!(h),      add!(l),      add!(d hl),   add!(a),
               adc!(b),      adc!(c),      adc!(d),      adc!(e),      adc!(h),      adc!(l),      adc!(d hl),   adc!(a),
-/* 9X */      sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_hl,     sub_a_r8,
+/* 9X */      sub!(b),      sub!(c),      sub!(d),      sub!(e),      sub!(h),      sub!(l),      sub!(d hl),   sub!(a),
               sbc!(b),      sbc!(c),      sbc!(d),      sbc!(e),      sbc!(h),      sbc!(l),      sbc!(d hl),   sbc!(a),
 /* AX */      and!(b),      and!(c),      and!(d),      and!(e),      and!(h),      and!(l),      and!(d hl),   and!(a),
               xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_hl,     xor_a_r8,
@@ -902,12 +956,12 @@ pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
               cp!(b),       cp!(c),       cp!(d),       cp!(e),       cp!(h),       cp!(l),       cp!(d hl),    cp!(a),
 /* CX */      ret_cc,       pop_r16,      jp_cc_n16,    jp_n16,       call_cc_n16,  push_r16,     add!(),       rst_vec,
               ret_cc,       ret,          jp_cc_n16,    cb_prefix,    call_cc_n16,  call_n16,     adc!(),       rst_vec,
-/* DX */      ret_cc,       pop_r16,      jp_cc_n16,    undefined,    call_cc_n16,  push_r16,     sub_a_n8,     rst_vec,
-              ret_cc,       reti,         jp_cc_n16,    undefined,    call_cc_n16,  undefined,    sbc!(),     rst_vec,
+/* DX */      ret_cc,       pop_r16,      jp_cc_n16,    undefined,    call_cc_n16,  push_r16,     sub!(),       rst_vec,
+              ret_cc,       reti,         jp_cc_n16,    undefined,    call_cc_n16,  undefined,    sbc!(),       rst_vec,
 /* EX */      ldh_n8_a,     pop_r16,      ldh_c_a,      undefined,    undefined,    push_r16,     and!(),       rst_vec,
               add_sp_e8,    jp_hl,        ld_n16_a,     undefined,    undefined,    undefined,    xor_a_n8,     rst_vec,
-/* fX */      ldh_a_n8,     pop_af,       ldh_a_c,      di,           undefined,    push_af,      or!(),      rst_vec,
-              ld_hl_sp_e8,  ld_sp_hl,     ld_a_n16,     ei,           undefined,    undefined,    cp!(),      rst_vec,
+/* fX */      ldh_a_n8,     pop_af,       ldh_a_c,      di,           undefined,    push_af,      or!(),        rst_vec,
+              ld_hl_sp_e8,  ld_sp_hl,     ld_a_n16,     ei,           undefined,    undefined,    cp!(),        rst_vec,
 ];
 
 #[rustfmt::skip]
