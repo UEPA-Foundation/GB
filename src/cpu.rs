@@ -460,11 +460,74 @@ macro_rules! or {
     };
 }
 
-pub fn sbc_a_r8(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! sbc {
+    () => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.pc += 1;
+            let val: u8 = gb.mem[gb.cpu.pc as usize];
 
-pub fn sbc_a_hl(gb: &mut GameBoy, opcode: Opcode) {}
+            let old_a: u8 = gb.cpu.a;
+            let carry: bool = gb.cpu.c_flag();
 
-pub fn sbc_a_n8(gb: &mut GameBoy, opcode: Opcode) {}
+            gb.cpu.a = u8::wrapping_sub(gb.cpu.a, val);
+            gb.cpu.a = u8::wrapping_sub(gb.cpu.a, carry as u8);
+
+            gb.cpu.f = N_FLAG;
+            if gb.cpu.a == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+            if (old_a & 0x0F) < (val & 0x0F) + carry as u8 {
+                gb.cpu.f |= H_FLAG;
+            }
+            if gb.cpu.a < u8::wrapping_add(val, carry as u8) {
+                gb.cpu.f |= C_FLAG;
+            }
+        }
+    };
+
+    ($r8: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            let old_a: u8 = gb.cpu.a;
+            let carry: bool = gb.cpu.c_flag();
+
+            gb.cpu.a = u8::wrapping_sub(gb.cpu.a, gb.cpu.$r8);
+            gb.cpu.a = u8::wrapping_sub(gb.cpu.a, carry as u8);
+
+            gb.cpu.f = N_FLAG;
+            if gb.cpu.a == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+            if (old_a & 0x0F) < (gb.cpu.$r8 & 0x0F) + carry as u8 {
+                gb.cpu.f |= H_FLAG;
+            }
+            if gb.cpu.a < u8::wrapping_add(gb.cpu.$r8, carry as u8) {
+                gb.cpu.f |= C_FLAG;
+            }
+        }
+    };
+
+    (d hl) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            let old_a: u8 = gb.cpu.a;
+            let carry: bool = gb.cpu.c_flag();
+            let addr: usize = gb.cpu.rd_hl() as usize;
+
+            gb.cpu.a = u8::wrapping_sub(gb.cpu.a, gb.mem[addr]);
+            gb.cpu.a = u8::wrapping_sub(gb.cpu.a, carry as u8);
+
+            gb.cpu.f = N_FLAG;
+            if gb.cpu.a == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+            if (old_a & 0x0F) < (gb.mem[addr] & 0x0F) + carry as u8 {
+                gb.cpu.f |= H_FLAG;
+            }
+            if gb.cpu.a < u8::wrapping_add(gb.mem[addr], carry as u8) {
+                gb.cpu.f |= C_FLAG;
+            }
+        }
+    };
+}
 
 pub fn sub_a_r8(gb: &mut GameBoy, opcode: Opcode) {}
 
@@ -832,7 +895,7 @@ pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
 /* 8X */      add!(b),      add!(c),      add!(d),      add!(e),      add!(h),      add!(l),      add!(d hl),   add!(a),
               adc!(b),      adc!(c),      adc!(d),      adc!(e),      adc!(h),      adc!(l),      adc!(d hl),   adc!(a),
 /* 9X */      sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_r8,     sub_a_hl,     sub_a_r8,
-              sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_r8,     sbc_a_hl,     sbc_a_r8,
+              sbc!(b),      sbc!(c),      sbc!(d),      sbc!(e),      sbc!(h),      sbc!(l),      sbc!(d hl),   sbc!(a),
 /* AX */      and!(b),      and!(c),      and!(d),      and!(e),      and!(h),      and!(l),      and!(d hl),   and!(a),
               xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_hl,     xor_a_r8,
 /* BX */      or!(b),       or!(c),       or!(d),       or!(e),       or!(h),       or!(l),       or!(d hl),    or!(a),
@@ -840,7 +903,7 @@ pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
 /* CX */      ret_cc,       pop_r16,      jp_cc_n16,    jp_n16,       call_cc_n16,  push_r16,     add!(),       rst_vec,
               ret_cc,       ret,          jp_cc_n16,    cb_prefix,    call_cc_n16,  call_n16,     adc!(),       rst_vec,
 /* DX */      ret_cc,       pop_r16,      jp_cc_n16,    undefined,    call_cc_n16,  push_r16,     sub_a_n8,     rst_vec,
-              ret_cc,       reti,         jp_cc_n16,    undefined,    call_cc_n16,  undefined,    sbc_a_n8,     rst_vec,
+              ret_cc,       reti,         jp_cc_n16,    undefined,    call_cc_n16,  undefined,    sbc!(),     rst_vec,
 /* EX */      ldh_n8_a,     pop_r16,      ldh_c_a,      undefined,    undefined,    push_r16,     and!(),       rst_vec,
               add_sp_e8,    jp_hl,        ld_n16_a,     undefined,    undefined,    undefined,    xor_a_n8,     rst_vec,
 /* fX */      ldh_a_n8,     pop_af,       ldh_a_c,      di,           undefined,    push_af,      or!(),      rst_vec,
