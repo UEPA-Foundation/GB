@@ -74,46 +74,6 @@ impl Cpu {
     pub fn c_flag(&mut self) -> bool {
         self.f & C_FLAG != 0
     }
-
-    #[inline(always)]
-    pub fn set_z(&mut self) {
-        self.f |= Z_FLAG
-    }
-
-    #[inline(always)]
-    pub fn set_n(&mut self) {
-        self.f |= N_FLAG
-    }
-
-    #[inline(always)]
-    pub fn set_h(&mut self) {
-        self.f |= H_FLAG
-    }
-
-    #[inline(always)]
-    pub fn set_c(&mut self) {
-        self.f |= C_FLAG
-    }
-
-    #[inline(always)]
-    pub fn reset_z(&mut self) {
-        self.f &= !Z_FLAG
-    }
-
-    #[inline(always)]
-    pub fn reset_n(&mut self) {
-        self.f &= !N_FLAG
-    }
-
-    #[inline(always)]
-    pub fn reset_h(&mut self) {
-        self.f &= !H_FLAG
-    }
-
-    #[inline(always)]
-    pub fn reset_c(&mut self) {
-        self.f &= !C_FLAG
-    }
 }
 
 impl GameBoy {
