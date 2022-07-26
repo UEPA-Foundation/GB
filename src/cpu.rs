@@ -199,78 +199,6 @@ macro_rules! adc {
     };
 }
 
-macro_rules! inc {
-    ($r8: ident) => {
-        paste::paste! {
-            |gb: &mut GameBoy, _: Opcode| {
-                gb.cpu.$r8 = u8::wrapping_add(gb.cpu.$r8, 1);
-
-                gb.cpu.f &= !(Z_FLAG | N_FLAG | H_FLAG);
-                if (gb.cpu.$r8 == 0) {
-                    gb.cpu.f |= Z_FLAG;
-                }
-                if ((gb.cpu.$r8 & 0x0F) + 1 > 0x0F) {
-                    gb.cpu.f |= H_FLAG;
-                }
-            }
-        }
-    };
-
-    (d $r16: ident) => {
-        paste::paste! {
-            |gb: &mut GameBoy, _: Opcode| {
-                let addr = gb.cpu.rd_hl() as usize;
-                let val = u8::wrapping_add(gb.mem[addr], 1);
-                gb.mem[addr] = val;
-
-                gb.cpu.f &= !(Z_FLAG | N_FLAG | H_FLAG);
-                if (val == 0) {
-                    gb.cpu.f |= Z_FLAG;
-                }
-                if ((val & 0x0F) + 1 > 0x0F) {
-                    gb.cpu.f |= H_FLAG;
-                }
-            }
-        }
-    };
-}
-
-macro_rules! dec {
-    ($r8: ident) => {
-        paste::paste! {
-            |gb: &mut GameBoy, _: Opcode| {
-                gb.cpu.$r8 = u8::wrapping_sub(gb.cpu.$r8, 1);
-
-                gb.cpu.f &= !(Z_FLAG | H_FLAG) | N_FLAG;
-                if (gb.cpu.$r8 == 0) {
-                    gb.cpu.f |= Z_FLAG;
-                }
-                if (u8::wrapping_sub(gb.cpu.$r8 & 0x0F, 1) > 0x0F) {
-                    gb.cpu.f |= H_FLAG;
-                }
-            }
-        }
-    };
-
-    (d $r16: ident) => {
-        paste::paste! {
-            |gb: &mut GameBoy, _: Opcode| {
-                let addr = gb.cpu.rd_hl() as usize;
-                let val = u8::wrapping_sub(gb.mem[addr], 1);
-                gb.mem[addr] = val;
-
-                gb.cpu.f &= !(Z_FLAG | H_FLAG) | N_FLAG;
-                if (val == 0) {
-                    gb.cpu.f |= Z_FLAG;
-                }
-                if (u8::wrapping_sub(val & 0x0F, 1) > 0x0F) {
-                    gb.cpu.f |= H_FLAG;
-                }
-            }
-        }
-    };
-}
-
 macro_rules! add {
     () => {
         |gb: &mut GameBoy, _: Opcode| {
@@ -330,6 +258,78 @@ macro_rules! add {
     };
 }
 
+macro_rules! dec {
+    ($r8: ident) => {
+        paste::paste! {
+            |gb: &mut GameBoy, _: Opcode| {
+                gb.cpu.$r8 = u8::wrapping_sub(gb.cpu.$r8, 1);
+
+                gb.cpu.f &= !(Z_FLAG | H_FLAG) | N_FLAG;
+                if (gb.cpu.$r8 == 0) {
+                    gb.cpu.f |= Z_FLAG;
+                }
+                if (u8::wrapping_sub(gb.cpu.$r8 & 0x0F, 1) > 0x0F) {
+                    gb.cpu.f |= H_FLAG;
+                }
+            }
+        }
+    };
+
+    (d $r16: ident) => {
+        paste::paste! {
+            |gb: &mut GameBoy, _: Opcode| {
+                let addr = gb.cpu.rd_hl() as usize;
+                let val = u8::wrapping_sub(gb.mem[addr], 1);
+                gb.mem[addr] = val;
+
+                gb.cpu.f &= !(Z_FLAG | H_FLAG) | N_FLAG;
+                if (val == 0) {
+                    gb.cpu.f |= Z_FLAG;
+                }
+                if (u8::wrapping_sub(val & 0x0F, 1) > 0x0F) {
+                    gb.cpu.f |= H_FLAG;
+                }
+            }
+        }
+    };
+}
+
+macro_rules! inc {
+    ($r8: ident) => {
+        paste::paste! {
+            |gb: &mut GameBoy, _: Opcode| {
+                gb.cpu.$r8 = u8::wrapping_add(gb.cpu.$r8, 1);
+
+                gb.cpu.f &= !(Z_FLAG | N_FLAG | H_FLAG);
+                if (gb.cpu.$r8 == 0) {
+                    gb.cpu.f |= Z_FLAG;
+                }
+                if ((gb.cpu.$r8 & 0x0F) + 1 > 0x0F) {
+                    gb.cpu.f |= H_FLAG;
+                }
+            }
+        }
+    };
+
+    (d $r16: ident) => {
+        paste::paste! {
+            |gb: &mut GameBoy, _: Opcode| {
+                let addr = gb.cpu.rd_hl() as usize;
+                let val = u8::wrapping_add(gb.mem[addr], 1);
+                gb.mem[addr] = val;
+
+                gb.cpu.f &= !(Z_FLAG | N_FLAG | H_FLAG);
+                if (val == 0) {
+                    gb.cpu.f |= Z_FLAG;
+                }
+                if ((val & 0x0F) + 1 > 0x0F) {
+                    gb.cpu.f |= H_FLAG;
+                }
+            }
+        }
+    };
+}
+
 pub fn and_a_r8(gb: &mut GameBoy, opcode: Opcode) {}
 
 pub fn and_a_hl(gb: &mut GameBoy, opcode: Opcode) {}
@@ -368,22 +368,22 @@ pub fn xor_a_n8(gb: &mut GameBoy, opcode: Opcode) {}
 
 // 16-bit Arithmetic Instructions
 
-macro_rules! inc16 {
+macro_rules! dec16 {
     ($r16: ident) => {
         paste::paste! {
             |gb: &mut GameBoy, _: Opcode| {
-                let val = u16::wrapping_add(gb.cpu.[<rd_ $r16>](), 1);
+                let val = u16::wrapping_sub(gb.cpu.[<rd_ $r16>](), 1);
                 gb.cpu.[<wr_ $r16>](val);
             }
         }
     }
 }
 
-macro_rules! dec16 {
+macro_rules! inc16 {
     ($r16: ident) => {
         paste::paste! {
             |gb: &mut GameBoy, _: Opcode| {
-                let val = u16::wrapping_sub(gb.cpu.[<rd_ $r16>](), 1);
+                let val = u16::wrapping_add(gb.cpu.[<rd_ $r16>](), 1);
                 gb.cpu.[<wr_ $r16>](val);
             }
         }
@@ -491,30 +491,6 @@ macro_rules! ld {
     };
 }
 
-fn ld_hli_a(gb: &mut GameBoy, _: Opcode) {
-    let hl = gb.cpu.rd_hl() as usize;
-    gb.cpu.a = gb.mem[hl];
-    gb.mem[hl] += 1;
-}
-
-fn ld_a_hli(gb: &mut GameBoy, _: Opcode) {
-    let hl = gb.cpu.rd_hl() as usize;
-    gb.mem[hl] = gb.cpu.a;
-    gb.mem[hl] += 1;
-}
-
-fn ld_hld_a(gb: &mut GameBoy, _: Opcode) {
-    let hl = gb.cpu.rd_hl() as usize;
-    gb.cpu.a = gb.mem[hl];
-    gb.mem[hl] -= 1;
-}
-
-fn ld_a_hld(gb: &mut GameBoy, _: Opcode) {
-    let hl = gb.cpu.rd_hl() as usize;
-    gb.mem[hl] = gb.cpu.a;
-    gb.mem[hl] -= 1;
-}
-
 macro_rules! ld16 {
     (sp) => {
         |gb: &mut GameBoy, _: Opcode| {
@@ -537,17 +513,16 @@ macro_rules! ld16 {
     };
 }
 
-fn ld_n16_sp(gb: &mut GameBoy, _: Opcode) {
+pub fn ld_n16_a(gb: &mut GameBoy, _: Opcode) {
     let addr = {
         let lsb = gb.mem[(gb.cpu.pc as usize) + 1] as usize;
         let msb = gb.mem[(gb.cpu.pc as usize) + 2] as usize;
         msb << 8 + lsb
     };
-    let bytes = u16::to_le_bytes(gb.cpu.sp);
-    gb.mem[addr] = bytes[0];
-    gb.mem[addr] = bytes[1];
+    gb.mem[addr] = gb.cpu.a;
     gb.cpu.pc += 2;
 }
+
 
 pub fn ldh_n8_a(gb: &mut GameBoy, _: Opcode) {
     gb.cpu.pc += 1;
@@ -560,7 +535,7 @@ pub fn ldh_c_a(gb: &mut GameBoy, _: Opcode) {
     gb.mem[addr] = gb.cpu.a;
 }
 
-pub fn ld_n16_a(gb: &mut GameBoy, _: Opcode) {
+pub fn ld_a_n16(gb: &mut GameBoy, _: Opcode) {
     let addr = {
         let lsb = gb.mem[(gb.cpu.pc as usize) + 1] as usize;
         let msb = gb.mem[(gb.cpu.pc as usize) + 2] as usize;
@@ -581,14 +556,28 @@ pub fn ldh_a_c(gb: &mut GameBoy, _: Opcode) {
     gb.cpu.a = gb.mem[addr];
 }
 
-pub fn ld_a_n16(gb: &mut GameBoy, _: Opcode) {
-    let addr = {
-        let lsb = gb.mem[(gb.cpu.pc as usize) + 1] as usize;
-        let msb = gb.mem[(gb.cpu.pc as usize) + 2] as usize;
-        msb << 8 + lsb
-    };
-    gb.mem[addr] = gb.cpu.a;
-    gb.cpu.pc += 2;
+fn ld_hli_a(gb: &mut GameBoy, _: Opcode) {
+    let hl = gb.cpu.rd_hl() as usize;
+    gb.cpu.a = gb.mem[hl];
+    gb.mem[hl] += 1;
+}
+
+fn ld_hld_a(gb: &mut GameBoy, _: Opcode) {
+    let hl = gb.cpu.rd_hl() as usize;
+    gb.cpu.a = gb.mem[hl];
+    gb.mem[hl] -= 1;
+}
+
+fn ld_a_hli(gb: &mut GameBoy, _: Opcode) {
+    let hl = gb.cpu.rd_hl() as usize;
+    gb.mem[hl] = gb.cpu.a;
+    gb.mem[hl] += 1;
+}
+
+fn ld_a_hld(gb: &mut GameBoy, _: Opcode) {
+    let hl = gb.cpu.rd_hl() as usize;
+    gb.mem[hl] = gb.cpu.a;
+    gb.mem[hl] -= 1;
 }
 
 // Stack Operations
@@ -603,6 +592,18 @@ pub fn dec_sp(gb: &mut GameBoy, opcode: Opcode) {
 
 fn inc_sp(gb: &mut GameBoy, _: Opcode) {
     gb.cpu.sp = u16::wrapping_add(gb.cpu.sp, 1);
+}
+
+fn ld_n16_sp(gb: &mut GameBoy, _: Opcode) {
+    let addr = {
+        let lsb = gb.mem[(gb.cpu.pc as usize) + 1] as usize;
+        let msb = gb.mem[(gb.cpu.pc as usize) + 2] as usize;
+        msb << 8 + lsb
+    };
+    let bytes = u16::to_le_bytes(gb.cpu.sp);
+    gb.mem[addr] = bytes[0];
+    gb.mem[addr] = bytes[1];
+    gb.cpu.pc += 2;
 }
 
 pub fn ld_hl_sp_e8(gb: &mut GameBoy, opcode: Opcode) {}
