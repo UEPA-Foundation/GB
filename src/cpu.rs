@@ -899,7 +899,7 @@ fn ld_n16_sp(gb: &mut GameBoy, _: Opcode) {
     };
     let bytes = u16::to_le_bytes(gb.cpu.sp);
     gb.mem[addr] = bytes[0];
-    gb.mem[addr] = bytes[1];
+    gb.mem[addr + 1] = bytes[1];
     gb.cpu.pc += 2;
 }
 
