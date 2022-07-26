@@ -879,11 +879,22 @@ fn ld_a_hld(gb: &mut GameBoy, _: Opcode) {
 
 // Stack Operations
 
-pub fn add_hl_sp(gb: &mut GameBoy, opcode: Opcode) {}
+fn add_sp_e8(gb: &mut GameBoy, _: Opcode) {
+    gb.cpu.pc += 1;
+    let offset = gb.mem[gb.cpu.pc as usize] as i8;
+    let old_sp = gb.cpu.sp;
+    gb.cpu.sp = i32::wrapping_add(old_sp as i32, offset as i32) as u16;
 
-pub fn add_sp_e8(gb: &mut GameBoy, opcode: Opcode) {}
+    gb.cpu.f = 0;
+    if (old_sp & 0x000F) + (offset & 0x000F) as u16 > 0x000F {
+        gb.cpu.f |= H_FLAG;
+    }
+    if (old_sp & 0x00FF) + offset as u16 > 0x00FF {
+        gb.cpu.f |= C_FLAG;
+    }
+}
 
-pub fn dec_sp(gb: &mut GameBoy, opcode: Opcode) {
+fn dec_sp(gb: &mut GameBoy, _: Opcode) {
     gb.cpu.sp = u16::wrapping_sub(gb.cpu.sp, 1);
 }
 
@@ -903,17 +914,59 @@ fn ld_n16_sp(gb: &mut GameBoy, _: Opcode) {
     gb.cpu.pc += 2;
 }
 
-pub fn ld_hl_sp_e8(gb: &mut GameBoy, opcode: Opcode) {}
+fn ld_hl_sp_e8(gb: &mut GameBoy, _: Opcode) {
+    gb.cpu.pc += 1;
+    let offset = gb.mem[gb.cpu.pc as usize] as i8;
+    let val = i32::wrapping_add(gb.cpu.sp as i32, offset as i32) as u16;
+    gb.cpu.wr_hl(val);
 
-pub fn ld_sp_hl(gb: &mut GameBoy, opcode: Opcode) {}
+    gb.cpu.f = 0;
+    if (gb.cpu.sp & 0x000F) + (offset & 0x0F) as u16 > 0x000F {
+        gb.cpu.f |= H_FLAG;
+    }
+    if val < gb.cpu.sp {
+        gb.cpu.f |= C_FLAG;
+    }
+}
 
-pub fn pop_af(gb: &mut GameBoy, opcode: Opcode) {}
+fn ld_sp_hl(gb: &mut GameBoy, _: Opcode) {
+    gb.cpu.sp = gb.cpu.rd_hl();
+}
 
-pub fn pop_r16(gb: &mut GameBoy, opcode: Opcode) {}
+fn pop_af(gb: &mut GameBoy, _: Opcode) {
+    gb.cpu.f = gb.mem[gb.cpu.sp as usize];
+    gb.cpu.a = gb.mem[(gb.cpu.sp + 1) as usize];
+    gb.cpu.sp = u16::wrapping_add(gb.cpu.sp, 2);
+}
 
-pub fn push_af(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! pop {
+    ($r16: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            paste::paste! {
+                let lsb = gb.mem[gb.cpu.sp as usize] as u16;
+                let msb = gb.mem[(gb.cpu.sp + 1) as usize] as u16;
+                gb.cpu.[<wr_ $r16>](msb << 8 + lsb);
+                gb.cpu.sp = u16::wrapping_add(gb.cpu.sp, 2);
+            }
+        }
+    }
+}
 
-pub fn push_r16(gb: &mut GameBoy, opcode: Opcode) {}
+fn push_af(gb: &mut GameBoy, _: Opcode) {
+    gb.mem[(gb.cpu.sp - 1) as usize] = gb.cpu.a;
+    gb.mem[(gb.cpu.sp - 2) as usize] = gb.cpu.f;
+    gb.cpu.sp = u16::wrapping_sub(gb.cpu.sp, 2);
+}
+
+macro_rules! push {
+    ($hi: ident, $lo: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.mem[(gb.cpu.sp - 1) as usize] = gb.cpu.$hi;
+            gb.mem[(gb.cpu.sp - 2) as usize] = gb.cpu.$lo;
+            gb.cpu.sp = u16::wrapping_sub(gb.cpu.sp, 2);
+        }
+    }
+}
 
 // Jumps and Subroutines
 
@@ -988,11 +1041,11 @@ pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
               xor!(b),      xor!(c),      xor!(d),      xor!(e),      xor!(h),      xor!(l),      xor!(d hl),   xor!(a),
 /* BX */      or!(b),       or!(c),       or!(d),       or!(e),       or!(h),       or!(l),       or!(d hl),    or!(a),
               cp!(b),       cp!(c),       cp!(d),       cp!(e),       cp!(h),       cp!(l),       cp!(d hl),    cp!(a),
-/* CX */      ret_cc,       pop_r16,      jp_cc_n16,    jp_n16,       call_cc_n16,  push_r16,     add!(),       rst_vec,
+/* CX */      ret_cc,       pop!(bc),     jp_cc_n16,    jp_n16,       call_cc_n16,  push!(b, c),  add!(),       rst_vec,
               ret_cc,       ret,          jp_cc_n16,    cb_prefix,    call_cc_n16,  call_n16,     adc!(),       rst_vec,
-/* DX */      ret_cc,       pop_r16,      jp_cc_n16,    undefined,    call_cc_n16,  push_r16,     sub!(),       rst_vec,
+/* DX */      ret_cc,       pop!(de),     jp_cc_n16,    undefined,    call_cc_n16,  push!(d, e),  sub!(),       rst_vec,
               ret_cc,       reti,         jp_cc_n16,    undefined,    call_cc_n16,  undefined,    sbc!(),       rst_vec,
-/* EX */      ldh_n8_a,     pop_r16,      ldh_c_a,      undefined,    undefined,    push_r16,     and!(),       rst_vec,
+/* EX */      ldh_n8_a,     pop!(hl),     ldh_c_a,      undefined,    undefined,    push!(h, l),  and!(),       rst_vec,
               add_sp_e8,    jp_hl,        ld_n16_a,     undefined,    undefined,    undefined,    xor!(),       rst_vec,
 /* fX */      ldh_a_n8,     pop_af,       ldh_a_c,      di,           undefined,    push_af,      or!(),        rst_vec,
               ld_hl_sp_e8,  ld_sp_hl,     ld_a_n16,     ei,           undefined,    undefined,    cp!(),        rst_vec,
