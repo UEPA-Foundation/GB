@@ -335,14 +335,15 @@ macro_rules! cp {
 
     (d hl) => {
         |gb: &mut GameBoy, _: Opcode| {
+            let addr: usize = gb.cpu.rd_hl() as usize;
             gb.cpu.f = N_FLAG;
-            if gb.cpu.a == gb.mem[gb.cpu.rd_hl() as usize] {
+            if gb.cpu.a == gb.mem[addr] {
                 gb.cpu.f |= Z_FLAG;
             }
-            if gb.cpu.a & 0x0F < gb.mem[gb.cpu.rd_hl() as usize] & 0x0F {
+            if gb.cpu.a & 0x0F < gb.mem[addr] & 0x0F {
                 gb.cpu.f |= H_FLAG;
             }
-            if gb.cpu.a < gb.mem[gb.cpu.rd_hl() as usize] {
+            if gb.cpu.a < gb.mem[addr] {
                 gb.cpu.f |= C_FLAG;
             }
         }
