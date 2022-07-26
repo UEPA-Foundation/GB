@@ -589,11 +589,43 @@ macro_rules! sub {
     };
 }
 
-pub fn xor_a_r8(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! xor {
+    () => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.pc += 1;
+            let val: u8 = gb.mem[gb.cpu.pc as usize];
 
-pub fn xor_a_hl(gb: &mut GameBoy, opcode: Opcode) {}
+            gb.cpu.a ^= val;
 
-pub fn xor_a_n8(gb: &mut GameBoy, opcode: Opcode) {}
+            gb.cpu.f = 0;
+            if gb.cpu.a == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
+
+    ($r8: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.a ^= gb.cpu.$r8;
+
+            gb.cpu.f = 0;
+            if gb.cpu.a == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
+
+    (d hl) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.a ^= gb.mem[gb.cpu.rd_hl() as usize];
+
+            gb.cpu.f = 0;
+            if gb.cpu.a == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
+}
 
 // 16-bit Arithmetic Instructions
 
@@ -951,7 +983,7 @@ pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
 /* 9X */      sub!(b),      sub!(c),      sub!(d),      sub!(e),      sub!(h),      sub!(l),      sub!(d hl),   sub!(a),
               sbc!(b),      sbc!(c),      sbc!(d),      sbc!(e),      sbc!(h),      sbc!(l),      sbc!(d hl),   sbc!(a),
 /* AX */      and!(b),      and!(c),      and!(d),      and!(e),      and!(h),      and!(l),      and!(d hl),   and!(a),
-              xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_r8,     xor_a_hl,     xor_a_r8,
+              xor!(b),      xor!(c),      xor!(d),      xor!(e),      xor!(h),      xor!(l),      xor!(d hl),   xor!(a),
 /* BX */      or!(b),       or!(c),       or!(d),       or!(e),       or!(h),       or!(l),       or!(d hl),    or!(a),
               cp!(b),       cp!(c),       cp!(d),       cp!(e),       cp!(h),       cp!(l),       cp!(d hl),    cp!(a),
 /* CX */      ret_cc,       pop_r16,      jp_cc_n16,    jp_n16,       call_cc_n16,  push_r16,     add!(),       rst_vec,
@@ -959,7 +991,7 @@ pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
 /* DX */      ret_cc,       pop_r16,      jp_cc_n16,    undefined,    call_cc_n16,  push_r16,     sub!(),       rst_vec,
               ret_cc,       reti,         jp_cc_n16,    undefined,    call_cc_n16,  undefined,    sbc!(),       rst_vec,
 /* EX */      ldh_n8_a,     pop_r16,      ldh_c_a,      undefined,    undefined,    push_r16,     and!(),       rst_vec,
-              add_sp_e8,    jp_hl,        ld_n16_a,     undefined,    undefined,    undefined,    xor_a_n8,     rst_vec,
+              add_sp_e8,    jp_hl,        ld_n16_a,     undefined,    undefined,    undefined,    xor!(),       rst_vec,
 /* fX */      ldh_a_n8,     pop_af,       ldh_a_c,      di,           undefined,    push_af,      or!(),        rst_vec,
               ld_hl_sp_e8,  ld_sp_hl,     ld_a_n16,     ei,           undefined,    undefined,    cp!(),        rst_vec,
 ];
