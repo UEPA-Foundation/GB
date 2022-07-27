@@ -74,6 +74,16 @@ impl Cpu {
     pub fn c_flag(&mut self) -> bool {
         self.f & C_FLAG != 0
     }
+
+    #[inline(always)]
+    pub fn nz_flag(&mut self) -> bool {
+        self.f & Z_FLAG == 0
+    }
+
+    #[inline(always)]
+    pub fn nc_flag(&mut self) -> bool {
+        self.f & C_FLAG == 0
+    }
 }
 
 impl GameBoy {
