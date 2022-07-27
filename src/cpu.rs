@@ -1344,7 +1344,10 @@ pub fn ccf(gb: &mut GameBoy, opcode: Opcode) {
     gb.cpu.f ^= C_FLAG;
 }
 
-pub fn cpl(gb: &mut GameBoy, opcode: Opcode) {}
+pub fn cpl(gb: &mut GameBoy, opcode: Opcode) {
+    gb.cpu.a = !gb.cpu.a;
+    gb.cpu.f |= N_FLAG | H_FLAG;
+}
 
 pub fn daa(gb: &mut GameBoy, opcode: Opcode) {}
 
