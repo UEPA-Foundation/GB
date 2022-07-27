@@ -778,7 +778,7 @@ macro_rules! sla {
     ($r8: ident) => {
         |gb: &mut GameBoy, _: Opcode| {
             gb.cpu.f = 0;
-            gb.cpu.f |= (gb.cpu.$r8 & 0x80) << 5;
+            gb.cpu.f |= (gb.cpu.$r8 & 0x80) >> 3;
             gb.cpu.$r8 = gb.cpu.$r8 << 1;
             if gb.cpu.$r8 == 0 {
                 gb.cpu.f |= Z_FLAG;
@@ -790,7 +790,7 @@ macro_rules! sla {
         |gb: &mut GameBoy, _: Opcode| {
             let addr: usize = gb.cpu.rd_hl() as usize;
             gb.cpu.f = 0;
-            gb.cpu.f |= (gb.mem[addr] & 0x80) << 5;
+            gb.cpu.f |= (gb.mem[addr] & 0x80) >> 3;
             gb.mem[addr] = gb.mem[addr] << 1;
             if gb.mem[addr] == 0 {
                 gb.cpu.f |= Z_FLAG;
