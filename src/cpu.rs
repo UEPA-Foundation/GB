@@ -94,6 +94,35 @@ impl GameBoy {
     }
 }
 
+trait Reg {
+    fn inc(&mut self);
+    fn dec(&mut self);
+}
+
+impl Reg for u8 {
+    #[inline(always)]
+    fn inc(&mut self) {
+        *self = u8::wrapping_add(*self, 1);
+    }
+
+    #[inline(always)]
+    fn dec(&mut self) {
+        *self = u8::wrapping_sub(*self, 1);
+    }
+}
+
+impl Reg for u16 {
+    #[inline(always)]
+    fn inc(&mut self) {
+        *self = u16::wrapping_add(*self, 1);
+    }
+
+    #[inline(always)]
+    fn dec(&mut self) {
+        *self = u16::wrapping_sub(*self, 1);
+    }
+}
+
 pub fn cb_prefix(gb: &mut GameBoy, _: Opcode) {
     gb.cpu.pc += 1;
     let opcode_cb = gb.mem[gb.cpu.pc as usize];
