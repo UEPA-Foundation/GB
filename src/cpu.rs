@@ -818,7 +818,13 @@ macro_rules! rr {
     };
 }
 
-pub fn rra(gb: &mut GameBoy, opcode: Opcode) {}
+pub fn rra(gb: &mut GameBoy, opcode: Opcode) {
+    let carry: u8 = gb.cpu.c_flag() as u8;
+    gb.cpu.f = 0;
+    gb.cpu.f |= (gb.cpu.a & 0x01) << 5;
+    gb.cpu.a = gb.cpu.a >> 1;
+    gb.cpu.a |= carry << 7;
+}
 
 macro_rules! rrc {
     ($r8: ident) => {
