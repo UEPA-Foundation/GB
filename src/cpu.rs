@@ -725,9 +725,34 @@ macro_rules! swap {
 
 // Bit Shift Instructions
 
-pub fn rl_r8(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! rl {
+    ($r8: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            let carry: u8 = gb.cpu.c_flag() as u8;
+            gb.cpu.f = 0;
+            gb.cpu.f |= (gb.cpu.$r8 & 0x80) >> 3;
+            gb.cpu.$r8 = gb.cpu.$r8 << 1;
+            gb.cpu.$r8 |= carry;
+            if gb.cpu.$r8 == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
 
-pub fn rl_hl(gb: &mut GameBoy, opcode: Opcode) {}
+    (d hl) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            let carry: u8 = gb.cpu.c_flag() as u8;
+            let addr: usize = gb.cpu.rd_hl() as usize;
+            gb.cpu.f = 0;
+            gb.cpu.f |= (gb.mem[addr] & 0x80) >> 3;
+            gb.mem[addr] = gb.mem[addr] << 1;
+            gb.mem[addr] |= carry;
+            if gb.mem[addr] == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
+}
 
 pub fn rla(gb: &mut GameBoy, opcode: Opcode) {}
 
@@ -1137,7 +1162,7 @@ pub const OPCODES_CB: [fn(&mut GameBoy, u8); 256] = [
 /*           X8           X9           XA           XB           XC           XD           XE              XF           */
 /* 0X */     rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_hl,         rlc_r8,
              rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_hl,         rrc_r8,
-/* 1X */     rl_r8,       rl_r8,       rl_r8,       rl_r8,       rl_r8,       rl_r8,       rl_hl,          rl_r8,
+/* 1X */     rl!(b),      rl!(c),      rl!(d),      rl!(e),      rl!(h),      rl!(l),      rl!(d hl),      rl!(a),
              rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_hl,          rr_r8,
 /* 2X */     sla!(b),     sla!(c),     sla!(d),     sla!(e),     sla!(h),     sla!(l),     sla!(d hl),     sla!(a),
              sra!(b),     sra!(c),     sra!(d),     sra!(e),     sra!(h),     sra!(l),     sra!(d hl),     sra!(a),
