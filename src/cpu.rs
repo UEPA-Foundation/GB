@@ -756,9 +756,30 @@ macro_rules! rl {
 
 pub fn rla(gb: &mut GameBoy, opcode: Opcode) {}
 
-pub fn rlc_r8(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! rlc {
+    ($r8: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.f = 0;
+            gb.cpu.f |= (gb.cpu.$r8 & 0x80) >> 3;
+            gb.cpu.$r8 = u8::rotate_left(gb.cpu.$r8, 1);
+            if gb.cpu.$r8 == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
 
-pub fn rlc_hl(gb: &mut GameBoy, opcode: Opcode) {}
+    (d hl) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            let addr: usize = gb.cpu.rd_hl() as usize;
+            gb.cpu.f = 0;
+            gb.cpu.f |= (gb.mem[addr] & 0x80) << 3;
+            gb.mem[addr] = u8::rotate_left(gb.mem[addr], 1);
+            if gb.mem[addr] == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
+}
 
 pub fn rlca(gb: &mut GameBoy, opcode: Opcode) {}
 
@@ -1185,7 +1206,7 @@ pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
 pub const OPCODES_CB: [fn(&mut GameBoy, u8); 256] = [
 /*           X0           X1           X2           X3           X4           X5           X6              X7           */
 /*           X8           X9           XA           XB           XC           XD           XE              XF           */
-/* 0X */     rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_hl,         rlc_r8,
+/* 0X */     rlc!(b),     rlc!(c),     rlc!(d),     rlc!(e),     rlc!(h),     rlc!(l),     rlc!(d hl),     rlc!(a),
              rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_hl,         rrc_r8,
 /* 1X */     rl!(b),      rl!(c),      rl!(d),      rl!(e),      rl!(h),      rl!(l),      rl!(d hl),      rl!(a),
              rr!(b),      rr!(c),      rr!(d),      rr!(e),      rr!(h),      rr!(l),      rr!(d hl),      rr!(a),
