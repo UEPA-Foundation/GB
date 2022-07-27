@@ -1353,7 +1353,10 @@ pub fn halt(gb: &mut GameBoy, opcode: Opcode) {}
 
 pub fn nop(gb: &mut GameBoy, opcode: Opcode) {}
 
-pub fn scf(gb: &mut GameBoy, opcode: Opcode) {}
+pub fn scf(gb: &mut GameBoy, opcode: Opcode) {
+    gb.cpu.f &= !(N_FLAG | H_FLAG);
+    gb.cpu.f |= C_FLAG;
+}
 
 pub fn stop(gb: &mut GameBoy, opcode: Opcode) {}
 
