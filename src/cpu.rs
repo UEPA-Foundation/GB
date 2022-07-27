@@ -653,10 +653,21 @@ macro_rules! inc16 {
 macro_rules! bit {
     ($i: expr, $r8: ident) => {
         |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.f &= !(N_FLAG | Z_FLAG);
+            gb.cpu.f |= H_FLAG;
+            if gb.cpu.$r8 & (1 << $i) == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
         }
     };
+
     ($i: expr, d hl) => {
         |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.f &= !(N_FLAG | Z_FLAG);
+            gb.cpu.f |= H_FLAG;
+            if gb.mem[gb.cpu.rd_hl() as usize] & (1 << $i) == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
         }
     };
 }
