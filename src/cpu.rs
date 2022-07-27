@@ -774,31 +774,6 @@ macro_rules! sla {
     };
 }
 
-macro_rules! srl {
-    ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
-            gb.cpu.f = 0;
-            gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 5;
-            gb.cpu.$r8 >>= 1;
-            if gb.cpu.$r8 == 0 {
-                gb.cpu.f |= Z_FLAG;
-            }
-        }
-    };
-
-    (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
-            let addr: usize = gb.cpu.rd_hl() as usize;
-            gb.cpu.f = 0;
-            gb.cpu.f |= (gb.mem[addr] & 0x01) << 5;
-            gb.mem[addr] >>= 1;
-            if gb.mem[addr] == 0 {
-                gb.cpu.f |= Z_FLAG;
-            }
-        }
-    };
-}
-
 macro_rules! sra {
     ($r8: ident) => {
         |gb: &mut GameBoy, _: Opcode| {
