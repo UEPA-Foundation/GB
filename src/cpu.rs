@@ -651,9 +651,19 @@ macro_rules! inc16 {
 
 // Bit Operations Instructions
 
-pub fn bit_u3_r8(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! bit {
+    ($i: expr, $r8: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.$r8 |= (1 << $i);
+        }
+    };
 
-pub fn bit_u3_hl(gb: &mut GameBoy, opcode: Opcode) {}
+    ($i: expr, d hl) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.mem[gb.cpu.rd_hl() as usize] |= (1 << $i);
+        }
+    };
+}
 
 pub fn res_u3_r8(gb: &mut GameBoy, opcode: Opcode) {}
 
@@ -976,7 +986,7 @@ pub fn undefined(gb: &mut GameBoy, opcode: Opcode) {}
 #[rustfmt::skip]
 pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
 /*            X0            X1            X2            X3            X4            X5            X6            X7            */
-/*            X8            X9            Xa            Xb            Xc            Xd            Xe            Xf            */
+/*            X8            X9            XA            XB            XC            XD            XE            XF            */
 /* 0X */      nop,          ld16!(bc),    ld!(d bc, a), inc16!(bc),   inc!(b),      dec!(b),      ld!(b),       rlca,
               ld_n16_sp,    add16!(bc),   ld!(a, d bc), dec16!(bc),   inc!(c),      dec!(c),      ld!(c),       rrca,
 /* 1X */      stop,         ld16!(de),    ld!(d de, a), inc16!(de),   inc!(d),      dec!(d),      ld!(d),       rla,
@@ -1013,38 +1023,38 @@ pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
 
 #[rustfmt::skip]
 pub const OPCODES_CB: [fn(&mut GameBoy, u8); 256] = [
-/*           X0           X1           X2           X3           X4           X5           X6           X7           */
-/*           X8           X9           XA           XB           XC           XD           XE           XF           */
-/* 0X */     rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_hl,      rlc_r8,
-             rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_hl,      rrc_r8,
-/* 1X */     rl_r8,       rl_r8,       rl_r8,       rl_r8,       rl_r8,       rl_r8,       rl_hl,       rl_r8,
-             rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_hl,       rr_r8,
-/* 2X */     sla_r8,      sla_r8,      sla_r8,      sla_r8,      sla_r8,      sla_r8,      sla_hl,      sla_r8,
-             sra_r8,      sra_r8,      sra_r8,      sra_r8,      sra_r8,      sra_r8,      sra_hl,      sra_r8,
-/* 3X */     swap_r8,     swap_r8,     swap_r8,     swap_r8,     swap_r8,     swap_r8,     swap_hl,     swap_r8,
-             srl_r8,      srl_r8,      srl_r8,      srl_r8,      srl_r8,      srl_r8,      srl_hl,      srl_r8,
-/* 4X */     bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
-             bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
-/* 5X */     bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
-             bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
-/* 6X */     bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
-             bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
-/* 7X */     bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
-             bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_r8,   bit_u3_hl,   bit_u3_r8,
-/* 8X */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
-             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
-/* 9X */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
-             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
-/* AX */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
-             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
-/* BX */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
-             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,   res_u3_r8,
-/* CX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
-             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
-/* DX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
-             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
-/* EX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
-             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
-/* FX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
-             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,   set_u3_r8,
+/*           X0           X1           X2           X3           X4           X5           X6              X7           */
+/*           X8           X9           XA           XB           XC           XD           XE              XF           */
+/* 0X */     rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_hl,         rlc_r8,
+             rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_hl,         rrc_r8,
+/* 1X */     rl_r8,       rl_r8,       rl_r8,       rl_r8,       rl_r8,       rl_r8,       rl_hl,          rl_r8,
+             rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_hl,          rr_r8,
+/* 2X */     sla_r8,      sla_r8,      sla_r8,      sla_r8,      sla_r8,      sla_r8,      sla_hl,         sla_r8,
+             sra_r8,      sra_r8,      sra_r8,      sra_r8,      sra_r8,      sra_r8,      sra_hl,         sra_r8,
+/* 3X */     swap_r8,     swap_r8,     swap_r8,     swap_r8,     swap_r8,     swap_r8,     swap_hl,        swap_r8,
+             srl_r8,      srl_r8,      srl_r8,      srl_r8,      srl_r8,      srl_r8,      srl_hl,         srl_r8,
+/* 4X */     bit!(0, b),  bit!(0, c),  bit!(0, d),  bit!(0, e),  bit!(0, h),  bit!(0, l),  bit!(0, d hl),  bit!(0, a),
+             bit!(1, b),  bit!(1, c),  bit!(1, d),  bit!(1, e),  bit!(1, h),  bit!(1, l),  bit!(1, d hl),  bit!(1, a),
+/* 5X */     bit!(2, b),  bit!(2, c),  bit!(2, d),  bit!(2, e),  bit!(2, h),  bit!(2, l),  bit!(2, d hl),  bit!(2, a),
+             bit!(3, b),  bit!(3, c),  bit!(3, d),  bit!(3, e),  bit!(3, h),  bit!(3, l),  bit!(3, d hl),  bit!(3, a),
+/* 6X */     bit!(4, b),  bit!(4, c),  bit!(4, d),  bit!(4, e),  bit!(4, h),  bit!(4, l),  bit!(4, d hl),  bit!(4, a),
+             bit!(5, b),  bit!(5, c),  bit!(5, d),  bit!(5, e),  bit!(5, h),  bit!(5, l),  bit!(5, d hl),  bit!(5, a),
+/* 7X */     bit!(6, b),  bit!(6, c),  bit!(6, d),  bit!(6, e),  bit!(6, h),  bit!(6, l),  bit!(6, d hl),  bit!(6, a),
+             bit!(7, b),  bit!(7, c),  bit!(7, d),  bit!(7, e),  bit!(7, h),  bit!(7, l),  bit!(7, d hl),  bit!(7, a),
+/* 8X */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
+             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
+/* 9X */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
+             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
+/* AX */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
+             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
+/* BX */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
+             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
+/* CX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
+             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
+/* DX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
+             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
+/* EX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
+             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
+/* FX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
+             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
 ];
