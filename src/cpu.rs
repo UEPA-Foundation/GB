@@ -749,9 +749,55 @@ pub fn rrc_hl(gb: &mut GameBoy, opcode: Opcode) {}
 
 pub fn rrca(gb: &mut GameBoy, opcode: Opcode) {}
 
-pub fn sla_r8(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! sla {
+    ($r8: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.f = 0;
+            gb.cpu.f |= (gb.cpu.$r8 & 0x80) << 5;
+            gb.cpu.$r8 = gb.cpu.$r8 << 1;
+            if gb.cpu.$r8 == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
 
-pub fn sla_hl(gb: &mut GameBoy, opcode: Opcode) {}
+    (d hl) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            let addr: usize = gb.cpu.rd_hl() as usize;
+            gb.cpu.f = 0;
+            gb.cpu.f |= (gb.mem[addr] & 0x80) << 5;
+            gb.mem[addr] = gb.mem[addr] << 1;
+            if gb.mem[addr] == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
+}
+
+macro_rules! srl {
+    ($r8: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.f = 0;
+            gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 5;
+            gb.cpu.$r8 >>= 1;
+            if gb.cpu.$r8 == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
+
+    (d hl) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            let addr: usize = gb.cpu.rd_hl() as usize;
+            gb.cpu.f = 0;
+            gb.cpu.f |= (gb.mem[addr] & 0x01) << 5;
+            gb.mem[addr] >>= 1;
+            if gb.mem[addr] == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
+}
 
 macro_rules! sra {
     ($r8: ident) => {
@@ -1118,7 +1164,7 @@ pub const OPCODES_CB: [fn(&mut GameBoy, u8); 256] = [
              rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_hl,         rrc_r8,
 /* 1X */     rl_r8,       rl_r8,       rl_r8,       rl_r8,       rl_r8,       rl_r8,       rl_hl,          rl_r8,
              rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_hl,          rr_r8,
-/* 2X */     sla_r8,      sla_r8,      sla_r8,      sla_r8,      sla_r8,      sla_r8,      sla_hl,         sla_r8,
+/* 2X */     sla!(b),     sla!(c),     sla!(d),     sla!(e),     sla!(h),     sla!(l),     sla!(d hl),     sla!(a),
              sra!(b),     sra!(c),     sra!(d),     sra!(e),     sra!(h),     sra!(l),     sra!(d hl),     sra!(a),
 /* 3X */     swap!(b),    swap!(c),    swap!(d),    swap!(e),    swap!(h),    swap!(l),    swap!(d hl),    swap!(a),
              srl!(b),     srl!(c),     srl!(d),     srl!(e),     srl!(h),     srl!(l),     srl!(d hl),     srl!(a),
