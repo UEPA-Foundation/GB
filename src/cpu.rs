@@ -1379,7 +1379,9 @@ pub fn daa(gb: &mut GameBoy, opcode: Opcode) {
     }
 }
 
-pub fn di(gb: &mut GameBoy, opcode: Opcode) {}
+pub fn di(gb: &mut GameBoy, opcode: Opcode) {
+    gb.ime = false;
+}
 
 pub fn ei(gb: &mut GameBoy, opcode: Opcode) {}
 
