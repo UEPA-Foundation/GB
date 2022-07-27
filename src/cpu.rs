@@ -757,9 +757,30 @@ pub fn sra_r8(gb: &mut GameBoy, opcode: Opcode) {}
 
 pub fn sra_hl(gb: &mut GameBoy, opcode: Opcode) {}
 
-pub fn srl_r8(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! srl {
+    ($r8: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.f = 0;
+            gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 5;
+            gb.cpu.$r8 >>= 1;
+            if gb.cpu.$r8 == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
 
-pub fn srl_hl(gb: &mut GameBoy, opcode: Opcode) {}
+    (d hl) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            let addr: usize = gb.cpu.rd_hl() as usize;
+            gb.cpu.f = 0;
+            gb.cpu.f |= (gb.mem[addr] & 0x01) << 5;
+            gb.mem[addr] >>= 1;
+            if gb.mem[addr] == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
+}
 
 // Load Instructions
 
@@ -1078,7 +1099,7 @@ pub const OPCODES_CB: [fn(&mut GameBoy, u8); 256] = [
 /* 2X */     sla_r8,      sla_r8,      sla_r8,      sla_r8,      sla_r8,      sla_r8,      sla_hl,         sla_r8,
              sra_r8,      sra_r8,      sra_r8,      sra_r8,      sra_r8,      sra_r8,      sra_hl,         sra_r8,
 /* 3X */     swap!(b),    swap!(c),    swap!(d),    swap!(e),    swap!(h),    swap!(l),    swap!(d hl),    swap!(a),
-             srl_r8,      srl_r8,      srl_r8,      srl_r8,      srl_r8,      srl_r8,      srl_hl,         srl_r8,
+             srl!(b),     srl!(c),     srl!(d),     srl!(e),     srl!(h),     srl!(l),     srl!(d hl),     srl!(a),
 /* 4X */     bit!(0, b),  bit!(0, c),  bit!(0, d),  bit!(0, e),  bit!(0, h),  bit!(0, l),  bit!(0, d hl),  bit!(0, a),
              bit!(1, b),  bit!(1, c),  bit!(1, d),  bit!(1, e),  bit!(1, h),  bit!(1, l),  bit!(1, d hl),  bit!(1, a),
 /* 5X */     bit!(2, b),  bit!(2, c),  bit!(2, d),  bit!(2, e),  bit!(2, h),  bit!(2, l),  bit!(2, d hl),  bit!(2, a),
