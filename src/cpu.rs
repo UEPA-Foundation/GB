@@ -1339,7 +1339,10 @@ macro_rules! push {
 }
 
 // Miscellaneous Instructions
-pub fn ccf(gb: &mut GameBoy, opcode: Opcode) {}
+pub fn ccf(gb: &mut GameBoy, opcode: Opcode) {
+    gb.cpu.f &= !(N_FLAG | H_FLAG);
+    gb.cpu.f ^= C_FLAG;
+}
 
 pub fn cpl(gb: &mut GameBoy, opcode: Opcode) {}
 
