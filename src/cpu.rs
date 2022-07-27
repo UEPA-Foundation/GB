@@ -772,7 +772,7 @@ macro_rules! rlc {
         |gb: &mut GameBoy, _: Opcode| {
             let addr: usize = gb.cpu.rd_hl() as usize;
             gb.cpu.f = 0;
-            gb.cpu.f |= (gb.mem[addr] & 0x80) << 3;
+            gb.cpu.f |= (gb.mem[addr] & 0x80) >> 3;
             gb.mem[addr] = u8::rotate_left(gb.mem[addr], 1);
             if gb.mem[addr] == 0 {
                 gb.cpu.f |= Z_FLAG;
