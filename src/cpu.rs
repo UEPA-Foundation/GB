@@ -1349,7 +1349,35 @@ pub fn cpl(gb: &mut GameBoy, opcode: Opcode) {
     gb.cpu.f |= N_FLAG | H_FLAG;
 }
 
-pub fn daa(gb: &mut GameBoy, opcode: Opcode) {}
+pub fn daa(gb: &mut GameBoy, opcode: Opcode) {
+    let mut res: i16 = (gb.cpu.a as i16) & 0xFF;
+    if gb.cpu.n_flag() {
+        if gb.cpu.h_flag() {
+            res = (res - 0x06) & 0xFF;
+        }
+        if gb.cpu.c_flag() {
+            res -= 0x60;
+        }
+    }
+    else {
+        if gb.cpu.h_flag() || res & 0x0F > 0x09 {
+            res += 0x06;
+        }
+        if gb.cpu.c_flag() || res > 0x9F {
+            res += 0x60;
+        }
+    }
+
+    gb.cpu.a = res as u8;
+
+    gb.cpu.f &= !H_FLAG;
+    if res & 0x100 == 0x100 {
+        gb.cpu.f |= C_FLAG;
+    }
+    if gb.cpu.a == 0 {
+        gb.cpu.f |= Z_FLAG;
+    }
+}
 
 pub fn di(gb: &mut GameBoy, opcode: Opcode) {}
 
