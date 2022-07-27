@@ -851,7 +851,12 @@ macro_rules! rrc {
     };
 }
 
-pub fn rrca(gb: &mut GameBoy, opcode: Opcode) {}
+pub fn rrca(gb: &mut GameBoy, opcode: Opcode) {
+    gb.cpu.f = 0;
+    gb.cpu.f |= (gb.cpu.a & 0x01) << 5;
+    gb.cpu.a = u8::rotate_right(gb.cpu.a, 1);
+
+}
 
 macro_rules! sla {
     ($r8: ident) => {
