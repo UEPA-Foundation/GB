@@ -650,17 +650,13 @@ macro_rules! inc16 {
 }
 
 // Bit Operations Instructions
-
 macro_rules! bit {
     ($i: expr, $r8: ident) => {
         |gb: &mut GameBoy, _: Opcode| {
-            gb.cpu.$r8 |= (1 << $i);
         }
     };
-
     ($i: expr, d hl) => {
         |gb: &mut GameBoy, _: Opcode| {
-            gb.mem[gb.cpu.rd_hl() as usize] |= (1 << $i);
         }
     };
 }
@@ -679,9 +675,19 @@ macro_rules! res {
     };
 }
 
-pub fn set_u3_r8(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! set {
+    ($i: expr, $r8: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.$r8 |= (1 << $i);
+        }
+    };
 
-pub fn set_u3_hl(gb: &mut GameBoy, opcode: Opcode) {}
+    ($i: expr, d hl) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.mem[gb.cpu.rd_hl() as usize] |= (1 << $i);
+        }
+    };
+}
 
 pub fn swap_r8(gb: &mut GameBoy, opcode: Opcode) {}
 
@@ -1059,12 +1065,12 @@ pub const OPCODES_CB: [fn(&mut GameBoy, u8); 256] = [
              res!(5, b),  res!(5, c),  res!(5, d),  res!(5, e),  res!(5, h),  res!(5, l),  res!(5, d hl),  res!(5, a),
 /* BX */     res!(6, b),  res!(6, c),  res!(6, d),  res!(6, e),  res!(6, h),  res!(6, l),  res!(6, d hl),  res!(6, a),
              res!(7, b),  res!(7, c),  res!(7, d),  res!(7, e),  res!(7, h),  res!(7, l),  res!(7, d hl),  res!(7, a),
-/* CX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
-             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
-/* DX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
-             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
-/* EX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
-             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
-/* FX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
-             set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
+/* CX */     set!(0, b),  set!(0, c),  set!(0, d),  set!(0, e),  set!(0, h),  set!(0, l),  set!(0, d hl),  set!(0, a),
+             set!(1, b),  set!(1, c),  set!(1, d),  set!(1, e),  set!(1, h),  set!(1, l),  set!(1, d hl),  set!(1, a),
+/* DX */     set!(2, b),  set!(2, c),  set!(2, d),  set!(2, e),  set!(2, h),  set!(2, l),  set!(2, d hl),  set!(2, a),
+             set!(3, b),  set!(3, c),  set!(3, d),  set!(3, e),  set!(3, h),  set!(3, l),  set!(3, d hl),  set!(3, a),
+/* EX */     set!(4, b),  set!(4, c),  set!(4, d),  set!(4, e),  set!(4, h),  set!(4, l),  set!(4, d hl),  set!(4, a),
+             set!(5, b),  set!(5, c),  set!(5, d),  set!(5, e),  set!(5, h),  set!(5, l),  set!(5, d hl),  set!(5, a),
+/* FX */     set!(6, b),  set!(6, c),  set!(6, d),  set!(6, e),  set!(6, h),  set!(6, l),  set!(6, d hl),  set!(6, a),
+             set!(7, b),  set!(7, c),  set!(7, d),  set!(7, e),  set!(7, h),  set!(7, l),  set!(7, d hl),  set!(7, a),
 ];
