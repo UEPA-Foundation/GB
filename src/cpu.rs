@@ -665,9 +665,19 @@ macro_rules! bit {
     };
 }
 
-pub fn res_u3_r8(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! res {
+    ($i: expr, $r8: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.cpu.$r8 &= !(1 << $i);
+        }
+    };
 
-pub fn res_u3_hl(gb: &mut GameBoy, opcode: Opcode) {}
+    ($i: expr, d hl) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            gb.mem[gb.cpu.rd_hl() as usize] &= !(1 << $i);
+        }
+    };
+}
 
 pub fn set_u3_r8(gb: &mut GameBoy, opcode: Opcode) {}
 
@@ -1041,14 +1051,14 @@ pub const OPCODES_CB: [fn(&mut GameBoy, u8); 256] = [
              bit!(5, b),  bit!(5, c),  bit!(5, d),  bit!(5, e),  bit!(5, h),  bit!(5, l),  bit!(5, d hl),  bit!(5, a),
 /* 7X */     bit!(6, b),  bit!(6, c),  bit!(6, d),  bit!(6, e),  bit!(6, h),  bit!(6, l),  bit!(6, d hl),  bit!(6, a),
              bit!(7, b),  bit!(7, c),  bit!(7, d),  bit!(7, e),  bit!(7, h),  bit!(7, l),  bit!(7, d hl),  bit!(7, a),
-/* 8X */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
-             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
-/* 9X */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
-             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
-/* AX */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
-             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
-/* BX */     res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
-             res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_r8,   res_u3_hl,      res_u3_r8,
+/* 8X */     res!(0, b),  res!(0, c),  res!(0, d),  res!(0, e),  res!(0, h),  res!(0, l),  res!(0, d hl),  res!(0, a),
+             res!(1, b),  res!(1, c),  res!(1, d),  res!(1, e),  res!(1, h),  res!(1, l),  res!(1, d hl),  res!(1, a),
+/* 9X */     res!(2, b),  res!(2, c),  res!(2, d),  res!(2, e),  res!(2, h),  res!(2, l),  res!(2, d hl),  res!(2, a),
+             res!(3, b),  res!(3, c),  res!(3, d),  res!(3, e),  res!(3, h),  res!(3, l),  res!(3, d hl),  res!(3, a),
+/* AX */     res!(4, b),  res!(4, c),  res!(4, d),  res!(4, e),  res!(4, h),  res!(4, l),  res!(4, d hl),  res!(4, a),
+             res!(5, b),  res!(5, c),  res!(5, d),  res!(5, e),  res!(5, h),  res!(5, l),  res!(5, d hl),  res!(5, a),
+/* BX */     res!(6, b),  res!(6, c),  res!(6, d),  res!(6, e),  res!(6, h),  res!(6, l),  res!(6, d hl),  res!(6, a),
+             res!(7, b),  res!(7, c),  res!(7, d),  res!(7, e),  res!(7, h),  res!(7, l),  res!(7, d hl),  res!(7, a),
 /* CX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
              set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
 /* DX */     set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_r8,   set_u3_hl,      set_u3_r8,
