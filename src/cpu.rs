@@ -762,9 +762,34 @@ pub fn rlc_hl(gb: &mut GameBoy, opcode: Opcode) {}
 
 pub fn rlca(gb: &mut GameBoy, opcode: Opcode) {}
 
-pub fn rr_r8(gb: &mut GameBoy, opcode: Opcode) {}
+macro_rules! rr {
+    ($r8: ident) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            let carry: u8 = gb.cpu.c_flag() as u8;
+            gb.cpu.f = 0;
+            gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 5;
+            gb.cpu.$r8 = gb.cpu.$r8 >> 1;
+            gb.cpu.$r8 |= carry << 7;
+            if gb.cpu.$r8 == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
 
-pub fn rr_hl(gb: &mut GameBoy, opcode: Opcode) {}
+    (d hl) => {
+        |gb: &mut GameBoy, _: Opcode| {
+            let carry: u8 = gb.cpu.c_flag() as u8;
+            let addr: usize = gb.cpu.rd_hl() as usize;
+            gb.cpu.f = 0;
+            gb.cpu.f |= (gb.mem[addr] & 0x01) << 5;
+            gb.mem[addr] = gb.mem[addr] >> 1;
+            gb.mem[addr] |= carry << 7;
+            if gb.mem[addr] == 0 {
+                gb.cpu.f |= Z_FLAG;
+            }
+        }
+    };
+}
 
 pub fn rra(gb: &mut GameBoy, opcode: Opcode) {}
 
@@ -1163,7 +1188,7 @@ pub const OPCODES_CB: [fn(&mut GameBoy, u8); 256] = [
 /* 0X */     rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_r8,      rlc_hl,         rlc_r8,
              rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_r8,      rrc_hl,         rrc_r8,
 /* 1X */     rl!(b),      rl!(c),      rl!(d),      rl!(e),      rl!(h),      rl!(l),      rl!(d hl),      rl!(a),
-             rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_r8,       rr_hl,          rr_r8,
+             rr!(b),      rr!(c),      rr!(d),      rr!(e),      rr!(h),      rr!(l),      rr!(d hl),      rr!(a),
 /* 2X */     sla!(b),     sla!(c),     sla!(d),     sla!(e),     sla!(h),     sla!(l),     sla!(d hl),     sla!(a),
              sra!(b),     sra!(c),     sra!(d),     sra!(e),     sra!(h),     sra!(l),     sra!(d hl),     sra!(a),
 /* 3X */     swap!(b),    swap!(c),    swap!(d),    swap!(e),    swap!(h),    swap!(l),    swap!(d hl),    swap!(a),
