@@ -88,6 +88,12 @@ impl Cpu {
 
 impl GameBoy {
     pub fn fetch_exec(&mut self) {
+        let current_ime = true;
+        if self.enabling_int {
+            self.ime = true;
+            self.enabling_int = false;
+        }
+
         let opcode = self.mem[self.cpu.pc as usize];
         self.cpu.pc.inc();
 

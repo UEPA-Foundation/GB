@@ -1283,7 +1283,11 @@ fn di(gb: &mut GameBoy) {
     gb.ime = false;
 }
 
-fn ei(_gb: &mut GameBoy) {}
+fn ei(gb: &mut GameBoy) {
+    if !gb.enabling_int {
+        gb.enabling_int = true;
+    }
+}
 
 fn halt(_gb: &mut GameBoy) {}
 
