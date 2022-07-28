@@ -1,3 +1,5 @@
+mod wram0;
+
 pub struct Mmu {
     rom0: Rom0,
     romx: RomX,
