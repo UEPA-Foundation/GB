@@ -94,7 +94,7 @@ impl GameBoy {
             self.enabling_int = false;
         }
 
-        let opcode = self.mem[self.cpu.pc as usize];
+        let opcode = self.mmu[self.cpu.pc as usize];
         self.cpu.pc.inc();
 
         let handler = OPCODES[opcode as usize];
