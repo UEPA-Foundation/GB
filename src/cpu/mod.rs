@@ -1,4 +1,5 @@
 use crate::gameboy::GameBoy;
+use crate::mmu::MemoryUnit;
 use instructions::OPCODES;
 
 pub mod instructions;
@@ -94,7 +95,7 @@ impl GameBoy {
             self.enabling_int = false;
         }
 
-        let opcode = self.mmu[self.cpu.pc as usize];
+        let opcode = self.mmu.read(self.cpu.pc);
         self.cpu.pc.inc();
 
         let handler = OPCODES[opcode as usize];
