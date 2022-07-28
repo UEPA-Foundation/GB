@@ -1,10 +1,10 @@
 use crate::mmu::MemoryUnit;
 
-pub struct Wram0 {
+pub struct WRam0 {
     bytes: [u8; 0x1000],
 }
 
-impl MemoryUnit for Wram0 {
+impl MemoryUnit for WRam0 {
     fn init() -> Self {
         Self {
             bytes: [0; 0x1000] //TODO: memory is actually initialized with random garbage
