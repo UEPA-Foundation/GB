@@ -1,5 +1,6 @@
 mod cpu;
 mod gameboy;
+mod mmu;
 
 extern crate num;
 extern crate num_derive;
