@@ -1,6 +1,3 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
-
 use crate::gameboy::GameBoy;
 
 const Z_FLAG: u8 = 0b10000000;
@@ -1405,20 +1402,20 @@ fn di(gb: &mut GameBoy) {
     gb.ime = false;
 }
 
-fn ei(gb: &mut GameBoy) {}
+fn ei(_gb: &mut GameBoy) {}
 
-fn halt(gb: &mut GameBoy) {}
+fn halt(_gb: &mut GameBoy) {}
 
-fn nop(gb: &mut GameBoy) {}
+fn nop(_gb: &mut GameBoy) {}
 
 fn scf(gb: &mut GameBoy) {
     gb.cpu.f &= !(N_FLAG | H_FLAG);
     gb.cpu.f |= C_FLAG;
 }
 
-fn stop(gb: &mut GameBoy) {}
+fn stop(_gb: &mut GameBoy) {}
 
-fn undefined(gb: &mut GameBoy) {}
+fn undefined(_gb: &mut GameBoy) {}
 
 #[rustfmt::skip]
 const OPCODES: [fn(&mut GameBoy); 256] = [
