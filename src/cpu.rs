@@ -125,7 +125,7 @@ impl Reg for u16 {
     }
 }
 
-pub fn cb_prefix(gb: &mut GameBoy, _: Opcode) {
+fn cb_prefix(gb: &mut GameBoy, _: Opcode) {
     let opcode_cb = gb.mem[gb.cpu.pc as usize];
     gb.cpu.pc.inc();
 
@@ -864,7 +864,7 @@ macro_rules! rr {
     };
 }
 
-pub fn rra(gb: &mut GameBoy, opcode: Opcode) {
+fn rra(gb: &mut GameBoy, opcode: Opcode) {
     let carry: u8 = gb.cpu.c_flag() as u8;
     gb.cpu.f = 0;
     gb.cpu.f |= (gb.cpu.a & 0x01) << 5;
@@ -897,7 +897,7 @@ macro_rules! rrc {
     };
 }
 
-pub fn rrca(gb: &mut GameBoy, opcode: Opcode) {
+fn rrca(gb: &mut GameBoy, opcode: Opcode) {
     gb.cpu.f = 0;
     gb.cpu.f |= (gb.cpu.a & 0x01) << 5;
     gb.cpu.a = u8::rotate_right(gb.cpu.a, 1);
@@ -1050,7 +1050,7 @@ macro_rules! ld16 {
     };
 }
 
-pub fn ld_n16_a(gb: &mut GameBoy, _: Opcode) {
+fn ld_n16_a(gb: &mut GameBoy, _: Opcode) {
     let addr = {
         let lsb = gb.mem[gb.cpu.pc as usize] as usize;
         gb.cpu.pc.inc();
@@ -1061,18 +1061,18 @@ pub fn ld_n16_a(gb: &mut GameBoy, _: Opcode) {
     gb.mem[addr] = gb.cpu.a;
 }
 
-pub fn ldh_n8_a(gb: &mut GameBoy, _: Opcode) {
+fn ldh_n8_a(gb: &mut GameBoy, _: Opcode) {
     let addr = 0xFF00 + gb.mem[gb.cpu.pc as usize] as usize;
     gb.cpu.pc.inc();
     gb.mem[addr] = gb.cpu.a;
 }
 
-pub fn ldh_c_a(gb: &mut GameBoy, _: Opcode) {
+fn ldh_c_a(gb: &mut GameBoy, _: Opcode) {
     let addr = 0xFF00 + (gb.cpu.c as usize) as usize;
     gb.mem[addr] = gb.cpu.a;
 }
 
-pub fn ld_a_n16(gb: &mut GameBoy, _: Opcode) {
+fn ld_a_n16(gb: &mut GameBoy, _: Opcode) {
     let addr = {
         let lsb = gb.mem[gb.cpu.pc as usize] as usize;
         gb.cpu.pc.inc();
@@ -1083,13 +1083,13 @@ pub fn ld_a_n16(gb: &mut GameBoy, _: Opcode) {
     gb.mem[addr] = gb.cpu.a;
 }
 
-pub fn ldh_a_n8(gb: &mut GameBoy, _: Opcode) {
+fn ldh_a_n8(gb: &mut GameBoy, _: Opcode) {
     let addr = 0xFF00 + gb.mem[gb.cpu.pc as usize] as usize;
     gb.cpu.pc.inc();
     gb.cpu.a = gb.mem[addr];
 }
 
-pub fn ldh_a_c(gb: &mut GameBoy, _: Opcode) {
+fn ldh_a_c(gb: &mut GameBoy, _: Opcode) {
     let addr = 0xFF00 + (gb.cpu.c as usize) as usize;
     gb.cpu.a = gb.mem[addr];
 }
@@ -1361,17 +1361,18 @@ macro_rules! push {
 }
 
 // Miscellaneous Instructions
-pub fn ccf(gb: &mut GameBoy, opcode: Opcode) {
+
+fn ccf(gb: &mut GameBoy, opcode: Opcode) {
     gb.cpu.f &= !(N_FLAG | H_FLAG);
     gb.cpu.f ^= C_FLAG;
 }
 
-pub fn cpl(gb: &mut GameBoy, opcode: Opcode) {
+fn cpl(gb: &mut GameBoy, opcode: Opcode) {
     gb.cpu.a = !gb.cpu.a;
     gb.cpu.f |= N_FLAG | H_FLAG;
 }
 
-pub fn daa(gb: &mut GameBoy, opcode: Opcode) {
+fn daa(gb: &mut GameBoy, opcode: Opcode) {
     let mut res: i16 = (gb.cpu.a as i16) & 0xFF;
     if gb.cpu.n_flag() {
         if gb.cpu.h_flag() {
@@ -1401,27 +1402,27 @@ pub fn daa(gb: &mut GameBoy, opcode: Opcode) {
     }
 }
 
-pub fn di(gb: &mut GameBoy, opcode: Opcode) {
+fn di(gb: &mut GameBoy, opcode: Opcode) {
     gb.ime = false;
 }
 
-pub fn ei(gb: &mut GameBoy, opcode: Opcode) {}
+fn ei(gb: &mut GameBoy, opcode: Opcode) {}
 
-pub fn halt(gb: &mut GameBoy, opcode: Opcode) {}
+fn halt(gb: &mut GameBoy, opcode: Opcode) {}
 
-pub fn nop(gb: &mut GameBoy, opcode: Opcode) {}
+fn nop(gb: &mut GameBoy, opcode: Opcode) {}
 
-pub fn scf(gb: &mut GameBoy, opcode: Opcode) {
+fn scf(gb: &mut GameBoy, opcode: Opcode) {
     gb.cpu.f &= !(N_FLAG | H_FLAG);
     gb.cpu.f |= C_FLAG;
 }
 
-pub fn stop(gb: &mut GameBoy, opcode: Opcode) {}
+fn stop(gb: &mut GameBoy, opcode: Opcode) {}
 
-pub fn undefined(gb: &mut GameBoy, opcode: Opcode) {}
+fn undefined(gb: &mut GameBoy, opcode: Opcode) {}
 
 #[rustfmt::skip]
-pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
+const OPCODES: [fn(&mut GameBoy, u8); 256] = [
 /*            X0            X1            X2            X3            X4            X5            X6            X7            */
 /*            X8            X9            XA            XB            XC            XD            XE            XF            */
 /* 0X */      nop,          ld16!(bc),    ld!(d bc, a), inc16!(bc),   inc!(b),      dec!(b),      ld!(b),       rlca,
@@ -1459,7 +1460,7 @@ pub const OPCODES: [fn(&mut GameBoy, u8); 256] = [
 ];
 
 #[rustfmt::skip]
-pub const OPCODES_CB: [fn(&mut GameBoy, u8); 256] = [
+const OPCODES_CB: [fn(&mut GameBoy, u8); 256] = [
 /*           X0           X1           X2           X3           X4           X5           X6              X7           */
 /*           X8           X9           XA           XB           XC           XD           XE              XF           */
 /* 0X */     rlc!(b),     rlc!(c),     rlc!(d),     rlc!(e),     rlc!(h),     rlc!(l),     rlc!(d hl),     rlc!(a),
