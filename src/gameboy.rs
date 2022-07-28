@@ -11,7 +11,7 @@ impl GameBoy {
     pub fn init() -> Self {
         Self {
             cpu: cpu::Cpu { a: 0, f: 0, b: 0, c: 0, d: 0, e: 0, h: 0, l: 0, sp: 0, pc: 0 },
-            mmu: mmu::Mmu::init(),
+            mmu: <mmu::Mmu as mmu::MemoryUnit>::init(),
             ime: false,
             enabling_int: false,
         }
