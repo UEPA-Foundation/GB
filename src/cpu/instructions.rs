@@ -1,126 +1,7 @@
+use crate::cpu::{Reg, C_FLAG, H_FLAG, N_FLAG, Z_FLAG};
 use crate::gameboy::GameBoy;
 
-const Z_FLAG: u8 = 0b10000000;
-const N_FLAG: u8 = 0b01000000;
-const H_FLAG: u8 = 0b00100000;
-const C_FLAG: u8 = 0b00010000;
-
-pub struct Cpu {
-    pub a: u8, // Accumulator
-    pub f: u8, // Flags
-    pub b: u8, // BC: u16
-    pub c: u8,
-    pub d: u8, // DE: u16
-    pub e: u8,
-    pub h: u8, // HL: u16
-    pub l: u8,
-    pub sp: u16,
-    pub pc: u16,
-}
-
-impl Cpu {
-    #[inline(always)]
-    pub fn rd_bc(&self) -> u16 {
-        (self.b as u16) << 8 + self.c
-    }
-
-    #[inline(always)]
-    pub fn rd_de(&self) -> u16 {
-        (self.d as u16) << 8 + self.e
-    }
-
-    #[inline(always)]
-    pub fn rd_hl(&self) -> u16 {
-        (self.h as u16) << 8 + self.l
-    }
-
-    #[inline(always)]
-    pub fn wr_bc(&mut self, val: u16) {
-        self.b = (val >> 8) as u8;
-        self.c = (val & 0x00FF) as u8;
-    }
-
-    #[inline(always)]
-    pub fn wr_de(&mut self, val: u16) {
-        self.d = (val >> 8) as u8;
-        self.e = (val & 0x00FF) as u8;
-    }
-
-    #[inline(always)]
-    pub fn wr_hl(&mut self, val: u16) {
-        self.h = (val >> 8) as u8;
-        self.l = (val & 0x00FF) as u8;
-    }
-
-    #[inline(always)]
-    pub fn z_flag(&mut self) -> bool {
-        self.f & Z_FLAG != 0
-    }
-
-    #[inline(always)]
-    pub fn n_flag(&mut self) -> bool {
-        self.f & N_FLAG != 0
-    }
-
-    #[inline(always)]
-    pub fn h_flag(&mut self) -> bool {
-        self.f & H_FLAG != 0
-    }
-
-    #[inline(always)]
-    pub fn c_flag(&mut self) -> bool {
-        self.f & C_FLAG != 0
-    }
-
-    #[inline(always)]
-    pub fn nz_flag(&mut self) -> bool {
-        self.f & Z_FLAG == 0
-    }
-
-    #[inline(always)]
-    pub fn nc_flag(&mut self) -> bool {
-        self.f & C_FLAG == 0
-    }
-}
-
-impl GameBoy {
-    pub fn fetch_exec(&mut self) {
-        let opcode = self.mem[self.cpu.pc as usize];
-        self.cpu.pc.inc();
-
-        let handler = OPCODES[opcode as usize];
-        handler(self);
-    }
-}
-
-trait Reg {
-    fn inc(&mut self);
-    fn dec(&mut self);
-}
-
-impl Reg for u8 {
-    #[inline(always)]
-    fn inc(&mut self) {
-        *self = u8::wrapping_add(*self, 1);
-    }
-
-    #[inline(always)]
-    fn dec(&mut self) {
-        *self = u8::wrapping_sub(*self, 1);
-    }
-}
-
-impl Reg for u16 {
-    #[inline(always)]
-    fn inc(&mut self) {
-        *self = u16::wrapping_add(*self, 1);
-    }
-
-    #[inline(always)]
-    fn dec(&mut self) {
-        *self = u16::wrapping_sub(*self, 1);
-    }
-}
+// CB prefix
 
 fn cb_prefix(gb: &mut GameBoy) {
     let opcode_cb = gb.mem[gb.cpu.pc as usize];
@@ -1418,7 +1299,7 @@ fn stop(_gb: &mut GameBoy) {}
 fn undefined(_gb: &mut GameBoy) {}
 
 #[rustfmt::skip]
-const OPCODES: [fn(&mut GameBoy); 256] = [
+pub const OPCODES: [fn(&mut GameBoy); 256] = [
 /*            X0            X1            X2            X3            X4            X5            X6            X7            */
 /*            X8            X9            XA            XB            XC            XD            XE            XF            */
 /* 0X */      nop,          ld16!(bc),    ld!(d bc, a), inc16!(bc),   inc!(b),      dec!(b),      ld!(b),       rlca,
@@ -1456,7 +1337,7 @@ const OPCODES: [fn(&mut GameBoy); 256] = [
 ];
 
 #[rustfmt::skip]
-const OPCODES_CB: [fn(&mut GameBoy); 256] = [
+pub const OPCODES_CB: [fn(&mut GameBoy); 256] = [
 /*             X0             X1             X2             X3             X4             X5             X6             X7             */
 /*             X8             X9             XA             XB             XC             XD             XE             XF             */
 /* 0X */       rlc!(b),       rlc!(c),       rlc!(d),       rlc!(e),       rlc!(h),       rlc!(l),       rlc!(d hl),    rlc!(a),

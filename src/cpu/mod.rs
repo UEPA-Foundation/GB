@@ -1,0 +1,126 @@
+use crate::gameboy::GameBoy;
+use instructions::OPCODES;
+
+pub mod instructions;
+
+pub const Z_FLAG: u8 = 0b10000000;
+pub const N_FLAG: u8 = 0b01000000;
+pub const H_FLAG: u8 = 0b00100000;
+pub const C_FLAG: u8 = 0b00010000;
+
+pub struct Cpu {
+    pub a: u8, // Accumulator
+    pub f: u8, // Flags
+    pub b: u8, // BC: u16
+    pub c: u8,
+    pub d: u8, // DE: u16
+    pub e: u8,
+    pub h: u8, // HL: u16
+    pub l: u8,
+    pub sp: u16,
+    pub pc: u16,
+}
+
+impl Cpu {
+    #[inline(always)]
+    pub fn rd_bc(&self) -> u16 {
+        (self.b as u16) << 8 + self.c
+    }
+
+    #[inline(always)]
+    pub fn rd_de(&self) -> u16 {
+        (self.d as u16) << 8 + self.e
+    }
+
+    #[inline(always)]
+    pub fn rd_hl(&self) -> u16 {
+        (self.h as u16) << 8 + self.l
+    }
+
+    #[inline(always)]
+    pub fn wr_bc(&mut self, val: u16) {
+        self.b = (val >> 8) as u8;
+        self.c = (val & 0x00FF) as u8;
+    }
+
+    #[inline(always)]
+    pub fn wr_de(&mut self, val: u16) {
+        self.d = (val >> 8) as u8;
+        self.e = (val & 0x00FF) as u8;
+    }
+
+    #[inline(always)]
+    pub fn wr_hl(&mut self, val: u16) {
+        self.h = (val >> 8) as u8;
+        self.l = (val & 0x00FF) as u8;
+    }
+
+    #[inline(always)]
+    pub fn z_flag(&mut self) -> bool {
+        self.f & Z_FLAG != 0
+    }
+
+    #[inline(always)]
+    pub fn n_flag(&mut self) -> bool {
+        self.f & N_FLAG != 0
+    }
+
+    #[inline(always)]
+    pub fn h_flag(&mut self) -> bool {
+        self.f & H_FLAG != 0
+    }
+
+    #[inline(always)]
+    pub fn c_flag(&mut self) -> bool {
+        self.f & C_FLAG != 0
+    }
+
+    #[inline(always)]
+    pub fn nz_flag(&mut self) -> bool {
+        self.f & Z_FLAG == 0
+    }
+
+    #[inline(always)]
+    pub fn nc_flag(&mut self) -> bool {
+        self.f & C_FLAG == 0
+    }
+}
+
+impl GameBoy {
+    pub fn fetch_exec(&mut self) {
+        let opcode = self.mem[self.cpu.pc as usize];
+        self.cpu.pc.inc();
+
+        let handler = OPCODES[opcode as usize];
+        handler(self);
+    }
+}
+
+trait Reg {
+    fn inc(&mut self);
+    fn dec(&mut self);
+}
+
+impl Reg for u8 {
+    #[inline(always)]
+    fn inc(&mut self) {
+        *self = u8::wrapping_add(*self, 1);
+    }
+
+    #[inline(always)]
+    fn dec(&mut self) {
+        *self = u8::wrapping_sub(*self, 1);
+    }
+}
+
+impl Reg for u16 {
+    #[inline(always)]
+    fn inc(&mut self) {
+        *self = u16::wrapping_add(*self, 1);
+    }
+
+    #[inline(always)]
+    fn dec(&mut self) {
+        *self = u16::wrapping_sub(*self, 1);
+    }
+}
