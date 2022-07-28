@@ -1,7 +1,5 @@
 use crate::cpu;
 
-pub type Opcode = u8;
-
 pub struct GameBoy {
     pub cpu: cpu::Cpu,
     pub mem: [u8; 4096],

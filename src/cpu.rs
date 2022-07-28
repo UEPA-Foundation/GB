@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use crate::gameboy::{GameBoy, Opcode};
+use crate::gameboy::GameBoy;
 
 const Z_FLAG: u8 = 0b10000000;
 const N_FLAG: u8 = 0b01000000;
@@ -92,7 +92,7 @@ impl GameBoy {
         self.cpu.pc.inc();
 
         let handler = OPCODES[opcode as usize];
-        handler(self, opcode);
+        handler(self);
     }
 }
 
@@ -125,19 +125,19 @@ impl Reg for u16 {
     }
 }
 
-fn cb_prefix(gb: &mut GameBoy, _: Opcode) {
+fn cb_prefix(gb: &mut GameBoy) {
     let opcode_cb = gb.mem[gb.cpu.pc as usize];
     gb.cpu.pc.inc();
 
     let handler = OPCODES_CB[opcode_cb as usize];
-    handler(gb, opcode_cb);
+    handler(gb);
 }
 
 // 8-bit Arithmetic and Logic
 
 macro_rules! adc {
     () => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let val = gb.mem[gb.cpu.pc as usize];
             gb.cpu.pc.inc();
 
@@ -161,7 +161,7 @@ macro_rules! adc {
     };
 
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let old_a = gb.cpu.a;
             let carry = gb.cpu.c_flag();
 
@@ -182,7 +182,7 @@ macro_rules! adc {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let old_a = gb.cpu.a;
             let carry = gb.cpu.c_flag();
 
@@ -205,7 +205,7 @@ macro_rules! adc {
 
 macro_rules! add {
     () => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let val = gb.mem[gb.cpu.pc as usize];
             gb.cpu.pc.inc();
 
@@ -226,7 +226,7 @@ macro_rules! add {
     };
 
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let old_a = gb.cpu.a;
             gb.cpu.a = u8::wrapping_add(gb.cpu.a, gb.cpu.$r8);
 
@@ -244,7 +244,7 @@ macro_rules! add {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let old_a = gb.cpu.a;
             gb.cpu.a = u8::wrapping_add(gb.cpu.a, gb.mem[gb.cpu.rd_hl() as usize]);
 
@@ -264,7 +264,7 @@ macro_rules! add {
 
 macro_rules! and {
     () => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let val = gb.mem[gb.cpu.pc as usize];
             gb.cpu.pc.inc();
 
@@ -278,7 +278,7 @@ macro_rules! and {
     };
 
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.a &= gb.mem[gb.cpu.rd_hl() as usize];
 
             gb.cpu.f = H_FLAG;
@@ -289,7 +289,7 @@ macro_rules! and {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let val = gb.mem[gb.cpu.pc as usize];
             gb.cpu.pc.inc();
 
@@ -305,7 +305,7 @@ macro_rules! and {
 
 macro_rules! cp {
     () => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let val = gb.mem[gb.cpu.pc as usize];
             gb.cpu.pc.inc();
 
@@ -323,7 +323,7 @@ macro_rules! cp {
     };
 
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.f = N_FLAG;
             if gb.cpu.a == gb.cpu.$r8 {
                 gb.cpu.f |= Z_FLAG;
@@ -338,7 +338,7 @@ macro_rules! cp {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let addr = gb.cpu.rd_hl() as usize;
             gb.cpu.f = N_FLAG;
             if gb.cpu.a == gb.mem[addr] {
@@ -356,7 +356,7 @@ macro_rules! cp {
 
 macro_rules! dec {
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
                 gb.cpu.$r8.dec();
 
@@ -372,7 +372,7 @@ macro_rules! dec {
     };
 
     (d $r16: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
                 let addr = gb.cpu.rd_hl() as usize;
                 let val = u8::wrapping_sub(gb.mem[addr], 1);
@@ -392,7 +392,7 @@ macro_rules! dec {
 
 macro_rules! inc {
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
                 gb.cpu.$r8.inc();
 
@@ -408,7 +408,7 @@ macro_rules! inc {
     };
 
     (d $r16: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
                 let addr = gb.cpu.rd_hl() as usize;
                 let val = u8::wrapping_add(gb.mem[addr], 1);
@@ -428,7 +428,7 @@ macro_rules! inc {
 
 macro_rules! or {
     () => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let val = gb.mem[gb.cpu.pc as usize];
             gb.cpu.pc.inc();
 
@@ -442,7 +442,7 @@ macro_rules! or {
     };
 
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.a |= gb.cpu.$r8;
 
             gb.cpu.f = 0;
@@ -453,7 +453,7 @@ macro_rules! or {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.a |= gb.mem[gb.cpu.rd_hl() as usize];
 
             gb.cpu.f = 0;
@@ -466,7 +466,7 @@ macro_rules! or {
 
 macro_rules! sbc {
     () => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let val = gb.mem[gb.cpu.pc as usize];
             gb.cpu.pc.inc();
 
@@ -490,7 +490,7 @@ macro_rules! sbc {
     };
 
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let old_a = gb.cpu.a;
             let carry = gb.cpu.c_flag();
 
@@ -511,7 +511,7 @@ macro_rules! sbc {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let old_a = gb.cpu.a;
             let carry = gb.cpu.c_flag();
             let addr = gb.cpu.rd_hl() as usize;
@@ -535,7 +535,7 @@ macro_rules! sbc {
 
 macro_rules! sub {
     () => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let val = gb.mem[gb.cpu.pc as usize];
             gb.cpu.pc.inc();
 
@@ -556,7 +556,7 @@ macro_rules! sub {
     };
 
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let old_a = gb.cpu.a;
             gb.cpu.a = u8::wrapping_sub(gb.cpu.a, gb.cpu.$r8);
 
@@ -574,7 +574,7 @@ macro_rules! sub {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let old_a = gb.cpu.a;
             let addr = gb.cpu.rd_hl() as usize;
             gb.cpu.a = u8::wrapping_sub(gb.cpu.a, gb.mem[addr]);
@@ -595,7 +595,7 @@ macro_rules! sub {
 
 macro_rules! xor {
     () => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let val = gb.mem[gb.cpu.pc as usize];
             gb.cpu.pc.inc();
 
@@ -609,7 +609,7 @@ macro_rules! xor {
     };
 
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.a ^= gb.cpu.$r8;
 
             gb.cpu.f = 0;
@@ -620,7 +620,7 @@ macro_rules! xor {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.a ^= gb.mem[gb.cpu.rd_hl() as usize];
 
             gb.cpu.f = 0;
@@ -635,7 +635,7 @@ macro_rules! xor {
 
 macro_rules! add16 {
     (sp) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let old_hl = gb.cpu.rd_hl();
             let val = u16::wrapping_add(old_hl, gb.cpu.sp);
             gb.cpu.wr_hl(val);
@@ -651,7 +651,7 @@ macro_rules! add16 {
     };
 
     ($r16: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
                 let old_hl = gb.cpu.rd_hl();
                 let val = u16::wrapping_add(old_hl, gb.cpu.[<rd_ $r16>]());
@@ -671,7 +671,7 @@ macro_rules! add16 {
 
 macro_rules! dec16 {
     ($r16: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
                 let val = u16::wrapping_sub(gb.cpu.[<rd_ $r16>](), 1);
                 gb.cpu.[<wr_ $r16>](val);
@@ -682,7 +682,7 @@ macro_rules! dec16 {
 
 macro_rules! inc16 {
     ($r16: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
                 let val = u16::wrapping_add(gb.cpu.[<rd_ $r16>](), 1);
                 gb.cpu.[<wr_ $r16>](val);
@@ -694,7 +694,7 @@ macro_rules! inc16 {
 // Bit Operations Instructions
 macro_rules! bit {
     ($i: expr, $r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.f &= !(N_FLAG | Z_FLAG);
             gb.cpu.f |= H_FLAG;
             if gb.cpu.$r8 & (1 << $i) == 0 {
@@ -704,7 +704,7 @@ macro_rules! bit {
     };
 
     ($i: expr, d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.f &= !(N_FLAG | Z_FLAG);
             gb.cpu.f |= H_FLAG;
             if gb.mem[gb.cpu.rd_hl() as usize] & (1 << $i) == 0 {
@@ -716,13 +716,13 @@ macro_rules! bit {
 
 macro_rules! res {
     ($i: expr, $r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.$r8 &= !(1 << $i);
         }
     };
 
     ($i: expr, d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.mem[gb.cpu.rd_hl() as usize] &= !(1 << $i);
         }
     };
@@ -730,13 +730,13 @@ macro_rules! res {
 
 macro_rules! set {
     ($i: expr, $r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.$r8 |= (1 << $i);
         }
     };
 
     ($i: expr, d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.mem[gb.cpu.rd_hl() as usize] |= (1 << $i);
         }
     };
@@ -744,7 +744,7 @@ macro_rules! set {
 
 macro_rules! swap {
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.$r8 = (gb.cpu.$r8 >> 4) | (gb.cpu.$r8 << 4);
             gb.cpu.f = 0;
             if gb.cpu.f == 0 {
@@ -754,7 +754,7 @@ macro_rules! swap {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let addr = gb.cpu.rd_hl() as usize;
             gb.mem[addr] = (gb.mem[addr] >> 4) | (gb.mem[addr] << 4);
             gb.cpu.f = 0;
@@ -769,7 +769,7 @@ macro_rules! swap {
 
 macro_rules! rl {
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let carry = gb.cpu.c_flag() as u8;
             gb.cpu.f = 0;
             gb.cpu.f |= (gb.cpu.$r8 & 0x80) >> 3;
@@ -782,7 +782,7 @@ macro_rules! rl {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let carry = gb.cpu.c_flag() as u8;
             let addr = gb.cpu.rd_hl() as usize;
             gb.cpu.f = 0;
@@ -796,7 +796,7 @@ macro_rules! rl {
     };
 }
 
-pub fn rla(gb: &mut GameBoy, opcode: Opcode) {
+fn rla(gb: &mut GameBoy) {
     let carry = gb.cpu.c_flag() as u8;
     gb.cpu.f = 0;
     gb.cpu.f |= (gb.cpu.a & 0x80) >> 3;
@@ -806,7 +806,7 @@ pub fn rla(gb: &mut GameBoy, opcode: Opcode) {
 
 macro_rules! rlc {
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.f = 0;
             gb.cpu.f |= (gb.cpu.$r8 & 0x80) >> 3;
             gb.cpu.$r8 = u8::rotate_left(gb.cpu.$r8, 1);
@@ -817,7 +817,7 @@ macro_rules! rlc {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let addr = gb.cpu.rd_hl() as usize;
             gb.cpu.f = 0;
             gb.cpu.f |= (gb.mem[addr] & 0x80) >> 3;
@@ -829,7 +829,7 @@ macro_rules! rlc {
     };
 }
 
-pub fn rlca(gb: &mut GameBoy, opcode: Opcode) {
+fn rlca(gb: &mut GameBoy) {
     gb.cpu.f = 0;
     gb.cpu.f |= (gb.cpu.a & 0x80) >> 3;
     gb.cpu.a = u8::rotate_left(gb.cpu.a, 1);
@@ -837,7 +837,7 @@ pub fn rlca(gb: &mut GameBoy, opcode: Opcode) {
 
 macro_rules! rr {
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let carry = gb.cpu.c_flag() as u8;
             gb.cpu.f = 0;
             gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 5;
@@ -850,7 +850,7 @@ macro_rules! rr {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let carry = gb.cpu.c_flag() as u8;
             let addr = gb.cpu.rd_hl() as usize;
             gb.cpu.f = 0;
@@ -864,7 +864,7 @@ macro_rules! rr {
     };
 }
 
-fn rra(gb: &mut GameBoy, opcode: Opcode) {
+fn rra(gb: &mut GameBoy) {
     let carry = gb.cpu.c_flag() as u8;
     gb.cpu.f = 0;
     gb.cpu.f |= (gb.cpu.a & 0x01) << 5;
@@ -874,7 +874,7 @@ fn rra(gb: &mut GameBoy, opcode: Opcode) {
 
 macro_rules! rrc {
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.f = 0;
             gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 5;
             gb.cpu.$r8 = u8::rotate_right(gb.cpu.$r8, 1);
@@ -885,7 +885,7 @@ macro_rules! rrc {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let addr = gb.cpu.rd_hl() as usize;
             gb.cpu.f = 0;
             gb.cpu.f |= (gb.mem[addr] & 0x01) << 5;
@@ -897,7 +897,7 @@ macro_rules! rrc {
     };
 }
 
-fn rrca(gb: &mut GameBoy, opcode: Opcode) {
+fn rrca(gb: &mut GameBoy) {
     gb.cpu.f = 0;
     gb.cpu.f |= (gb.cpu.a & 0x01) << 5;
     gb.cpu.a = u8::rotate_right(gb.cpu.a, 1);
@@ -905,7 +905,7 @@ fn rrca(gb: &mut GameBoy, opcode: Opcode) {
 
 macro_rules! sla {
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.f = 0;
             gb.cpu.f |= (gb.cpu.$r8 & 0x80) >> 3;
             gb.cpu.$r8 = gb.cpu.$r8 << 1;
@@ -916,7 +916,7 @@ macro_rules! sla {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let addr = gb.cpu.rd_hl() as usize;
             gb.cpu.f = 0;
             gb.cpu.f |= (gb.mem[addr] & 0x80) >> 3;
@@ -930,7 +930,7 @@ macro_rules! sla {
 
 macro_rules! sra {
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.f = 0;
             gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 5;
             gb.cpu.$r8 = (gb.cpu.$r8 as i8 >> 1) as u8;
@@ -941,7 +941,7 @@ macro_rules! sra {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let addr = gb.cpu.rd_hl() as usize;
             gb.cpu.f = 0;
             gb.cpu.f |= (gb.mem[addr] & 0x01) << 5;
@@ -955,7 +955,7 @@ macro_rules! sra {
 
 macro_rules! srl {
     ($r8: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.f = 0;
             gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 5;
             gb.cpu.$r8 >>= 1;
@@ -966,7 +966,7 @@ macro_rules! srl {
     };
 
     (d hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             let addr = gb.cpu.rd_hl() as usize;
             gb.cpu.f = 0;
             gb.cpu.f |= (gb.mem[addr] & 0x01) << 5;
@@ -982,7 +982,7 @@ macro_rules! srl {
 
 macro_rules! ld {
     (d $targ: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
                 let r16 = gb.cpu.[<rd_ $targ>]();
                 gb.mem[r16 as usize] = gb.mem[gb.cpu.pc as usize];
@@ -992,14 +992,14 @@ macro_rules! ld {
     };
 
     ($targ: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.$targ = gb.mem[gb.cpu.pc as usize];
             gb.cpu.pc.inc();
         }
     };
 
     ($targ: ident, d $orig: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
                 let r16 = gb.cpu.[<rd_ $orig>]();
                 gb.cpu.$targ = gb.mem[r16 as usize];
@@ -1008,7 +1008,7 @@ macro_rules! ld {
     };
 
     (d $targ: ident, $orig: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
                 let r16 = gb.cpu.[<rd_ $targ>]();
                 gb.mem[r16 as usize] = gb.cpu.$orig;
@@ -1017,13 +1017,13 @@ macro_rules! ld {
     };
 
     ($targ: ident, $orig: ident) => {
-        |gb: &mut GameBoy, _: Opcode| gb.cpu.$targ = gb.cpu.$orig
+        |gb: &mut GameBoy| gb.cpu.$targ = gb.cpu.$orig
     };
 }
 
 macro_rules! ld16 {
     (sp) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.sp = {
                 let lsb = gb.mem[gb.cpu.pc as usize] as u16;
                 gb.cpu.pc.inc();
@@ -1035,7 +1035,7 @@ macro_rules! ld16 {
     };
 
     ($targ: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
                 let val = {
                     let lsb = gb.mem[gb.cpu.pc as usize] as u16;
@@ -1050,7 +1050,7 @@ macro_rules! ld16 {
     };
 }
 
-fn ld_n16_a(gb: &mut GameBoy, _: Opcode) {
+fn ld_n16_a(gb: &mut GameBoy) {
     let addr = {
         let lsb = gb.mem[gb.cpu.pc as usize] as usize;
         gb.cpu.pc.inc();
@@ -1061,18 +1061,18 @@ fn ld_n16_a(gb: &mut GameBoy, _: Opcode) {
     gb.mem[addr] = gb.cpu.a;
 }
 
-fn ldh_n8_a(gb: &mut GameBoy, _: Opcode) {
+fn ldh_n8_a(gb: &mut GameBoy) {
     let addr = 0xFF00 + gb.mem[gb.cpu.pc as usize] as usize;
     gb.cpu.pc.inc();
     gb.mem[addr] = gb.cpu.a;
 }
 
-fn ldh_c_a(gb: &mut GameBoy, _: Opcode) {
+fn ldh_c_a(gb: &mut GameBoy) {
     let addr = 0xFF00 + (gb.cpu.c as usize) as usize;
     gb.mem[addr] = gb.cpu.a;
 }
 
-fn ld_a_n16(gb: &mut GameBoy, _: Opcode) {
+fn ld_a_n16(gb: &mut GameBoy) {
     let addr = {
         let lsb = gb.mem[gb.cpu.pc as usize] as usize;
         gb.cpu.pc.inc();
@@ -1083,36 +1083,36 @@ fn ld_a_n16(gb: &mut GameBoy, _: Opcode) {
     gb.mem[addr] = gb.cpu.a;
 }
 
-fn ldh_a_n8(gb: &mut GameBoy, _: Opcode) {
+fn ldh_a_n8(gb: &mut GameBoy) {
     let addr = 0xFF00 + gb.mem[gb.cpu.pc as usize] as usize;
     gb.cpu.pc.inc();
     gb.cpu.a = gb.mem[addr];
 }
 
-fn ldh_a_c(gb: &mut GameBoy, _: Opcode) {
+fn ldh_a_c(gb: &mut GameBoy) {
     let addr = 0xFF00 + (gb.cpu.c as usize) as usize;
     gb.cpu.a = gb.mem[addr];
 }
 
-fn ld_hli_a(gb: &mut GameBoy, _: Opcode) {
+fn ld_hli_a(gb: &mut GameBoy) {
     let hl = gb.cpu.rd_hl() as usize;
     gb.cpu.a = gb.mem[hl];
     gb.mem[hl] = u8::wrapping_add(gb.mem[hl], 1);
 }
 
-fn ld_hld_a(gb: &mut GameBoy, _: Opcode) {
+fn ld_hld_a(gb: &mut GameBoy) {
     let hl = gb.cpu.rd_hl() as usize;
     gb.cpu.a = gb.mem[hl];
     gb.mem[hl] = u8::wrapping_sub(gb.mem[hl], 1);
 }
 
-fn ld_a_hli(gb: &mut GameBoy, _: Opcode) {
+fn ld_a_hli(gb: &mut GameBoy) {
     let hl = gb.cpu.rd_hl() as usize;
     gb.mem[hl] = gb.cpu.a;
     gb.mem[hl] = u8::wrapping_add(gb.mem[hl], 1);
 }
 
-fn ld_a_hld(gb: &mut GameBoy, _: Opcode) {
+fn ld_a_hld(gb: &mut GameBoy) {
     let hl = gb.cpu.rd_hl() as usize;
     gb.mem[hl] = gb.cpu.a;
     gb.mem[hl] = u8::wrapping_sub(gb.mem[hl], 1);
@@ -1134,13 +1134,13 @@ fn _call(gb: &mut GameBoy) {
 
 macro_rules! call {
     () => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             _call(gb);
         }
     };
 
     ($cc: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
                 if gb.cpu.[<$cc _flag>]() {
                     _call(gb);
@@ -1165,19 +1165,19 @@ fn _jp(gb: &mut GameBoy) {
 
 macro_rules! jp {
     () => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             _jp(gb);
         }
     };
 
     (hl) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.pc = gb.cpu.rd_hl();
         }
     };
 
     ($cc: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
                 if gb.cpu.[<$cc _flag>]() {
                     _jp(gb);
@@ -1197,13 +1197,13 @@ fn _jr(gb: &mut GameBoy) {
 
 macro_rules! jr {
     () => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             _jr(gb);
         }
     };
 
     ($cc: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
                 if gb.cpu.[<$cc _flag>]() {
                     _jr(gb);
@@ -1228,13 +1228,13 @@ fn _ret(gb: &mut GameBoy) {
 
 macro_rules! ret {
     () => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             _ret(gb);
         }
     };
 
     ($cc: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
                 if gb.cpu.[<$cc _flag>]() {
                     _ret(gb);
@@ -1245,14 +1245,14 @@ macro_rules! ret {
     };
 }
 
-fn reti(gb: &mut GameBoy, _: Opcode) {
+fn reti(gb: &mut GameBoy) {
     _ret(gb);
     gb.ime = true;
 }
 
 macro_rules! rst {
     ($hx: expr) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.sp = $hx;
         }
     };
@@ -1260,7 +1260,7 @@ macro_rules! rst {
 
 // Stack Operations
 
-fn add_sp_e8(gb: &mut GameBoy, _: Opcode) {
+fn add_sp_e8(gb: &mut GameBoy) {
     let offset = gb.mem[gb.cpu.pc as usize] as i8;
     gb.cpu.pc.inc();
 
@@ -1276,15 +1276,15 @@ fn add_sp_e8(gb: &mut GameBoy, _: Opcode) {
     }
 }
 
-fn dec_sp(gb: &mut GameBoy, _: Opcode) {
+fn dec_sp(gb: &mut GameBoy) {
     gb.cpu.sp.dec();
 }
 
-fn inc_sp(gb: &mut GameBoy, _: Opcode) {
+fn inc_sp(gb: &mut GameBoy) {
     gb.cpu.sp.inc();
 }
 
-fn ld_n16_sp(gb: &mut GameBoy, _: Opcode) {
+fn ld_n16_sp(gb: &mut GameBoy) {
     let addr = {
         let lsb = gb.mem[gb.cpu.pc as usize] as usize;
         gb.cpu.pc.inc();
@@ -1297,7 +1297,7 @@ fn ld_n16_sp(gb: &mut GameBoy, _: Opcode) {
     gb.mem[usize::wrapping_add(addr, 1)] = bytes[1];
 }
 
-fn ld_hl_sp_e8(gb: &mut GameBoy, _: Opcode) {
+fn ld_hl_sp_e8(gb: &mut GameBoy) {
     let offset = gb.mem[gb.cpu.pc as usize] as i8;
     gb.cpu.pc.inc();
 
@@ -1313,11 +1313,11 @@ fn ld_hl_sp_e8(gb: &mut GameBoy, _: Opcode) {
     }
 }
 
-fn ld_sp_hl(gb: &mut GameBoy, _: Opcode) {
+fn ld_sp_hl(gb: &mut GameBoy) {
     gb.cpu.sp = gb.cpu.rd_hl();
 }
 
-fn pop_af(gb: &mut GameBoy, _: Opcode) {
+fn pop_af(gb: &mut GameBoy) {
     gb.cpu.f = gb.mem[gb.cpu.sp as usize];
     gb.cpu.sp.inc();
     gb.cpu.a = gb.mem[gb.cpu.sp as usize];
@@ -1326,7 +1326,7 @@ fn pop_af(gb: &mut GameBoy, _: Opcode) {
 
 macro_rules! pop {
     ($r16: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             paste::paste! {
 
                 let val = {
@@ -1342,7 +1342,7 @@ macro_rules! pop {
     };
 }
 
-fn push_af(gb: &mut GameBoy, _: Opcode) {
+fn push_af(gb: &mut GameBoy) {
     gb.cpu.sp.dec();
     gb.mem[gb.cpu.sp as usize] = gb.cpu.a;
     gb.cpu.sp.dec();
@@ -1351,7 +1351,7 @@ fn push_af(gb: &mut GameBoy, _: Opcode) {
 
 macro_rules! push {
     ($hi: ident, $lo: ident) => {
-        |gb: &mut GameBoy, _: Opcode| {
+        |gb: &mut GameBoy| {
             gb.cpu.sp.dec();
             gb.mem[gb.cpu.sp as usize] = gb.cpu.$hi;
             gb.cpu.sp.dec();
@@ -1362,17 +1362,17 @@ macro_rules! push {
 
 // Miscellaneous Instructions
 
-fn ccf(gb: &mut GameBoy, opcode: Opcode) {
+fn ccf(gb: &mut GameBoy) {
     gb.cpu.f &= !(N_FLAG | H_FLAG);
     gb.cpu.f ^= C_FLAG;
 }
 
-fn cpl(gb: &mut GameBoy, opcode: Opcode) {
+fn cpl(gb: &mut GameBoy) {
     gb.cpu.a = !gb.cpu.a;
     gb.cpu.f |= N_FLAG | H_FLAG;
 }
 
-fn daa(gb: &mut GameBoy, opcode: Opcode) {
+fn daa(gb: &mut GameBoy) {
     let mut res = (gb.cpu.a as i16) & 0xFF;
     if gb.cpu.n_flag() {
         if gb.cpu.h_flag() {
@@ -1401,27 +1401,27 @@ fn daa(gb: &mut GameBoy, opcode: Opcode) {
     }
 }
 
-fn di(gb: &mut GameBoy, opcode: Opcode) {
+fn di(gb: &mut GameBoy) {
     gb.ime = false;
 }
 
-fn ei(gb: &mut GameBoy, opcode: Opcode) {}
+fn ei(gb: &mut GameBoy) {}
 
-fn halt(gb: &mut GameBoy, opcode: Opcode) {}
+fn halt(gb: &mut GameBoy) {}
 
-fn nop(gb: &mut GameBoy, opcode: Opcode) {}
+fn nop(gb: &mut GameBoy) {}
 
-fn scf(gb: &mut GameBoy, opcode: Opcode) {
+fn scf(gb: &mut GameBoy) {
     gb.cpu.f &= !(N_FLAG | H_FLAG);
     gb.cpu.f |= C_FLAG;
 }
 
-fn stop(gb: &mut GameBoy, opcode: Opcode) {}
+fn stop(gb: &mut GameBoy) {}
 
-fn undefined(gb: &mut GameBoy, opcode: Opcode) {}
+fn undefined(gb: &mut GameBoy) {}
 
 #[rustfmt::skip]
-const OPCODES: [fn(&mut GameBoy, u8); 256] = [
+const OPCODES: [fn(&mut GameBoy); 256] = [
 /*            X0            X1            X2            X3            X4            X5            X6            X7            */
 /*            X8            X9            XA            XB            XC            XD            XE            XF            */
 /* 0X */      nop,          ld16!(bc),    ld!(d bc, a), inc16!(bc),   inc!(b),      dec!(b),      ld!(b),       rlca,
@@ -1459,7 +1459,7 @@ const OPCODES: [fn(&mut GameBoy, u8); 256] = [
 ];
 
 #[rustfmt::skip]
-const OPCODES_CB: [fn(&mut GameBoy, u8); 256] = [
+const OPCODES_CB: [fn(&mut GameBoy); 256] = [
 /*             X0             X1             X2             X3             X4             X5             X6             X7             */
 /*             X8             X9             XA             XB             XC             XD             XE             XF             */
 /* 0X */       rlc!(b),       rlc!(c),       rlc!(d),       rlc!(e),       rlc!(h),       rlc!(l),       rlc!(d hl),    rlc!(a),
