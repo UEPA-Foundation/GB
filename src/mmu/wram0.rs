@@ -7,8 +7,8 @@ pub struct WRam0 {
 impl MemoryUnit for WRam0 {
     fn init() -> Self {
         Self {
-            // WARN: memory is actually initialized with random garbage there are known patterns for this garbage
-            // More research needed!
+            // WARN: memory is actually initialized with random garbage there
+            // are known patterns for this garbage. More research needed!
             bytes: [0; 0x1000],
         }
     }

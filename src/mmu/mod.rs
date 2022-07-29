@@ -1,8 +1,9 @@
-use crate::mmu::{cart::Cartridge, wram0::WRam0, wramx::WRamX};
+use crate::mmu::{cart::Cartridge, wram0::WRam0, wramx::WRamX, hram::HRam};
 
 mod cart;
 mod wram0;
 mod wramx;
+mod hram;
 
 pub struct Mmu {
     cart: Box<dyn Cartridge>,
@@ -13,7 +14,7 @@ pub struct Mmu {
     // oam: Oam,
     // unused: Unused,
     // io: IoRegisters,
-    // hram: HRam,
+    hram: HRam,
     // ie: IeRegister,
 }
 
@@ -27,7 +28,11 @@ pub trait MemoryUnit {
 
 impl Mmu {
     pub fn init(path: &str) -> Self {
-        Self { cart: cart::read_rom(path), wram0: <WRam0 as MemoryUnit>::init(), wramx: <WRamX as MemoryUnit>::init() }
+        Self {
+            cart: cart::read_rom(path),
+            wram0: <WRam0 as MemoryUnit>::init(),
+            wramx: <WRamX as MemoryUnit>::init()
+        }
     }
 
     pub fn read(&self, index: u16) -> u8 {
@@ -42,7 +47,7 @@ impl Mmu {
             // 0xFE00..=0xFE9F => self.oam.read(index),
             // 0xFFA0..=0xFEFF => self.unused.read(index),
             // 0xFF00..=0xFF7F => self.io.read(index),
-            // 0xFF80..=0xFFFE => self.hram.read(index),
+            0xFF80..=0xFFFE => self.hram.read(index),
             // 0xFFFF => self.ie.read(index),
             _ => panic!(),
         }
@@ -60,7 +65,7 @@ impl Mmu {
             // 0xFE00..=0xFE9F => self.oam.write(index, val),
             // 0xFFA0..=0xFEFF => self.unused.write(index, val),
             // 0xFF00..=0xFF7F => self.io.write(index, val),
-            // 0xFF80..=0xFFFE => self.hram.write(index, val),
+            0xFF80..=0xFFFE => self.hram.write(index, val),
             // 0xFFFF => self.ie.write(index, val),
             _ => panic!(),
         }
