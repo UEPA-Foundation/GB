@@ -7,9 +7,11 @@ pub struct WRam0 {
 impl MemoryUnit for WRam0 {
     fn init() -> Self {
         Self {
-            bytes: [0; 0x1000] //TODO: memory is actually initialized with random garbage
-        }                      //there are known patterns for this garbage
-    }                          //more research needed!
+            // WARN: memory is actually initialized with random garbage there are known patterns for this garbage
+            // More research needed!
+            bytes: [0; 0x1000],
+        }
+    }
 
     fn read(&self, index: u16) -> u8 {
         self.bytes[(index & 0x0FFF) as usize]

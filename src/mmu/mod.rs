@@ -1,8 +1,7 @@
-use crate::mmu::wram0::WRam0;
-use crate::mmu::wramx::WRamX;
+use crate::mmu::{wram0::WRam0, wramx::WRamX};
 
-pub mod wram0;
-pub mod wramx;
+mod wram0;
+mod wramx;
 
 pub struct Mmu {
     rom0: Rom0,
