@@ -1,5 +1,4 @@
 use crate::cpu::{Reg, C_FLAG, H_FLAG, N_FLAG, Z_FLAG};
-use crate::mmu::MemoryUnit;
 use crate::gameboy::GameBoy;
 
 // CB prefix
@@ -1237,7 +1236,7 @@ macro_rules! pop {
 
 fn push_af(gb: &mut GameBoy) {
     gb.cpu.sp.dec();
-    gb.mmu.write(gb.cpu.sp,  gb.cpu.a);
+    gb.mmu.write(gb.cpu.sp, gb.cpu.a);
     gb.cpu.sp.dec();
     gb.mmu.write(gb.cpu.sp, gb.cpu.f);
 }

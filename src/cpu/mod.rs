@@ -1,5 +1,4 @@
 use crate::gameboy::GameBoy;
-use crate::mmu::MemoryUnit;
 use instructions::OPCODES;
 
 pub mod instructions;

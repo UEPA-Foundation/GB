@@ -1,13 +1,12 @@
-use crate::mmu::{wram0::WRam0, wramx::WRamX};
+use crate::mmu::{cart::Cartridge, wram0::WRam0, wramx::WRamX};
 
+mod cart;
 mod wram0;
 mod wramx;
 
 pub struct Mmu {
-    rom0: Rom0,
-    romx: RomX,
+    cart: Box<dyn Cartridge>,
     vram: VRam,
-    sram: SRam,
     wram0: WRam0,
     wramx: WRamX,
     echo: Echo,
@@ -19,22 +18,24 @@ pub struct Mmu {
 }
 
 pub trait MemoryUnit {
-    fn init() -> Self;
+    fn init() -> Self
+    where
+        Self: Sized;
     fn read(&self, index: u16) -> u8;
     fn write(&mut self, index: u16, val: u8);
 }
 
-impl MemoryUnit for Mmu {
-    fn init() -> Self {
-        todo!();
+impl Mmu {
+    pub fn init(path: &str) -> Self {
+        Self { cart: cart::read_rom(path), wram0: <WRam0 as MemoryUnit>::init(), wramx: <WRamX as MemoryUnit>::init() }
     }
 
-    fn read(&self, index: u16) -> u8 {
+    pub fn read(&self, index: u16) -> u8 {
         match index {
-            0x0000..=0x3FFF => self.rom0.read(index),
-            0x4000..=0x7FFF => self.romx.read(index),
+            0x0000..=0x3FFF => self.cart.rom0_read(index),
+            0x4000..=0x7FFF => self.cart.romx_read(index),
             0x8000..=0x9FFF => self.vram.read(index),
-            0xA000..=0xBFFF => self.sram.read(index),
+            0xA000..=0xBFFF => self.cart.sram_read(index),
             0xC000..=0xCFFF => self.wram0.read(index),
             0xD000..=0xDFFF => self.wramx.read(index),
             0xE000..=0xFDFF => self.echo.read(index),
@@ -46,12 +47,12 @@ impl MemoryUnit for Mmu {
         }
     }
 
-    fn write(&mut self, index: u16, val: u8) {
+    pub fn write(&mut self, index: u16, val: u8) {
         match index {
-            0x0000..=0x3FFF => self.rom0.write(index, val),
-            0x4000..=0x7FFF => self.romx.write(index, val),
+            0x0000..=0x3FFF => self.cart.rom0_write(index, val),
+            0x4000..=0x7FFF => self.cart.romx_write(index, val),
             0x8000..=0x9FFF => self.vram.write(index, val),
-            0xA000..=0xBFFF => self.sram.write(index, val),
+            0xA000..=0xBFFF => self.cart.sram_write(index, val),
             0xC000..=0xCFFF => self.wram0.write(index, val),
             0xD000..=0xDFFF => self.wramx.write(index, val),
             0xE000..=0xFDFF => self.echo.write(index, val),
