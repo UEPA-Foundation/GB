@@ -1,5 +1,6 @@
 use snafu::prelude::*;
 
+mod mbc1;
 mod no_mbc;
 
 pub type RomBank = [u8; 0x4000];
@@ -94,14 +95,14 @@ pub fn load_rom_file(path: &str) -> Box<dyn Cartridge> {
 }
 
 fn boxed_cartridge(code: u8) -> Result<Box<dyn Cartridge>, CartridgeError> {
-    let res = match code {
-        0x00 => Ok(no_mbc::NoMbc::init(false)),
-        0x08 => Ok(no_mbc::NoMbc::init(true)),
-        // 0x09 cartridges include batteries, but it doesn't seem to make a
-        // difference from the emulator perspective, might be wise to keep an
-        // eye on this if bugs arise.
-        0x09 => Ok(no_mbc::NoMbc::init(true)),
-        val => Err(CartridgeError::InvalidType { tp: val }),
-    };
-    Ok(Box::new(res?))
+    // Some cartridges include batteries, but it doesn't seem to make a
+    // difference from the emulator perspective, might be wise to keep an eye on
+    // this if bugs arise.
+    Ok(match code {
+        0x00 => Box::new(no_mbc::NoMbc::init(false)),
+        0x01 => Box::new(mbc1::Mbc1::init(false)),
+        0x02 | 0x03 => Box::new(mbc1::Mbc1::init(true)),
+        0x08 | 0x09 => Box::new(no_mbc::NoMbc::init(true)),
+        val => return Err(CartridgeError::InvalidType { tp: val }),
+    })
 }
