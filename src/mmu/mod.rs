@@ -1,14 +1,15 @@
-use crate::mmu::{cart::Cartridge, hram::HRam, unused::Unused, wram0::WRam0, wramx::WRamX};
+use crate::mmu::{cart::Cartridge, hram::HRam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX};
 
 mod cart;
 mod hram;
 mod unused;
+mod vram;
 mod wram0;
 mod wramx;
 
 pub struct Mmu {
     cart: Box<dyn Cartridge>,
-    // vram: VRam,
+    vram: VRam,
     wram0: WRam0,
     wramx: WRamX,
     // echo: Echo,
@@ -33,8 +34,9 @@ impl Mmu {
             cart: cart::read_rom(path),
             wram0: <WRam0 as MemoryUnit>::init(),
             wramx: <WRamX as MemoryUnit>::init(),
-            hram: <HRam as MemoryUnit>::init(),
+            vram: <VRam as MemoryUnit>::init(),
             unused: <Unused as MemoryUnit>::init(),
+            hram: <HRam as MemoryUnit>::init(),
         }
     }
 
@@ -42,7 +44,7 @@ impl Mmu {
         match index {
             0x0000..=0x3FFF => self.cart.rom0_read(index),
             0x4000..=0x7FFF => self.cart.romx_read(index),
-            // 0x8000..=0x9FFF => self.vram.read(index),
+            0x8000..=0x9FFF => self.vram.read(index),
             0xA000..=0xBFFF => self.cart.sram_read(index),
             0xC000..=0xCFFF => self.wram0.read(index),
             0xD000..=0xDFFF => self.wramx.read(index),
