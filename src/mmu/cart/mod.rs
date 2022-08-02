@@ -30,7 +30,7 @@ pub trait Cartridge {
     fn sram_write(&mut self, addr: u16, val: u8);
 }
 
-pub fn read_rom(path: &str) -> Box<dyn Cartridge> {
+pub fn load_rom_file(path: &str) -> Box<dyn Cartridge> {
     let raw_rom = std::fs::read(path).unwrap();
 
     let title = String::from_utf8_lossy(&raw_rom[0x0134..=0x0142]);

@@ -31,7 +31,7 @@ pub trait MemoryUnit {
 impl Mmu {
     pub fn init(path: &str) -> Self {
         Self {
-            cart: cart::read_rom(path),
+            cart: cart::load_rom_file(path),
             wram0: <WRam0 as MemoryUnit>::init(),
             wramx: <WRamX as MemoryUnit>::init(),
             vram: <VRam as MemoryUnit>::init(),
