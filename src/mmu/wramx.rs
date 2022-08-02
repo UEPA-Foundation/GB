@@ -1,4 +1,4 @@
-use crate::mmu::MemoryUnit;
+use crate::gameboy::GameBoy;
 
 pub struct WRamX {
     // As only DMG is currently supported, there is only one RAM bank
@@ -6,20 +6,22 @@ pub struct WRamX {
     bytes: [u8; 0x1000],
 }
 
-impl MemoryUnit for WRamX {
-    fn init() -> Self {
+impl WRamX {
+    pub fn init() -> Self {
         Self {
             // WARN: memory is actually initialized with random garbage there
             // are known patterns for this garbage. More research needed!
             bytes: [0; 0x1000],
         }
     }
+}
 
-    fn read(&self, index: u16) -> u8 {
-        self.bytes[(index & 0x0FFF) as usize]
+impl GameBoy {
+    pub fn wramx_read(&self, index: u16) -> u8 {
+        self.mmu.wramx.bytes[(index & 0x0FFF) as usize]
     }
 
-    fn write(&mut self, index: u16, val: u8) {
-        self.bytes[(index & 0x0FFF) as usize] = val;
+    pub fn wramx_write(&mut self, index: u16, val: u8) {
+        self.mmu.wramx.bytes[(index & 0x0FFF) as usize] = val;
     }
 }

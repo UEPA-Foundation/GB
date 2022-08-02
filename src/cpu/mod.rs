@@ -88,13 +88,13 @@ impl Cpu {
 
 impl GameBoy {
     pub fn fetch_exec(&mut self) {
-        let current_ime = true;
+        let _current_ime = true;
         if self.enabling_int {
             self.ime = true;
             self.enabling_int = false;
         }
 
-        let opcode = self.mmu.read(self.cpu.pc);
+        let opcode = self.read(self.cpu.pc);
         self.cpu.pc.inc();
 
         let handler = OPCODES[opcode as usize];

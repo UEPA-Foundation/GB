@@ -1,4 +1,4 @@
-use crate::mmu::MemoryUnit;
+use crate::gameboy::GameBoy;
 
 pub struct VRam {
     // As only DMG is currently supported, there is only one VRAM bank
@@ -6,20 +6,22 @@ pub struct VRam {
     bytes: [u8; 0x2000],
 }
 
-impl MemoryUnit for VRam {
-    fn init() -> Self {
+impl VRam {
+    pub fn init() -> Self {
         Self {
             // WARN: memory is actually initialized with random garbage. There
             // are known patterns for this garbage. More research needed!
             bytes: [0; 0x2000],
         }
     }
+}
 
-    fn read(&self, index: u16) -> u8 {
-        self.bytes[(index & 0x1FFF) as usize]
+impl GameBoy {
+    pub fn vram_read(&self, index: u16) -> u8 {
+        self.mmu.vram.bytes[(index & 0x1FFF) as usize]
     }
 
-    fn write(&mut self, index: u16, val: u8) {
-        self.bytes[(index & 0x1FFF) as usize] = val;
+    pub fn vram_write(&mut self, index: u16, val: u8) {
+        self.mmu.vram.bytes[(index & 0x1FFF) as usize] = val;
     }
 }
