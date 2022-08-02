@@ -1,7 +1,7 @@
 use crate::mmu::MemoryUnit;
 
 pub struct Unused {
-    bytes: [u8; 0x60],
+    _bytes: [u8; 0x60],
 }
 
 impl MemoryUnit for Unused {
@@ -9,15 +9,15 @@ impl MemoryUnit for Unused {
         Self {
             // WARN: memory is actually initialized with random garbage there
             // are known patterns for this garbage. More research needed!
-            bytes: [0; 0x60],
+            _bytes: [0; 0x60],
         }
     }
 
-    fn read(&self, index: u16) -> u8 {
+    fn read(&self, _index: u16) -> u8 {
         0
     }
 
-    fn write(&mut self, index: u16, val: u8) {
+    fn write(&mut self, _index: u16, _val: u8) {
         // In DMG, writes are ignored.
     }
 }
