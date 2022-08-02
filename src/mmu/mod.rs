@@ -1,7 +1,8 @@
-use crate::mmu::{cart::Cartridge, hram::HRam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX};
+use crate::mmu::{cart::Cartridge, hram::HRam, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX};
 
 mod cart;
 mod hram;
+mod oam;
 mod unused;
 mod vram;
 mod wram0;
@@ -13,7 +14,7 @@ pub struct Mmu {
     wram0: WRam0,
     wramx: WRamX,
     // echo: Echo,
-    // oam: Oam,
+    oam: Oam,
     unused: Unused,
     // io: IoRegisters,
     hram: HRam,
@@ -35,6 +36,7 @@ impl Mmu {
             wram0: <WRam0 as MemoryUnit>::init(),
             wramx: <WRamX as MemoryUnit>::init(),
             vram: <VRam as MemoryUnit>::init(),
+            oam: <Oam as MemoryUnit>::init(),
             unused: <Unused as MemoryUnit>::init(),
             hram: <HRam as MemoryUnit>::init(),
         }
@@ -49,7 +51,7 @@ impl Mmu {
             0xC000..=0xCFFF => self.wram0.read(index),
             0xD000..=0xDFFF => self.wramx.read(index),
             // 0xE000..=0xFDFF => self.echo.read(index),
-            // 0xFE00..=0xFE9F => self.oam.read(index),
+            0xFE00..=0xFE9F => self.oam.read(index),
             0xFEA0..=0xFEFF => self.unused.read(index),
             // 0xFF00..=0xFF7F => self.io.read(index),
             0xFF80..=0xFFFE => self.hram.read(index),
@@ -67,7 +69,7 @@ impl Mmu {
             0xC000..=0xCFFF => self.wram0.write(index, val),
             0xD000..=0xDFFF => self.wramx.write(index, val),
             // 0xE000..=0xFDFF => self.echo.write(index, val),
-            // 0xFE00..=0xFE9F => self.oam.write(index, val),
+            0xFE00..=0xFE9F => self.oam.write(index, val),
             0xFEA0..=0xFEFF => self.unused.write(index, val),
             // 0xFF00..=0xFF7F => self.io.write(index, val),
             0xFF80..=0xFFFE => self.hram.write(index, val),
