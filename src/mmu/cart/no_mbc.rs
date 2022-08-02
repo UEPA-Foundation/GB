@@ -3,19 +3,20 @@ use crate::mmu::cart::{Cartridge, CartridgeError, RamBank, RomBank, BLANK_RAM, B
 pub struct NoMbc {
     rom0: RomBank,
     romx: RomBank,
-    extras: Extras,
+    ram: Ram,
 }
 
-enum Extras {
+enum Ram {
     NONE,
-    RAM { ram: RamBank },
+    RAM(RamBank),
 }
 
 impl NoMbc {
     pub fn init(ram: bool) -> Self {
-        match ram {
-            false => NoMbc { rom0: BLANK_ROM, romx: BLANK_ROM, extras: Extras::NONE },
-            true => NoMbc { rom0: BLANK_ROM, romx: BLANK_ROM, extras: Extras::RAM { ram: BLANK_RAM } },
+        if ram {
+            NoMbc { rom0: BLANK_ROM, romx: BLANK_ROM, ram: Ram::RAM(BLANK_RAM) }
+        } else {
+            NoMbc { rom0: BLANK_ROM, romx: BLANK_ROM, ram: Ram::NONE }
         }
     }
 }
@@ -23,29 +24,36 @@ impl NoMbc {
 impl Cartridge for NoMbc {
     fn init_rom_banks(&mut self, nbanks: u16) -> Result<(), CartridgeError> {
         if nbanks != 2 {
-            Err(invalid_combination("multiple ROM banks".to_string()))
-        } else {
-            Ok(())
+            return Err(CartridgeError::InvalidCombination {
+                tp: "No MBC".to_string(),
+                feat: "multiple ROM banks".to_string(),
+            });
         }
+
+        Ok(())
     }
 
     fn init_ram_banks(&mut self, nbanks: u16) -> Result<(), CartridgeError> {
-        match self.extras {
-            Extras::NONE => {
+        match self.ram {
+            Ram::NONE => {
                 if nbanks != 0 {
-                    Err(invalid_combination("RAM banks".to_string()))
-                } else {
-                    Ok(())
+                    return Err(CartridgeError::InvalidCombination {
+                        tp: "No MBC without RAM".to_string(),
+                        feat: "ROM banks".to_string(),
+                    });
                 }
             }
-            Extras::RAM { .. } => {
+            Ram::RAM(_) => {
                 if nbanks > 1 {
-                    Err(invalid_combination("multiple RAM banks".to_string()))
-                } else {
-                    Ok(())
+                    return Err(CartridgeError::InvalidCombination {
+                        tp: "No MBC".to_string(),
+                        feat: "multiple ROM banks".to_string(),
+                    });
                 }
             }
         }
+
+        Ok(())
     }
 
     fn rom0_read(&self, addr: u16) -> u8 {
@@ -53,13 +61,13 @@ impl Cartridge for NoMbc {
     }
 
     fn romx_read(&self, addr: u16) -> u8 {
-        self.romx[addr as usize]
+        self.romx[(addr - 0x4000) as usize]
     }
 
     fn sram_read(&self, addr: u16) -> u8 {
-        match self.extras {
-            Extras::NONE => 0,
-            Extras::RAM { ram } => ram[addr as usize],
+        match self.ram {
+            Ram::NONE => 0xFF,
+            Ram::RAM(ram) => ram[(addr - 0xA000) as usize],
         }
     }
 
@@ -68,15 +76,9 @@ impl Cartridge for NoMbc {
     fn romx_write(&mut self, _: u16, _: u8) {}
 
     fn sram_write(&mut self, addr: u16, val: u8) {
-        match self.extras {
-            Extras::NONE => {}
-            Extras::RAM { ref mut ram } => {
-                ram[addr as usize] = val;
-            }
+        match self.ram {
+            Ram::NONE => {}
+            Ram::RAM(ref mut ram) => ram[(addr - 0xA000) as usize] = val,
         }
     }
-}
-
-fn invalid_combination(desc: String) -> CartridgeError {
-    CartridgeError::InvalidCombination { tp: "No MBC".to_string(), feat: desc }
 }
