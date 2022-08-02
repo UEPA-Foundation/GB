@@ -14,7 +14,6 @@ pub struct Mmu {
     vram: VRam,
     wram0: WRam0,
     wramx: WRamX,
-    // echo: Echo,
     oam: Oam,
     _unused: Unused, // Currently unused, but will be needed for CGB implementation
     // io: IoRegisters,
@@ -45,7 +44,8 @@ impl GameBoy {
             0xA000..=0xBFFF => self.mmu.cart.sram_read(index),
             0xC000..=0xCFFF => self.wram0_read(index),
             0xD000..=0xDFFF => self.wramx_read(index),
-            // 0xE000..=0xFDFF => self.echo_read(index),
+            0xE000..=0xEFFF => self.wram0_read(index),
+            0xF000..=0xFDFF => self.wramx_read(index),
             0xFE00..=0xFE9F => self.oam_read(index),
             0xFEA0..=0xFEFF => self.unused_read(index),
             // 0xFF00..=0xFF7F => self.io_read(index),
