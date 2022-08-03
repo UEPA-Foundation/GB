@@ -69,7 +69,7 @@ impl Cartridge for Mbc1 {
             Ram::RAM(ref mut ram) => {
                 if nbanks > 4 {
                     return Err(CartridgeError::InvalidCombination {
-                        tp: "MBC1 without RAM".to_string(),
+                        tp: "MBC1 with RAM".to_string(),
                         feat: "more than 4 banks of RAM".to_string(),
                     });
                 }
