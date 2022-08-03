@@ -8,10 +8,10 @@ pub struct GameBoy {
 }
 
 impl GameBoy {
-    pub fn init() -> Self {
+    pub fn init(path: &str) -> Self {
         Self {
             cpu: cpu::Cpu { a: 0, f: 0, b: 0, c: 0, d: 0, e: 0, h: 0, l: 0, sp: 0, pc: 0 },
-            mmu: mmu::Mmu::init("path"),
+            mmu: mmu::Mmu::init(path),
             ime: false,
             enabling_int: false,
         }

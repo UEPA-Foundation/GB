@@ -7,7 +7,9 @@ extern crate num_derive;
 extern crate paste;
 extern crate snafu;
 
+const PATH: &str = "path";
+
 fn main() {
-    let mut gb = gameboy::GameBoy::init();
+    let mut gb = gameboy::GameBoy::init(PATH);
     gb.fetch_exec();
 }
