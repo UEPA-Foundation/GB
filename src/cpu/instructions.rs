@@ -1046,7 +1046,7 @@ macro_rules! call {
 
 #[inline(always)]
 fn _jp(gb: &mut GameBoy) {
-    gb.cpu.sp = {
+    gb.cpu.pc = {
         let lsb = gb.read(gb.cpu.pc) as u16;
         gb.cpu.pc.inc();
         let msb = gb.read(gb.cpu.pc) as u16;
