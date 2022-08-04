@@ -40,7 +40,7 @@ impl Mbc1 {
 }
 
 impl Cartridge for Mbc1 {
-    fn init_rom_banks(&mut self, nbanks: u16) -> Result<(), CartridgeError> {
+    fn init_rom_banks(&mut self, nbanks: u16, raw_rom: &Vec<u8>) -> Result<(), CartridgeError> {
         if nbanks > 128 {
             return Err(CartridgeError::InvalidCombination {
                 tp: "MBC1".to_string(),
@@ -48,10 +48,20 @@ impl Cartridge for Mbc1 {
             });
         }
 
+        if (nbanks as usize) * 0x4000 < raw_rom.len() {
+            return Err(CartridgeError::OutOfRomBanks { nbanks, rom_size: raw_rom.len() / 1024 });
+        }
+
         self.mask = 1 << (16 - nbanks.leading_zeros() as u8);
         self.mask -= 1;
 
         self.rom = vec![BLANK_ROM; nbanks as usize];
+
+        for i in 0..nbanks as usize {
+            for j in 0..0x4000 {
+                self.rom[i][j] = raw_rom[(i * 0x4000) + j];
+            }
+        }
 
         Ok(())
     }

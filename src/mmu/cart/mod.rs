@@ -17,10 +17,13 @@ pub enum CartridgeError {
 
     #[snafu(display("{} Cartridge doesn't support {}", tp, feat))]
     InvalidCombination { tp: String, feat: String },
+
+    #[snafu(display("Cartridge expected a maximum of {} banks of ROM ({}KiB), but got {}KiB of ROM", nbanks, (*nbanks as usize) * 0x4000 / 1024, rom_size))]
+    OutOfRomBanks { nbanks: u16, rom_size: usize },
 }
 
 pub trait Cartridge {
-    fn init_rom_banks(&mut self, nbanks: u16) -> Result<(), CartridgeError>;
+    fn init_rom_banks(&mut self, nbanks: u16, raw_rom: &Vec<u8>) -> Result<(), CartridgeError>;
     fn init_ram_banks(&mut self, nbanks: u16) -> Result<(), CartridgeError>;
 
     fn rom0_read(&self, addr: u16) -> u8;
@@ -59,7 +62,7 @@ pub fn load_rom_file(path: &str) -> Box<dyn Cartridge> {
 
     let rom_size = raw_rom[0x0148];
     let rom_banks = 2 << rom_size;
-    rom.init_rom_banks(rom_banks).unwrap();
+    rom.init_rom_banks(rom_banks, &raw_rom).unwrap();
 
     let ram_size = raw_rom[0x0149];
     let ram_banks = match ram_size {

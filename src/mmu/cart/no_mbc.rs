@@ -22,12 +22,23 @@ impl NoMbc {
 }
 
 impl Cartridge for NoMbc {
-    fn init_rom_banks(&mut self, nbanks: u16) -> Result<(), CartridgeError> {
+    fn init_rom_banks(&mut self, nbanks: u16, raw_rom: &Vec<u8>) -> Result<(), CartridgeError> {
         if nbanks != 2 {
             return Err(CartridgeError::InvalidCombination {
                 tp: "No MBC".to_string(),
                 feat: "multiple ROM banks".to_string(),
             });
+        }
+
+        if raw_rom.len() >= 0x8000 {
+            return Err(CartridgeError::OutOfRomBanks { nbanks, rom_size: raw_rom.len() / 1024 });
+        }
+
+        for i in 0..0x4000 {
+            self.rom0[i] = raw_rom[i];
+        }
+        for i in 0..0x4000 {
+            self.romx[i] = raw_rom[i + 0x4000];
         }
 
         Ok(())
