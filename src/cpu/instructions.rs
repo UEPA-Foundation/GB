@@ -923,7 +923,7 @@ macro_rules! ld16 {
                 gb.cpu.pc.inc();
                 let msb = gb.read(gb.cpu.pc) as u16;
                 gb.cpu.pc.inc();
-                msb << 8 + lsb
+                (msb << 8) + lsb
             }
         }
     };
@@ -936,7 +936,7 @@ macro_rules! ld16 {
                     gb.cpu.pc.inc();
                     let msb = gb.read(gb.cpu.pc) as u16;
                     gb.cpu.pc.inc();
-                    msb << 8 + lsb
+                    (msb << 8) + lsb
                 };
                 gb.cpu.[<wr_ $targ>](val);
             }
@@ -950,7 +950,7 @@ fn ld_n16_a(gb: &mut GameBoy) {
         gb.cpu.pc.inc();
         let msb = gb.read(gb.cpu.pc) as u16;
         gb.cpu.pc.inc();
-        msb << 8 + lsb
+        (msb << 8) + lsb
     };
     gb.write(addr, gb.cpu.a);
 }
@@ -972,7 +972,7 @@ fn ld_a_n16(gb: &mut GameBoy) {
         gb.cpu.pc.inc();
         let msb = gb.read(gb.cpu.pc) as u16;
         gb.cpu.pc.inc();
-        msb << 8 + lsb
+        (msb << 8) + lsb
     };
     gb.write(addr, gb.cpu.a);
 }
@@ -1051,7 +1051,7 @@ fn _jp(gb: &mut GameBoy) {
         gb.cpu.pc.inc();
         let msb = gb.read(gb.cpu.pc) as u16;
         gb.cpu.pc.inc();
-        msb << 8 + lsb
+        (msb << 8) + lsb
     };
 }
 
@@ -1114,7 +1114,7 @@ fn _ret(gb: &mut GameBoy) {
         gb.cpu.sp.inc();
         let hi = gb.read(gb.cpu.sp) as u16;
         gb.cpu.sp.inc();
-        hi << 8 + lo
+        (hi << 8) + lo
     }
 }
 
@@ -1182,7 +1182,7 @@ fn ld_n16_sp(gb: &mut GameBoy) {
         gb.cpu.pc.inc();
         let msb = gb.read(gb.cpu.pc) as u16;
         gb.cpu.pc.inc();
-        msb << 8 + lsb
+        (msb << 8) + lsb
     };
     let bytes = u16::to_le_bytes(gb.cpu.sp);
     gb.write(addr, bytes[0]);
@@ -1226,7 +1226,7 @@ macro_rules! pop {
                     gb.cpu.sp.inc();
                     let msb = gb.read(gb.cpu.sp) as u16;
                     gb.cpu.sp.inc();
-                    msb << 8 + lsb
+                    (msb << 8) + lsb
                 };
                 gb.cpu.[<wr_ $r16>](val);
             }

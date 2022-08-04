@@ -24,17 +24,17 @@ pub struct Cpu {
 impl Cpu {
     #[inline(always)]
     pub fn rd_bc(&self) -> u16 {
-        (self.b as u16) << 8 + self.c
+        ((self.b as u16) << 8) + self.c as u16
     }
 
     #[inline(always)]
     pub fn rd_de(&self) -> u16 {
-        (self.d as u16) << 8 + self.e
+        ((self.d as u16) << 8) + self.e as u16
     }
 
     #[inline(always)]
     pub fn rd_hl(&self) -> u16 {
-        (self.h as u16) << 8 + self.l
+        ((self.h as u16) << 8) + self.l as u16
     }
 
     #[inline(always)]
