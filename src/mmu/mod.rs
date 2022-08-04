@@ -21,7 +21,7 @@ pub struct Mmu {
     _unused: Unused, // Currently unused, but will be needed for CGB implementation
     io: IoRegisters,
     hram: HRam,
-    // ie: IeRegister,
+    ie: u8,
 }
 
 impl Mmu {
@@ -35,6 +35,7 @@ impl Mmu {
             _unused: Unused::init(),
             io: IoRegisters::init(),
             hram: HRam::init(),
+            ie: 0,
         }
     }
 }
@@ -54,8 +55,7 @@ impl GameBoy {
             0xFEA0..=0xFEFF => self.unused_read(index),
             0xFF00..=0xFF7F => self.io_read(index),
             0xFF80..=0xFFFE => self.hram_read(index),
-            // 0xFFFF => self.ie_read(index),
-            _ => panic!(),
+            0xFFFF => self.mmu.ie,
         }
     }
 
@@ -73,8 +73,7 @@ impl GameBoy {
             0xFEA0..=0xFEFF => self.unused_write(index, val),
             0xFF00..=0xFF7F => self.io_write(index, val),
             0xFF80..=0xFFFE => self.hram_write(index, val),
-            // 0xFFFF => self.ie_write(index, val),
-            _ => panic!(),
+            0xFFFF => self.mmu.ie = val,
         }
     }
 }
