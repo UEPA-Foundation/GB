@@ -44,8 +44,12 @@ pub fn load_rom_file(path: &str) -> Box<dyn Cartridge> {
         panic!("CGB only ROM :(");
     }
 
-    let licensee = &raw_rom[0x0144..=0x0145];
-    println!("Licensee code: {:02X?}", licensee);
+    let new_licensee = &raw_rom[0x0144..=0x0145];
+    println!("New licensee code: {:02X?}", new_licensee);
+
+    let old_licensee = raw_rom[0x014B];
+    // if old_licensee != 0x33 -> disable SGB functions
+    println!("Old licensee code: {:02X?}", old_licensee);
 
     let _sgb = raw_rom[0x0146];
     // if sgb == 0x03 -> enable SGB functions
@@ -73,9 +77,6 @@ pub fn load_rom_file(path: &str) -> Box<dyn Cartridge> {
     rom.init_ram_banks(ram_banks).unwrap();
 
     let _destination = raw_rom[0x014A];
-
-    let _old_licensee = raw_rom[0x014B];
-    // if old_licensee != 0x33 -> disable SGB functions
 
     let mask_version = raw_rom[0x014C];
     println!("Mask ROM version: {}", mask_version);
