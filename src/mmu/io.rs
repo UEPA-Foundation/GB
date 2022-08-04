@@ -28,7 +28,7 @@ impl GameBoy {
             0xFF05 => self.mmu.io.timer.counter,
             0xFF06 => self.mmu.io.timer.modulo,
             0xFF07 => self.mmu.io.timer.control | 0xF8,
-            _ => panic!("Io Register not yet implemented!"),
+            _ => 0, // panic!("Io Register not yet implemented!"),
         }
     }
 
@@ -54,7 +54,7 @@ impl GameBoy {
                 // emulated here. More research needed!
                 self.mmu.io.timer.control = val
             }
-            _ => panic!("Io Register not yet implemented!"),
+            _ => (), // panic!("Io Register not yet implemented!"),
         }
     }
 }
