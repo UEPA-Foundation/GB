@@ -36,7 +36,10 @@ pub trait Cartridge {
 }
 
 pub fn load_rom_file(path: &str) -> Box<dyn Cartridge> {
-    let raw_rom = std::fs::read(path).unwrap();
+    let raw_rom = match std::fs::read(path) {
+        Ok(content) => content,
+        Err(e) => panic!("{}", e),
+    };
 
     let title = String::from_utf8_lossy(&raw_rom[0x0134..=0x0142]);
     println!("Cartridge title: {}", title);
@@ -58,11 +61,17 @@ pub fn load_rom_file(path: &str) -> Box<dyn Cartridge> {
     // if sgb == 0x03 -> enable SGB functions
 
     let cartridge_type = raw_rom[0x0147];
-    let mut rom = boxed_cartridge(cartridge_type).unwrap();
+    let mut rom = match boxed_cartridge(cartridge_type) {
+        Ok(cart) => cart,
+        Err(e) => panic!("{}", e),
+    };
 
     let rom_size = raw_rom[0x0148];
     let rom_banks = 2 << rom_size;
-    rom.init_rom_banks(rom_banks, &raw_rom).unwrap();
+    match rom.init_rom_banks(rom_banks, &raw_rom) {
+        Ok(()) => {}
+        Err(e) => panic!("{}", e),
+    };
 
     let ram_size = raw_rom[0x0149];
     let ram_banks = match ram_size {
@@ -77,7 +86,10 @@ pub fn load_rom_file(path: &str) -> Box<dyn Cartridge> {
         0x05 => 8,
         _ => panic!("Too much RAM?"),
     };
-    rom.init_ram_banks(ram_banks).unwrap();
+    match rom.init_ram_banks(ram_banks) {
+        Ok(()) => {}
+        Err(e) => panic!("{}", e),
+    };
 
     let _destination = raw_rom[0x014A];
 
@@ -94,7 +106,7 @@ pub fn load_rom_file(path: &str) -> Box<dyn Cartridge> {
         panic!("ROM checksum does not match");
     }
 
-    let _global_checksum = (raw_rom[0x014E] as u16) << 8 + raw_rom[0x014F] as u16;
+    let _global_checksum = ((raw_rom[0x014E] as u16) << 8) + raw_rom[0x014F] as u16;
 
     rom
 }
