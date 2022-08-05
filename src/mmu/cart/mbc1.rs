@@ -52,7 +52,7 @@ impl Cartridge for Mbc1 {
             return Err(CartridgeError::OutOfRomBanks { nbanks, rom_size: raw_rom.len() / 1024 });
         }
 
-        self.mask = 1 << (16 - nbanks.leading_zeros() as u8);
+        self.mask = 1 << (15 - nbanks.leading_zeros() as u8);
         self.mask -= 1;
 
         self.rom = vec![BLANK_ROM; nbanks as usize];
