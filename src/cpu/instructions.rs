@@ -1083,8 +1083,9 @@ macro_rules! jp {
 
 #[inline(always)]
 fn _jr(gb: &mut GameBoy) {
-    let addr = gb.read(gb.cpu.pc) as u16;
+    let addr = (gb.read(gb.cpu.pc) as i8) as u16;
     gb.cpu.pc = u16::wrapping_add(gb.cpu.pc, addr);
+    gb.cpu.pc.dec();
 }
 
 macro_rules! jr {
