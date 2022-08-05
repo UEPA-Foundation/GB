@@ -238,7 +238,8 @@ macro_rules! dec {
             paste::paste! {
                 gb.cpu.$r8.dec();
 
-                gb.cpu.f &= !(Z_FLAG | H_FLAG) | N_FLAG;
+                gb.cpu.f &= !(Z_FLAG | H_FLAG);
+                gb.cpu.f |= N_FLAG;
                 if (gb.cpu.$r8 == 0) {
                     gb.cpu.f |= Z_FLAG;
                 }
@@ -1085,7 +1086,6 @@ macro_rules! jp {
 fn _jr(gb: &mut GameBoy) {
     let addr = (gb.read(gb.cpu.pc) as i8) as u16;
     gb.cpu.pc = u16::wrapping_add(gb.cpu.pc, addr);
-    gb.cpu.pc.dec();
 }
 
 macro_rules! jr {
