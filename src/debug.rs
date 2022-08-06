@@ -97,7 +97,7 @@ pub fn disassemble(opcode: u8, param1: u8, param2: u8) -> String {
 pub const OPCODES_STR: [&str; 256] = [
 /*             X0              X1              X2              X3              X4              X5              X6              X7              */
 /*             X8              X9              XA              XB              XC              XD              XE              XF              */
-/* 0X */      "NOP",           "LD BC, U16",   "LD (BC), A",   "INC BC",       "INC B",        "DEC B",        "LD B, U8",     "RLCA", 
+/* 0X */      "NOP",           "LD BC, U16",   "LD (BC), A",   "INC BC",       "INC B",        "DEC B",        "LD B, U8",     "RLCA",
               "LD (U16), SP",  "ADD HL, BC",   "LD A, (BC)",   "DEC BC",       "INC C",        "DEC C",        "LD C, U8",     "RRCA",
 /* 1X */      "STOP",          "LD DE, U16",   "LD (DE), A",   "INC DE",       "INC D",        "DEC D",        "LD D, U8",     "RLA",
               "JR I8",         "ADD HL, DE",   "LD A, (DE)",   "DEC DE",       "INC E",        "DEC E",        "LD E, U8",     "RRA",
@@ -125,9 +125,9 @@ pub const OPCODES_STR: [&str; 256] = [
               "RET Z",         "RET",          "JP Z, U16",    "CB",           "CALL Z, U16",  "CALL U16",     "ADC A, U8",    "RST $08",
 /* DX */      "RET NC",        "POP DE",       "JP NC, U16",   "UNDEFINED",    "CALL NC, U16", "PUSH DE",      "SUB U8",       "RST $10",
               "RET C",         "RETI",         "JP C, U16",    "UNDEFINED",    "CALL C, U16",  "UNDEFINED",    "SBC A, U8",    "RST $18",
-/* EX */      "LDH (U8), A",   "POP HL",       "LDH (C), A",    "UNDEFINED",    "UNDEFINED",    "PUSH HL",      "AND U8",       "RST $20",
+/* EX */      "LDH (U8), A",   "POP HL",       "LDH (C), A",   "UNDEFINED",    "UNDEFINED",    "PUSH HL",      "AND U8",       "RST $20",
               "ADD SP, I8",    "JP (HL)",      "LD (U16), A",  "UNDEFINED",    "UNDEFINED",    "UNDEFINED",    "XOR U8",       "RST $28",
-/* FX */      "LDH A, (U8)",   "POP AF",       "LDH A, (C)",    "DI",           "UNDEFINED",    "PUSH AF",      "OR U8",        "RST $30",
+/* FX */      "LDH A, (U8)",   "POP AF",       "LDH A, (C)",   "DI",           "UNDEFINED",    "PUSH AF",      "OR U8",        "RST $30",
               "LD HL, SP+I8",  "LD SP, HL",    "LD A, (U16)",  "EI",           "UNDEFINED",    "UNDEFINED",    "CP U8",        "RST $38",
 ];
 
