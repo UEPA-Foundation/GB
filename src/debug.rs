@@ -74,23 +74,23 @@ impl<'a> DebugGB<'a> {
         }
     }
 
-    pub fn disassemble(&self) -> (String, u8) {
-        let opcode = self.gb.read_instr(0);
+    pub fn disassemble(&self, offset: i8) -> (String, u8) {
+        let opcode = self.gb.read_instr(0 + offset);
         let mut mnemonic = OPCODES_STR[opcode as usize].to_string();
 
         if mnemonic == "CB" {
-            let param = self.gb.read_instr(1);
+            let param = self.gb.read_instr(1 + offset);
             return (OPCODES_CB_STR[param as usize].to_string(), 2);
         }
 
         if mnemonic.contains("U8") {
-            let param = self.gb.read_instr(1);
+            let param = self.gb.read_instr(1 + offset);
             mnemonic = mnemonic.replace("U8", &format!("${:02X}", param));
             return (mnemonic, 2);
         }
 
         if mnemonic.contains("I8") {
-            let param = self.gb.read_instr(1);
+            let param = self.gb.read_instr(1 + offset);
             mnemonic = mnemonic.replace("I8", &format!("${:02X}", param));
             mnemonic += " (";
             if param as i8 > 0 {
@@ -100,9 +100,9 @@ impl<'a> DebugGB<'a> {
             return (mnemonic, 2);
         }
 
-            let param1 = self.gb.read_instr(1);
-            let param2 = self.gb.read_instr(2);
         if mnemonic.contains("U16") {
+            let param1 = self.gb.read_instr(1 + offset);
+            let param2 = self.gb.read_instr(2 + offset);
             mnemonic = mnemonic.replace("U16", &format!("${:04X}", (((param2 as u16) << 8) + param1 as u16)));
             return (mnemonic, 3);
         }
