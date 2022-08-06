@@ -59,6 +59,10 @@ impl GameBoy {
         }
     }
 
+    pub fn read_instr(&self, offset: i8) -> u8 {
+        self.read(u16::wrapping_add(self.cpu.pc, offset as u16))
+    }
+
     pub fn write(&mut self, index: u16, val: u8) {
         match index {
             0x0000..=0x3FFF => self.mmu.cart.rom0_write(index, val),
