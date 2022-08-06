@@ -4,18 +4,20 @@ use std::io::Write;
 pub enum Command {
     RUN,
     STEP,
+    DISASSEMBLE,
     HELP,
 }
 
 pub struct DebugGB<'a> {
     pub gb: &'a mut GameBoy,
+    disassemble: bool,
     stdin: std::io::Stdin,
     stdout: std::io::Stdout,
 }
 
 impl<'a> DebugGB<'a> {
     pub fn init(gb: &'a mut GameBoy) -> Self {
-        Self { gb, stdin: std::io::stdin(), stdout: std::io::stdout() }
+        Self { gb, disassemble: false, stdin: std::io::stdin(), stdout: std::io::stdout() }
     }
 
     pub fn prompt(&mut self) -> Command {
@@ -41,6 +43,7 @@ impl<'a> DebugGB<'a> {
                 "r" | "run" => Command::RUN,
                 "s" | "step" => Command::STEP,
                 "h" | "help" => Command::HELP,
+                "d" | "disassemble" => Command::DISASSEMBLE,
                 inv => {
                     println!("Unknown command: {}", inv);
                     Command::HELP
@@ -54,7 +57,9 @@ impl<'a> DebugGB<'a> {
                     // TODO: actually describe what each command does
                     println!("{}run{}", BOLD, RESET);
                     println!("{}step{}", BOLD, RESET);
+                    println!("{}disassemble{}", BOLD, RESET);
                     println!("{}help{} -- prints the list of commands", BOLD, RESET);
+                    println!();
                 }
                 _ => return cmd,
             }
@@ -70,7 +75,19 @@ impl<'a> DebugGB<'a> {
                 self.gb.fetch_exec();
                 println!("{}", self.gb.cpu);
             }
+            Command::DISASSEMBLE => self.disassemble = !self.disassemble,
             Command::HELP => {}
+        }
+
+        if self.disassemble {
+            let (dis, mut offset) = self.disassemble(0);
+            println!("\t> {}", dis);
+
+            for _ in 1..=5 {
+                let (dis, len) = self.disassemble(offset as i8);
+                println!("\t  {}", dis);
+                offset += len;
+            }
         }
     }
 
