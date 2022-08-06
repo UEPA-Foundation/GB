@@ -102,6 +102,21 @@ impl GameBoy {
     }
 }
 
+impl std::fmt::Display for Cpu {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Cpu: (AF: ${:04X} BC: ${:04X} DE: ${:04X} HL: ${:04X} | PC: ${:04X} SP: ${:04X})",
+            ((self.a as u16) << 8) + self.f as u16,
+            self.rd_bc(),
+            self.rd_de(),
+            self.rd_hl(),
+            self.pc,
+            self.sp,
+        )
+    }
+}
+
 trait Reg {
     fn inc(&mut self);
     fn dec(&mut self);
