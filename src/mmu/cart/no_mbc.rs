@@ -30,7 +30,7 @@ impl Cartridge for NoMbc {
             });
         }
 
-        if raw_rom.len() >= 0x8000 {
+        if raw_rom.len() > 0x8000 {
             return Err(CartridgeError::OutOfRomBanks { nbanks, rom_size: raw_rom.len() / 1024 });
         }
 
