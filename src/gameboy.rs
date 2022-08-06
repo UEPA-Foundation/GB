@@ -1,3 +1,4 @@
+use crate::debug;
 use crate::{cpu, mmu};
 
 pub struct GameBoy {
@@ -14,6 +15,20 @@ impl GameBoy {
             mmu: mmu::Mmu::init(path),
             ime: false,
             enabling_int: false,
+        }
+    }
+
+    pub fn run(&mut self, debug: bool) {
+        if debug {
+            let mut dgb = debug::DebugGB::init(self);
+            loop {
+                let cmd = dgb.prompt();
+                dgb.exec(cmd);
+            }
+        }
+
+        loop {
+            self.fetch_exec();
         }
     }
 }

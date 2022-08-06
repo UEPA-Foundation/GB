@@ -1,3 +1,80 @@
+use crate::gameboy::GameBoy;
+use std::io::Write;
+
+pub enum Command {
+    RUN,
+    STEP,
+    HELP,
+}
+
+pub struct DebugGB<'a> {
+    pub gb: &'a mut GameBoy,
+    stdin: std::io::Stdin,
+    stdout: std::io::Stdout,
+}
+
+impl<'a> DebugGB<'a> {
+    pub fn init(gb: &'a mut GameBoy) -> Self {
+        Self { gb, stdin: std::io::stdin(), stdout: std::io::stdout() }
+    }
+
+    pub fn prompt(&mut self) -> Command {
+        loop {
+            print!("> ");
+            if !self.stdout.flush().is_ok() {
+                println!();
+                continue;
+            }
+
+            let mut user_input = String::new();
+            if !self.stdin.read_line(&mut user_input).is_ok() {
+                println!();
+                continue;
+            }
+
+            let stripped_input = match user_input.strip_suffix("\n") {
+                None => user_input.as_str(),
+                Some(stripped) => stripped,
+            };
+
+            let cmd = match stripped_input {
+                "r" | "run" => Command::RUN,
+                "s" | "step" => Command::STEP,
+                "h" | "help" => Command::HELP,
+                inv => {
+                    println!("Unknown command: {}", inv);
+                    Command::HELP
+                }
+            };
+
+            match cmd {
+                Command::HELP => {
+                    println!("List of commands:\n");
+
+                    // TODO: actually describe what each command does
+                    println!("{}run{}", BOLD, RESET);
+                    println!("{}step{}", BOLD, RESET);
+                    println!("{}help{} -- prints the list of commands", BOLD, RESET);
+                }
+                _ => return cmd,
+            }
+        }
+    }
+
+    pub fn exec(&mut self, cmd: Command) {
+        match cmd {
+            Command::RUN => loop {
+                self.gb.fetch_exec();
+            },
+            Command::STEP => {
+                self.gb.fetch_exec();
+                println!("{}", self.gb.cpu);
+            }
+            Command::HELP => {}
+        }
+    }
+}
+
 pub fn disassemble(opcode: u8, param1: u8, param2: u8) -> String {
     let mut mnemonic = OPCODES_STR[opcode as usize].to_string();
     if mnemonic == "CB" {
@@ -91,3 +168,12 @@ pub const OPCODES_CB_STR: [&str; 256] = [
 /* FX */      "SET 6, B",    "SET 6, C",    "SET 6, D",    "SET 6, E",    "SET 6, H",    "SET 6, L",    "SET 6, (HL)", "SET 6, A",
               "SET 7, B",    "SET 7, C",    "SET 7, D",    "SET 7, E",    "SET 7, H",    "SET 7, L",    "SET 7, (HL)", "SET 7, A",
 ];
+
+// Terminal utilities
+
+const RESET: &str = "\x1b[0m";
+const BOLD: &str = "\x1b[1m";
+
+fn clear_terminal() {
+    print!("\x1b[2J\x1b[1;1H");
+}

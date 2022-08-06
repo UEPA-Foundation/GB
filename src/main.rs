@@ -1,4 +1,5 @@
 mod cpu;
+mod debug;
 mod gameboy;
 mod mmu;
 
@@ -11,5 +12,5 @@ const PATH: &str = "path";
 
 fn main() {
     let mut gb = gameboy::GameBoy::init(PATH);
-    gb.fetch_exec();
+    gb.run(true);
 }
