@@ -3,13 +3,15 @@ pub fn disassemble(opcode: u8, param1: u8, param2: u8) -> String {
     if mnemonic == "CB" {
         return OPCODES_CB_STR[param1 as usize].to_string();
     }
-    mnemonic = mnemonic.replace("U8", &format!("${:X}", param1));
-    mnemonic = mnemonic.replace("U16", &format!("${:X}", (((param2 as u16) << 8) + param1 as u16)));
+    mnemonic = mnemonic.replace("U8", &format!("${:02X}", param1));
+    mnemonic = mnemonic.replace("U16", &format!("${:04X}", (((param2 as u16) << 8) + param1 as u16)));
     if mnemonic.contains("I8") {
-        mnemonic = mnemonic.replace("I8", &format!("${:X}", param1));
-        if (param1 as i8) < 0 {
-            mnemonic += &(param1 as i8).to_string();
+        mnemonic = mnemonic.replace("I8", &format!("${:02X}", param1));
+        mnemonic += " (";
+        if param1 as i8 > 0 {
+            mnemonic += "+";
         }
+        mnemonic += &format!("{})", param1 as i8);
     }
     mnemonic
 }
