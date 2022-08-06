@@ -73,24 +73,42 @@ impl<'a> DebugGB<'a> {
             Command::HELP => {}
         }
     }
-}
 
-pub fn disassemble(opcode: u8, param1: u8, param2: u8) -> String {
-    let mut mnemonic = OPCODES_STR[opcode as usize].to_string();
-    if mnemonic == "CB" {
-        return OPCODES_CB_STR[param1 as usize].to_string();
-    }
-    mnemonic = mnemonic.replace("U8", &format!("${:02X}", param1));
-    mnemonic = mnemonic.replace("U16", &format!("${:04X}", (((param2 as u16) << 8) + param1 as u16)));
-    if mnemonic.contains("I8") {
-        mnemonic = mnemonic.replace("I8", &format!("${:02X}", param1));
-        mnemonic += " (";
-        if param1 as i8 > 0 {
-            mnemonic += "+";
+    pub fn disassemble(&self) -> (String, u8) {
+        let opcode = self.gb.read_instr(0);
+        let mut mnemonic = OPCODES_STR[opcode as usize].to_string();
+
+        if mnemonic == "CB" {
+            let param = self.gb.read_instr(1);
+            return (OPCODES_CB_STR[param as usize].to_string(), 2);
         }
-        mnemonic += &format!("{})", param1 as i8);
+
+        if mnemonic.contains("U8") {
+            let param = self.gb.read_instr(1);
+            mnemonic = mnemonic.replace("U8", &format!("${:02X}", param));
+            return (mnemonic, 2);
+        }
+
+        if mnemonic.contains("I8") {
+            let param = self.gb.read_instr(1);
+            mnemonic = mnemonic.replace("I8", &format!("${:02X}", param));
+            mnemonic += " (";
+            if param as i8 > 0 {
+                mnemonic += "+";
+            }
+            mnemonic += &format!("{})", param as i8);
+            return (mnemonic, 2);
+        }
+
+            let param1 = self.gb.read_instr(1);
+            let param2 = self.gb.read_instr(2);
+        if mnemonic.contains("U16") {
+            mnemonic = mnemonic.replace("U16", &format!("${:04X}", (((param2 as u16) << 8) + param1 as u16)));
+            return (mnemonic, 3);
+        }
+
+        (mnemonic, 1)
     }
-    mnemonic
 }
 
 #[rustfmt::skip]
