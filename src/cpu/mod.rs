@@ -109,15 +109,35 @@ impl GameBoy {
 
 impl std::fmt::Display for Cpu {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut z = "-";
+        let mut n = "-";
+        let mut h = "-";
+        let mut c = "-";
+        if self.f & Z_FLAG != 0 {
+            z = "Z";
+        }
+        if self.f & N_FLAG != 0 {
+            n = "N";
+        }
+        if self.f & H_FLAG != 0 {
+            h = "H";
+        }
+        if self.f & C_FLAG != 0 {
+            c = "C";
+        }
         write!(
             f,
-            "Cpu: (AF: ${:04X} BC: ${:04X} DE: ${:04X} HL: ${:04X} | PC: ${:04X} SP: ${:04X})",
+            "Cpu: (AF: ${:04X} BC: ${:04X} DE: ${:04X} HL: ${:04X} | PC: ${:04X} SP: ${:04X}) | Flags: ({}{}{}{})",
             ((self.a as u16) << 8) + self.f as u16,
             self.rd_bc(),
             self.rd_de(),
             self.rd_hl(),
             self.pc,
             self.sp,
+            z,
+            n,
+            h,
+            c,
         )
     }
 }
