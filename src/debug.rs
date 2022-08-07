@@ -53,7 +53,7 @@ impl<'a> DebugGB<'a> {
 
             let mut modif = None;
             if cmd_end != slash_pos {
-                match Self::eval_modif(mod_str) {
+                match eval_modif(mod_str) {
                     Ok(m) => modif = m,
                     Err(e) => {
                         println!("{}", e);
@@ -61,10 +61,10 @@ impl<'a> DebugGB<'a> {
                     }
                 }
             }
-            
+
             let mut args = vec![];
             for i in 1..(splitted_input.len()) {
-                match Self::eval_arg(splitted_input[i]) {
+                match eval_arg(splitted_input[i]) {
                     Ok(arg) => args.push(arg),
                     Err(e) => {
                         println!("{}", e);
@@ -183,23 +183,17 @@ impl<'a> DebugGB<'a> {
 
         (mnemonic, 1)
     }
+}
 
-    fn eval_modif(mod_str: String) -> Result<Option<u16>, String> {
-        if mod_str == "" {
-            return Ok(None);
-        }
-        match mod_str.parse::<u16>() {
-            Ok(n) => Ok(Some(n)),
-            Err(_e) => Err(format!("Invalid modifier: {}", mod_str)), 
-        }
+fn eval_modif(mod_str: String) -> Result<Option<u16>, String> {
+    if mod_str == "" {
+        return Ok(None);
     }
+    Ok(Some(mod_str.parse::<u16>().or_else(|_| Err(format!("Invalid modifier: {}", mod_str)))?))
+}
 
-    fn eval_arg(arg_str: &str) -> Result<u16, String> {
-        match arg_str.parse::<u16>() {
-            Ok(n) => Ok(n),
-            Err(_e) => Err(format!("Invalid argument: {}", arg_str)), 
-        }
-    }
+fn eval_arg(arg_str: &str) -> Result<u16, String> {
+    Ok(arg_str.parse::<u16>().or_else(|_| Err(format!("Invalid argument: {}", arg_str)))?)
 }
 
 #[rustfmt::skip]
