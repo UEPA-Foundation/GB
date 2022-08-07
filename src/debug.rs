@@ -204,7 +204,7 @@ impl<'a> DebugGB<'a> {
         }
     }
 
-    fn disasm_cmd(self: &Self, modif: Option<u16>, addr: u16) {
+    fn disasm_cmd(&mut self, modif: Option<u16>, addr: u16) {
         let count = match modif {
             None => 5,
             Some(n) => n,
@@ -217,7 +217,12 @@ impl<'a> DebugGB<'a> {
                 self.gb.read(u16::wrapping_add(addr, 1)),
                 self.gb.read(u16::wrapping_add(addr, 2)),
             );
-            println!("    {:04X}: {}", u16::wrapping_add(addr, offset as u16), dis);
+            let curr_addr = u16::wrapping_add(addr, offset as u16);
+            let mut padding = "    ";
+            if curr_addr == self.gb.cpu.pc {
+                padding = " -> ";
+            }
+            println!("{}{:04X}: {}", padding, curr_addr, dis);
             offset = u16::wrapping_add(offset, len as u16);
         }
     }
