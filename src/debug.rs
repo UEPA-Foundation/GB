@@ -31,7 +31,7 @@ impl<'a> DebugGB<'a> {
             breakpoints: vec![],
             stdin: std::io::stdin(),
             stdout: std::io::stdout(),
-            config: DbgConfig { disasm: false, regs: false},
+            config: DbgConfig { disasm: false, regs: false },
         }
     }
 
@@ -119,6 +119,7 @@ impl<'a> DebugGB<'a> {
                 ("x" | "examine", _, Arg::Numeric(addr), Arg::None) => self.examine_cmd(modif, addr),
                 ("r" | "regs" | "registers", None, Arg::None, Arg::None) => self.regs_cmd(),
                 ("set", _, Arg::Str(config), Arg::Bool(state)) => self.set_cmd(config, state),
+                ("cl" | "clear", None, Arg::None, Arg::None) => self.clear_cmd(),
                 _ => self.help_cmd(cmd_name.to_string()),
             };
 
@@ -244,6 +245,7 @@ impl<'a> DebugGB<'a> {
                 println!("{}b{}reak -- create a breakpoint at a specified address", ULINE, RESET);
                 println!("{}d{}elete -- deletes a breakpoint at a specified address", ULINE, RESET);
                 println!("{}s{}et -- sets a configuration flag", ULINE, RESET);
+                println!("{}cl{}ear -- clears terminal", ULINE, RESET);
                 println!();
             }
             "h" | "help" => {
@@ -294,11 +296,20 @@ impl<'a> DebugGB<'a> {
                 println!("regs -- automatic printing of cpu regs");
                 println!();
             }
+            "cl" | "clear" => {
+                println!("{}cl{}ear -- clears terminal", ULINE, RESET);
+                println!("usage: clear\n");
+                println!();
+            }
             _ => {
                 println!("{}", format!("Invalid command: {}", cmd_name));
                 println!();
             }
         }
+    }
+
+    fn clear_cmd(&self) {
+        print!("\x1b[2J\x1b[1;1H");
     }
 
     fn eval_arg(&self, arg_str: &str) -> Result<Arg, String> {
@@ -309,7 +320,8 @@ impl<'a> DebugGB<'a> {
             "off" => {
                 return Ok(Arg::Bool(false));
             }
-            "help" | "continue" | "step" | "disassemble" | "break" | "delete" | "examine" | "registers" | "set" => {
+            "help" | "continue" | "step" | "disassemble" | "break" | "delete" | "examine" | "registers" | "set"
+            | "clear" => {
                 return Ok(Arg::Str(arg_str.to_string()));
             }
             "disasm" | "regs" => {
@@ -463,7 +475,3 @@ pub const OPCODES_CB_STR: [&str; 256] = [
 const RESET: &str = "\x1b[0m";
 const BOLD: &str = "\x1b[1m";
 const ULINE: &str = "\x1b[4m";
-
-fn clear_terminal() {
-    print!("\x1b[2J\x1b[1;1H");
-}
