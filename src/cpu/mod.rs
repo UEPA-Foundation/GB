@@ -23,6 +23,11 @@ pub struct Cpu {
 
 impl Cpu {
     #[inline(always)]
+    pub fn rd_af(&self) -> u16 {
+        ((self.a as u16) << 8) + self.f as u16
+    }
+
+    #[inline(always)]
     pub fn rd_bc(&self) -> u16 {
         ((self.b as u16) << 8) + self.c as u16
     }
