@@ -155,7 +155,7 @@ impl<'a> DebugGB<'a> {
             Some(n) => n,
         };
         let mut s = String::new();
-        for i in 0..=count {
+        for i in 0..count {
             if i % 16 == 0 {
                 s += &format!("${:04X}: ", u16::wrapping_add(addr, i));
             }
