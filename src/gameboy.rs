@@ -22,8 +22,7 @@ impl GameBoy {
         if debug {
             let mut dgb = debug::DebugGB::init(self);
             loop {
-                let cmd = dgb.prompt();
-                dgb.exec(cmd);
+                dgb.prompt();
             }
         }
 
