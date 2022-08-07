@@ -279,7 +279,11 @@ fn eval_modif(mod_str: String) -> Result<Option<u16>, String> {
     if mod_str == "" {
         return Ok(None);
     }
-    Ok(Some(mod_str.parse::<u16>().or_else(|_| Err(format!("Invalid modifier: {}", mod_str)))?))
+    if mod_str.starts_with('$') {
+        Ok(Some(u16::from_str_radix(&mod_str[1..], 16).or_else(|_| Err(format!("Invalid modifier: {}", mod_str)))?))
+    } else {
+        Ok(Some(mod_str.parse::<u16>().or_else(|_| Err(format!("Invalid modifier: {}", mod_str)))?))
+    }
 }
 
 fn eval_arg(arg_str: &str) -> Result<Arg, String> {
