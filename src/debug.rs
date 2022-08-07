@@ -5,11 +5,18 @@ use std::io::Write;
 pub enum Command {
     CONTINUE,
     STEP,
-    BREAKPOINT(u16),
-    DELETE(u16),
-    DISASSEMBLE(Option<u16>, u16),
-    EXAMINE(Option<u16>, u16),
+    BREAKPOINT(Arg),
+    DELETE(Arg),
+    DISASSEMBLE(Option<u16>, Arg),
+    EXAMINE(Option<u16>, Arg),
     HELP(String),
+}
+
+#[derive(Clone)]
+pub enum Arg {
+    Numeric(u16),
+    Bool(bool),
+    Str(String),
 }
 
 pub struct DebugGB<'a> {
@@ -91,10 +98,10 @@ impl<'a> DebugGB<'a> {
                 ("c" | "continue", None, 0) => Command::CONTINUE,
                 ("s" | "step", None, 0) => Command::STEP,
                 ("h" | "help", None, 0) => Command::HELP("".to_string()),
-                ("b" | "break", None, 1) => Command::BREAKPOINT(args[0]),
-                ("de" | "delete", None, 1) => Command::DELETE(args[0]),
-                ("d" | "disassemble", _, 1) => Command::DISASSEMBLE(modif, args[0]),
-                ("x" | "examine", _, 1) => Command::EXAMINE(modif, args[0]),
+                ("b" | "break", None, 1) => Command::BREAKPOINT(args[0].clone()),
+                ("de" | "delete", None, 1) => Command::DELETE(args[0].clone()),
+                ("d" | "disassemble", _, 1) => Command::DISASSEMBLE(modif, args[0].clone()),
+                ("x" | "examine", _, 1) => Command::EXAMINE(modif, args[0].clone()),
                 _ => Command::HELP(cmd_name.to_string()),
             };
         }
@@ -113,8 +120,8 @@ impl<'a> DebugGB<'a> {
                 self.gb.fetch_exec();
                 println!("{}", self.gb.cpu);
             }
-            Command::DISASSEMBLE(modif, addr) => self.disasm_cmd(modif, addr),
-            Command::EXAMINE(modif, addr) => {
+            Command::DISASSEMBLE(modif, Arg::Numeric(addr)) => self.disasm_cmd(modif, addr),
+            Command::EXAMINE(modif, Arg::Numeric(addr)) => {
                 let count = match modif {
                     None => 32,
                     Some(n) => n,
@@ -133,7 +140,7 @@ impl<'a> DebugGB<'a> {
                 }
                 println!("{}", s);
             }
-            Command::BREAKPOINT(addr) => match self.breakpoints.binary_search(&addr) {
+            Command::BREAKPOINT(Arg::Numeric(addr)) => match self.breakpoints.binary_search(&addr) {
                 Ok(_) => {
                     println!("Breakpoint already at ${:04X}", addr);
                 }
@@ -142,7 +149,7 @@ impl<'a> DebugGB<'a> {
                     println!("Breakpoint set at ${:04X}", addr);
                 }
             },
-            Command::DELETE(addr) => match self.breakpoints.binary_search(&addr) {
+            Command::DELETE(Arg::Numeric(addr)) => match self.breakpoints.binary_search(&addr) {
                 Ok(pos) => {
                     _ = self.breakpoints.remove(pos);
                     println!("Deleted breakpoint at ${:04X}", addr);
@@ -152,6 +159,7 @@ impl<'a> DebugGB<'a> {
                 }
             },
             Command::HELP(cmd_name) => help_cmd(cmd_name),
+            _ => { println!("Invalid argument")},
         }
     }
 
@@ -181,12 +189,21 @@ fn eval_modif(mod_str: String) -> Result<Option<u16>, String> {
     Ok(Some(mod_str.parse::<u16>().or_else(|_| Err(format!("Invalid modifier: {}", mod_str)))?))
 }
 
-fn eval_arg(arg_str: &str) -> Result<u16, String> {
+fn eval_arg(arg_str: &str) -> Result<Arg, String> {
+    let arg;
     if arg_str.starts_with('$') {
-        Ok(u16::from_str_radix(&arg_str[1..], 16).or_else(|_| Err(format!("Invalid argument: {}", arg_str)))?)
+        arg = match u16::from_str_radix(&arg_str[1..], 16) {
+            Ok(n) => Ok(Arg::Numeric(n)),
+            Err(_e) => Err(format!("Invalid argument: {}", arg_str)),
+        }
     } else {
-        Ok(arg_str.parse::<u16>().or_else(|_| Err(format!("Invalid argument: {}", arg_str)))?)
-    }
+        arg = match arg_str.parse::<u16>() { 
+            Ok(n) => Ok(Arg::Numeric(n)),
+            Err(_e) => Err(format!("Invalid argument: {}", arg_str)),
+        }
+    };
+
+    arg
 }
 
 fn help_cmd(cmd_name: String) {
@@ -210,7 +227,7 @@ fn help_cmd(cmd_name: String) {
         }
         "d" | "disassemble" => {
             println!("disassemble -- disassembles instructions at a specified address");
-            println!("usage: disassemble offset");
+            println!("usage: disassemble[/count] address");
         }
         "x" | "examine" => {
             println!("{}examine{} -- displays a range of values from memory", BOLD, RESET);
