@@ -5,6 +5,7 @@ pub enum Command {
     RUN,
     STEP,
     DISASSEMBLE,
+    EXAMINE(Option<u16>, u16),
     HELP,
 }
 
@@ -77,6 +78,7 @@ impl<'a> DebugGB<'a> {
                 ("s" | "step", None, 0) => Command::STEP,
                 ("h" | "help", None, 0) => Command::HELP,
                 ("d" | "disassemble", None, 0) => Command::DISASSEMBLE,
+                ("x" | "examine", _, 1) => Command::EXAMINE(modif, args[0]),
                 _ => {
                     println!("Invalid command");
                     Command::HELP
@@ -109,6 +111,28 @@ impl<'a> DebugGB<'a> {
                 println!("{}", self.gb.cpu);
             }
             Command::DISASSEMBLE => self.disassemble = !self.disassemble,
+            Command::EXAMINE(modif, addr) => {
+                let count = match modif {
+                    None => 32,
+                    Some(n) => n,
+                };
+                let mut byte_count = 0;
+                let mut s = String::new();
+                for i in addr..(addr + count) {
+                    if byte_count % 16 == 0 {
+                        s += &format!("${:04X}: ", addr + byte_count);
+                    }
+                    s += &format!("{:02X}", self.gb.read(i));
+                    if byte_count % 2 == 1 {
+                        s += " ";
+                    }
+                    if byte_count % 16 == 15 {
+                        s += "\n";
+                    }
+                    byte_count += 1;
+                }
+                println!("{}", s);
+            },
             Command::HELP => {}
         }
 
