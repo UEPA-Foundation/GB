@@ -134,11 +134,11 @@ impl<'a> DebugGB<'a> {
 
         if self.disassemble {
             let (dis, mut offset) = self.disassemble(0);
-            println!("\t> {}", dis);
+            println!(" -> {:04X}: {}", self.gb.cpu.pc, dis);
 
             for _ in 1..=5 {
                 let (dis, len) = self.disassemble(offset as i8);
-                println!("\t  {}", dis);
+                println!("    {:04X}: {}", u16::wrapping_add(self.gb.cpu.pc, offset as u16), dis);
                 offset += len;
             }
         }
