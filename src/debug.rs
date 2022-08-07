@@ -1,6 +1,7 @@
 use crate::gameboy::GameBoy;
 use std::io::Write;
 
+#[derive(Clone)]
 pub enum Command {
     RUN,
     STEP,
@@ -11,6 +12,7 @@ pub enum Command {
 
 pub struct DebugGB<'a> {
     pub gb: &'a mut GameBoy,
+    last_cmd: Command,
     disassemble: bool,
     stdin: std::io::Stdin,
     stdout: std::io::Stdout,
@@ -18,7 +20,7 @@ pub struct DebugGB<'a> {
 
 impl<'a> DebugGB<'a> {
     pub fn init(gb: &'a mut GameBoy) -> Self {
-        Self { gb, disassemble: false, stdin: std::io::stdin(), stdout: std::io::stdout() }
+        Self { gb, last_cmd: Command::HELP, disassemble: false, stdin: std::io::stdin(), stdout: std::io::stdout() }
     }
 
     pub fn prompt(&mut self) -> Command {
@@ -39,6 +41,10 @@ impl<'a> DebugGB<'a> {
                 None => user_input.as_str(),
                 Some(stripped) => stripped,
             };
+
+            if stripped_input.is_empty() {
+                return self.last_cmd.clone();
+            }
 
             let splitted_input: Vec<&str> = stripped_input.split_whitespace().collect();
 
@@ -142,6 +148,8 @@ impl<'a> DebugGB<'a> {
                 offset += len;
             }
         }
+
+        self.last_cmd = cmd;
     }
 
     pub fn disassemble(&self, offset: i8) -> (String, u8) {
