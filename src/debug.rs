@@ -19,7 +19,7 @@ pub struct DebugGB<'a> {
 }
 
 struct DbgConfig {
-    print_disasm: bool,
+    disasm: bool,
 }
 
 impl<'a> DebugGB<'a> {
@@ -30,7 +30,7 @@ impl<'a> DebugGB<'a> {
             breakpoints: vec![],
             stdin: std::io::stdin(),
             stdout: std::io::stdout(),
-            config: DbgConfig { print_disasm: false },
+            config: DbgConfig { disasm: false },
         }
     }
 
@@ -124,7 +124,7 @@ impl<'a> DebugGB<'a> {
                 self.last_cmd = user_input.to_string();
             }
 
-            if self.config.print_disasm {
+            if self.config.disasm {
                 self.disasm_cmd(None, self.gb.cpu.pc);
             }
         }
@@ -188,8 +188,8 @@ impl<'a> DebugGB<'a> {
 
     fn set_cmd(&mut self, config: String, state: bool) {
         match config.as_str() {
-            "disassemble" => self.config.print_disasm = state,
-            _ => println!("You've met with a terrible fate, haven't you?"),
+            "disasm" => self.config.disasm = state,
+            _ => println!("Invalid configuration flag: {}", config),
         }
     }
 
@@ -264,7 +264,7 @@ impl<'a> DebugGB<'a> {
                 println!("{}set{} -- sets a configuration flag", ULINE, RESET);
                 println!("usage: set config on/off\n");
                 println!("Configuration flags:");
-                println!("disassemble -- automatic printing of disassembly at current address");
+                println!("disasm -- automatic printing of disassembly at current address");
                 println!();
             }
             _ => {
@@ -291,6 +291,9 @@ fn eval_arg(arg_str: &str) -> Result<Arg, String> {
             return Ok(Arg::Bool(false));
         }
         "help" | "continue" | "step" | "disassemble" | "break" | "delete" | "examine" | "set" => {
+            return Ok(Arg::Str(arg_str.to_string()));
+        }
+        "disasm" => {
             return Ok(Arg::Str(arg_str.to_string()));
         }
         _ => {}
