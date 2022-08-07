@@ -7,6 +7,7 @@ pub enum Command {
     STEP,
     DISASSEMBLE,
     BREAKPOINT(u16),
+    DELETE(u16),
     EXAMINE(Option<u16>, u16),
     HELP,
 }
@@ -94,6 +95,7 @@ impl<'a> DebugGB<'a> {
                 ("h" | "help", None, 0) => Command::HELP,
                 ("d" | "disassemble", None, 0) => Command::DISASSEMBLE,
                 ("b" | "break", None, 1) => Command::BREAKPOINT(args[0]),
+                ("de" | "delete", None, 1) => Command::DELETE(args[0]),
                 ("x" | "examine", _, 1) => Command::EXAMINE(modif, args[0]),
                 _ => {
                     println!("Invalid command");
@@ -144,6 +146,14 @@ impl<'a> DebugGB<'a> {
                     println!("Breakpoint set at ${:04X}", addr);
                 }
             },
+            Command::DELETE(addr) => match self.breakpoints.binary_search(&addr) {
+                Ok(pos) => {
+                    _ = self.breakpoints.remove(pos);
+                    println!("Deleted breakpoint at ${:04X}", addr);
+                }
+                Err(_) => {
+                    println!("No breakpoint at ${:04X}", addr);
+                }
             },
             Command::HELP => {
                 println!("List of commands:\n");
