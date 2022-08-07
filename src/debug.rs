@@ -136,8 +136,14 @@ impl<'a> DebugGB<'a> {
                 println!("{}", s);
             }
             Command::BREAKPOINT(addr) => match self.breakpoints.binary_search(&addr) {
-                Ok(_) => {}
-                Err(pos) => self.breakpoints.insert(pos, addr),
+                Ok(_) => {
+                    println!("Breakpoint already at ${:04X}", addr);
+                }
+                Err(pos) => {
+                    self.breakpoints.insert(pos, addr);
+                    println!("Breakpoint set at ${:04X}", addr);
+                }
+            },
             },
             Command::HELP => {
                 println!("List of commands:\n");
