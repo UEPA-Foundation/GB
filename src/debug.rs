@@ -18,6 +18,7 @@ pub enum Arg {
     Numeric(u16),
     Bool(bool),
     Str(String),
+    None,
 }
 
 pub struct DebugGB<'a> {
@@ -46,7 +47,7 @@ impl<'a> DebugGB<'a> {
     }
 
     pub fn prompt(&mut self) -> Command {
-        'promptlp: loop {
+        loop {
             print!("> ");
             if !self.stdout.flush().is_ok() {
                 println!();
@@ -70,6 +71,11 @@ impl<'a> DebugGB<'a> {
 
             let splitted_input: Vec<&str> = stripped_input.split_whitespace().collect();
 
+            if splitted_input.len() > 3 {
+                println!("Invalid number of arguments. They range 0-2.");
+                continue;
+            }
+
             let cmd_end = stripped_input.find(' ').unwrap_or(stripped_input.len());
             let slash_pos = std::cmp::min(cmd_end, stripped_input.find('/').unwrap_or(stripped_input.len()));
 
@@ -90,26 +96,36 @@ impl<'a> DebugGB<'a> {
                 }
             }
 
-            let mut args = vec![];
-            for i in 1..(splitted_input.len()) {
-                match eval_arg(splitted_input[i]) {
-                    Ok(arg) => args.push(arg),
+            let mut arg1 = Arg::None;
+            let mut arg2 = Arg::None;
+            if splitted_input.len() > 1 {
+                arg1 = match eval_arg(splitted_input[1]) {
+                    Ok(arg) => arg,
                     Err(e) => {
                         println!("{}", e);
-                        continue 'promptlp;
+                        continue;
+                    }
+                }
+            }
+            if splitted_input.len() > 2 {
+                arg2 = match eval_arg(splitted_input[2]) {
+                    Ok(arg) => arg,
+                    Err(e) => {
+                        println!("{}", e);
+                        continue;
                     }
                 }
             }
 
-            return match (cmd_name, modif, args.len()) {
-                ("c" | "continue", None, 0) => Command::CONTINUE,
-                ("s" | "step", None, 0) => Command::STEP,
-                ("h" | "help", None, 0) => Command::HELP("".to_string()),
-                ("b" | "break", None, 1) => Command::BREAKPOINT(args[0].clone()),
-                ("de" | "delete", None, 1) => Command::DELETE(args[0].clone()),
-                ("d" | "disassemble", _, 1) => Command::DISASSEMBLE(modif, args[0].clone()),
-                ("x" | "examine", _, 1) => Command::EXAMINE(modif, args[0].clone()),
-                ("set", _, 2) => Command::SET(args[0].clone(), args[1].clone()),
+            return match (cmd_name, modif) {
+                ("c" | "continue", None) => Command::CONTINUE,
+                ("s" | "step", None) => Command::STEP,
+                ("h" | "help", None) => Command::HELP("".to_string()),
+                ("b" | "break", None) => Command::BREAKPOINT(arg1.clone()),
+                ("de" | "delete", None) => Command::DELETE(arg1.clone()),
+                ("d" | "disassemble", _) => Command::DISASSEMBLE(modif, arg1.clone()),
+                ("x" | "examine", _) => Command::EXAMINE(modif, arg1.clone()),
+                ("set", _) => Command::SET(arg1.clone(), arg2.clone()),
                 _ => Command::HELP(cmd_name.to_string()),
             };
         }
@@ -126,7 +142,9 @@ impl<'a> DebugGB<'a> {
             Command::DELETE(Arg::Numeric(addr)) => self.delete_cmd(addr),
             Command::HELP(cmd_name) => self.help_cmd(cmd_name),
             Command::SET(Arg::Str(config), Arg::Bool(state)) => self.set_cmd(config, state),
-            _ => { println!("Invalid argument")},
+            _ => {
+                println!("Invalid argument")
+            }
         }
 
         if self.config.print_disasm {
@@ -142,14 +160,13 @@ impl<'a> DebugGB<'a> {
             }
         }
     }
-    
+
     fn step_cmd(&mut self) {
         self.gb.fetch_exec();
         println!("{}", self.gb.cpu);
     }
 
-    fn examine_cmd(&mut self, modif: Option<u16>, addr: u16)
-    {
+    fn examine_cmd(&mut self, modif: Option<u16>, addr: u16) {
         let count = match modif {
             None => 32,
             Some(n) => n,
@@ -180,7 +197,7 @@ impl<'a> DebugGB<'a> {
             }
         }
     }
-    
+
     fn delete_cmd(&mut self, addr: u16) {
         match self.breakpoints.binary_search(&addr) {
             Ok(pos) => {
@@ -196,7 +213,7 @@ impl<'a> DebugGB<'a> {
     fn set_cmd(&mut self, config: String, state: bool) {
         match config.as_str() {
             "disassemble" => self.config.print_disasm = state,
-            _ => println!("You've met with a terrible fate, haven't you?")
+            _ => println!("You've met with a terrible fate, haven't you?"),
         }
     }
 
@@ -265,10 +282,16 @@ fn eval_modif(mod_str: String) -> Result<Option<u16>, String> {
 
 fn eval_arg(arg_str: &str) -> Result<Arg, String> {
     match arg_str {
-        "on" => { return Ok(Arg::Bool(true)); },
-        "off" => { return Ok(Arg::Bool(false)); },
-        "disassemble" => { return Ok(Arg::Str("disassemble".to_string())); },
-        _ => {},
+        "on" => {
+            return Ok(Arg::Bool(true));
+        }
+        "off" => {
+            return Ok(Arg::Bool(false));
+        }
+        "disassemble" => {
+            return Ok(Arg::Str("disassemble".to_string()));
+        }
+        _ => {}
     };
 
     let arg;
@@ -278,7 +301,7 @@ fn eval_arg(arg_str: &str) -> Result<Arg, String> {
             Err(_e) => Err(format!("Invalid argument: {}", arg_str)),
         }
     } else {
-        arg = match arg_str.parse::<u16>() { 
+        arg = match arg_str.parse::<u16>() {
             Ok(n) => Ok(Arg::Numeric(n)),
             Err(_e) => Err(format!("Invalid argument: {}", arg_str)),
         }
