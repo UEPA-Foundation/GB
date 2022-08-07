@@ -5,9 +5,9 @@ use std::io::Write;
 pub enum Command {
     CONTINUE,
     STEP,
-    DISASSEMBLE,
     BREAKPOINT(u16),
     DELETE(u16),
+    DISASSEMBLE(Option<u16>, u16),
     EXAMINE(Option<u16>, u16),
     HELP(String),
 }
@@ -16,14 +16,19 @@ pub struct DebugGB<'a> {
     pub gb: &'a mut GameBoy,
     breakpoints: Vec<u16>,
     last_cmd: Command,
-    disassemble: bool,
     stdin: std::io::Stdin,
     stdout: std::io::Stdout,
 }
 
 impl<'a> DebugGB<'a> {
     pub fn init(gb: &'a mut GameBoy) -> Self {
-        Self { gb, last_cmd: Command::HELP("".to_string()), disassemble: false, stdin: std::io::stdin(), stdout: std::io::stdout() }
+        Self {
+            gb,
+            last_cmd: Command::HELP("".to_string()),
+            breakpoints: vec![],
+            stdin: std::io::stdin(),
+            stdout: std::io::stdout(),
+        }
     }
 
     pub fn prompt(&mut self) -> Command {
@@ -86,9 +91,9 @@ impl<'a> DebugGB<'a> {
                 ("c" | "continue", None, 0) => Command::CONTINUE,
                 ("s" | "step", None, 0) => Command::STEP,
                 ("h" | "help", None, 0) => Command::HELP("".to_string()),
-                ("d" | "disassemble", None, 0) => Command::DISASSEMBLE,
                 ("b" | "break", None, 1) => Command::BREAKPOINT(args[0]),
                 ("de" | "delete", None, 1) => Command::DELETE(args[0]),
+                ("d" | "disassemble", _, 1) => Command::DISASSEMBLE(modif, args[0]),
                 ("x" | "examine", _, 1) => Command::EXAMINE(modif, args[0]),
                 _ => Command::HELP(cmd_name.to_string()),
             };
@@ -108,7 +113,7 @@ impl<'a> DebugGB<'a> {
                 self.gb.fetch_exec();
                 println!("{}", self.gb.cpu);
             }
-            Command::DISASSEMBLE => self.disassemble = !self.disassemble,
+            Command::DISASSEMBLE(modif, addr) => self.disasm_cmd(modif, addr),
             Command::EXAMINE(modif, addr) => {
                 let count = match modif {
                     None => 32,
@@ -148,53 +153,24 @@ impl<'a> DebugGB<'a> {
             },
             Command::HELP(cmd_name) => help_cmd(cmd_name),
         }
-
-        if self.disassemble {
-            let (dis, mut offset) = self.disassemble(0);
-            println!(" -> {:04X}: {}", self.gb.cpu.pc, dis);
-
-            for _ in 1..=5 {
-                let (dis, len) = self.disassemble(offset as i8);
-                println!("    {:04X}: {}", u16::wrapping_add(self.gb.cpu.pc, offset as u16), dis);
-                offset += len;
-            }
-        }
     }
 
-    pub fn disassemble(&self, offset: i8) -> (String, u8) {
-        let opcode = self.gb.read_instr(0 + offset);
-        let mut mnemonic = OPCODES_STR[opcode as usize].to_string();
+    fn disasm_cmd(self: &Self, modif: Option<u16>, addr: u16) {
+        let count = match modif {
+            None => 5,
+            Some(n) => n,
+        };
 
-        if mnemonic == "CB" {
-            let param = self.gb.read_instr(1 + offset);
-            return (OPCODES_CB_STR[param as usize].to_string(), 2);
+        let mut offset = 0;
+        for _ in 1..=count {
+            let (dis, len) = disassemble(
+                self.gb.read(addr),
+                self.gb.read(u16::wrapping_add(addr, 1)),
+                self.gb.read(u16::wrapping_add(addr, 2)),
+            );
+            println!("    {:04X}: {}", u16::wrapping_add(addr, offset as u16), dis);
+            offset += len;
         }
-
-        if mnemonic.contains("U8") {
-            let param = self.gb.read_instr(1 + offset);
-            mnemonic = mnemonic.replace("U8", &format!("${:02X}", param));
-            return (mnemonic, 2);
-        }
-
-        if mnemonic.contains("I8") {
-            let param = self.gb.read_instr(1 + offset);
-            mnemonic = mnemonic.replace("I8", &format!("${:02X}", param));
-            mnemonic += " (";
-            if param as i8 > 0 {
-                mnemonic += "+";
-            }
-            mnemonic += &format!("{})", param as i8);
-            return (mnemonic, 2);
-        }
-
-        if mnemonic.contains("U16") {
-            let param1 = self.gb.read_instr(1 + offset);
-            let param2 = self.gb.read_instr(2 + offset);
-            mnemonic = mnemonic.replace("U16", &format!("${:04X}", (((param2 as u16) << 8) + param1 as u16)));
-            return (mnemonic, 3);
-        }
-
-        (mnemonic, 1)
     }
 }
 
@@ -223,23 +199,23 @@ fn help_cmd(cmd_name: String) {
             println!("{}help{} -- displays this message", BOLD, RESET);
             println!("{}examine{} -- displays a range of values from memory", BOLD, RESET);
             println!();
-        },
+        }
         "r" | "run" => {
             println!("run -- continues execution without stopping");
             println!("usage: run");
-        },
+        }
         "s" | "step" => {
             println!("step -- executes next instruction");
             println!("usage: step");
-        },
+        }
         "d" | "disassemble" => {
             println!("disassemble -- disassembles instructions at a specified address");
             println!("usage: disassemble offset");
-        },
+        }
         "x" | "examine" => {
             println!("{}examine{} -- displays a range of values from memory", BOLD, RESET);
             println!("usage: examine[/count] address");
-        },
+        }
         "h" | "help" => {
             println!("displays help message");
             println!("usage: help");
@@ -248,6 +224,36 @@ fn help_cmd(cmd_name: String) {
             println!("{}", format!("Invalid command: {}", cmd_name));
         }
     }
+}
+
+pub fn disassemble(opcode: u8, param1: u8, param2: u8) -> (String, u8) {
+    let mut mnemonic = OPCODES_STR[opcode as usize].to_string();
+
+    if mnemonic == "CB" {
+        return (OPCODES_CB_STR[param1 as usize].to_string(), 2);
+    }
+
+    if mnemonic.contains("U8") {
+        mnemonic = mnemonic.replace("U8", &format!("${:02X}", param1));
+        return (mnemonic, 2);
+    }
+
+    if mnemonic.contains("U16") {
+        mnemonic = mnemonic.replace("U16", &format!("${:04X}", (((param2 as u16) << 8) + param1 as u16)));
+        return (mnemonic, 3);
+    }
+
+    if mnemonic.contains("I8") {
+        mnemonic = mnemonic.replace("I8", &format!("${:02X}", param1));
+        mnemonic += " (";
+        if param1 as i8 > 0 {
+            mnemonic += "+";
+        }
+        mnemonic += &format!("{})", param1 as i8);
+        return (mnemonic, 2);
+    }
+
+    (mnemonic, 1)
 }
 
 #[rustfmt::skip]
