@@ -110,6 +110,7 @@ impl<'a> DebugGB<'a> {
             match (cmd_name, modif, arg1, arg2) {
                 ("c" | "continue", None, Arg::None, Arg::None) => self.continue_cmd(),
                 ("s" | "step", None, Arg::None, Arg::None) => self.step_cmd(),
+                ("h" | "help", None, Arg::None, Arg::None) => self.help_cmd("".to_string()),
                 ("h" | "help", None, Arg::Str(cmd_name), Arg::None) => self.help_cmd(cmd_name),
                 ("b" | "break", None, Arg::Numeric(addr), Arg::None) => self.breakpoint_cmd(addr),
                 ("de" | "delete", None, Arg::Numeric(addr), Arg::None) => self.delete_cmd(addr),
@@ -216,35 +217,61 @@ impl<'a> DebugGB<'a> {
         match cmd_name.as_str() {
             "" => {
                 println!("List of commands:\n");
-                println!("{}run{} -- continues execution without stopping", BOLD, RESET);
-                println!("{}step{} -- executes next instruction", BOLD, RESET);
-                println!("{}disassemble{} -- disassembles instructions at a specified address", BOLD, RESET);
-                println!("{}help{} -- displays this message", BOLD, RESET);
-                println!("{}examine{} -- displays a range of values from memory", BOLD, RESET);
+                println!("{}h{}elp -- displays this message", ULINE, RESET);
+                println!("{}c{}ontinue -- continues execution without stopping", ULINE, RESET);
+                println!("{}s{}tep -- executes next instruction", ULINE, RESET);
+                println!("e{}x{}amine -- displays a range of values from memory", ULINE, RESET);
+                println!("{}d{}isassemble -- disassembles instructions at a specified address", ULINE, RESET);
+                println!("{}b{}reak -- create a breakpoint at a specified address", ULINE, RESET);
+                println!("{}d{}elete -- deletes a breakpoint at a specified address", ULINE, RESET);
+                println!("{}s{}et -- sets a configuration flag", ULINE, RESET);
                 println!();
             }
-            "r" | "run" => {
-                println!("run -- continues execution without stopping");
-                println!("usage: run");
+            "h" | "help" => {
+                println!("{}h{}elp -- displays list of commands or explanation of a command", ULINE, RESET);
+                println!("usage: help [command]");
+                println!();
+            }
+            "c" | "continue" => {
+                println!("{}c{}ontinue -- continues execution without stopping", ULINE, RESET);
+                println!("usage: continue");
+                println!();
             }
             "s" | "step" => {
-                println!("step -- executes next instruction");
+                println!("{}s{}tep -- executes next instruction", ULINE, RESET);
                 println!("usage: step");
-            }
-            "d" | "disassemble" => {
-                println!("disassemble -- disassembles instructions at a specified address");
-                println!("usage: disassemble[/count] address");
+                println!();
             }
             "x" | "examine" => {
-                println!("{}examine{} -- displays a range of values from memory", BOLD, RESET);
+                println!("e{}x{}amine -- displays a range of values from memory", ULINE, RESET);
                 println!("usage: examine[/count] address");
+                println!();
             }
-            "h" | "help" => {
-                println!("displays help message");
-                println!("usage: help");
+            "d" | "disassemble" => {
+                println!("{}d{}isassemble -- disassembles instructions at a specified address", ULINE, RESET);
+                println!("usage: disassemble[/count] address");
+                println!();
+            }
+            "b" | "break" => {
+                println!("{}b{}reak -- creates a breakpoint at a specified address", ULINE, RESET);
+                println!("usage: break address");
+                println!();
+            }
+            "del" | "delete" => {
+                println!("{}del{}ete -- deletes a breakpoint at a specified address", ULINE, RESET);
+                println!("usage: delete address");
+                println!();
+            }
+            "set" => {
+                println!("{}set{} -- sets a configuration flag", ULINE, RESET);
+                println!("usage: set config on/off\n");
+                println!("Configuration flags:");
+                println!("disassemble -- automatic printing of disassembly at current address");
+                println!();
             }
             _ => {
                 println!("{}", format!("Invalid command: {}", cmd_name));
+                println!();
             }
         }
     }
@@ -265,8 +292,8 @@ fn eval_arg(arg_str: &str) -> Result<Arg, String> {
         "off" => {
             return Ok(Arg::Bool(false));
         }
-        "disassemble" => {
-            return Ok(Arg::Str("disassemble".to_string()));
+        "help" | "continue" | "step" | "disassemble" | "break" | "delete" | "examine" | "set" => {
+            return Ok(Arg::Str(arg_str.to_string()));
         }
         _ => {}
     };
@@ -397,6 +424,7 @@ pub const OPCODES_CB_STR: [&str; 256] = [
 
 const RESET: &str = "\x1b[0m";
 const BOLD: &str = "\x1b[1m";
+const ULINE: &str = "\x1b[4m";
 
 fn clear_terminal() {
     print!("\x1b[2J\x1b[1;1H");
