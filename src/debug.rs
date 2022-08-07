@@ -21,7 +21,7 @@ impl<'a> DebugGB<'a> {
     }
 
     pub fn prompt(&mut self) -> Command {
-        loop {
+        'promptlp: loop {
             print!("> ");
             if !self.stdout.flush().is_ok() {
                 println!();
@@ -39,13 +39,46 @@ impl<'a> DebugGB<'a> {
                 Some(stripped) => stripped,
             };
 
-            let cmd = match stripped_input {
-                "r" | "run" => Command::RUN,
-                "s" | "step" => Command::STEP,
-                "h" | "help" => Command::HELP,
-                "d" | "disassemble" => Command::DISASSEMBLE,
-                inv => {
-                    println!("Unknown command: {}", inv);
+            let splitted_input: Vec<&str> = stripped_input.split_whitespace().collect();
+
+            let cmd_end = stripped_input.find(' ').unwrap_or(stripped_input.len());
+            let slash_pos = std::cmp::min(cmd_end, stripped_input.find('/').unwrap_or(stripped_input.len()));
+
+            let cmd_name = &stripped_input[0..slash_pos];
+            let mod_str = match stripped_input[slash_pos..cmd_end].to_string().strip_prefix("/") {
+                None => stripped_input[slash_pos..cmd_end].to_string(),
+                Some(stripped) => stripped.to_string(),
+            };
+
+            let mut modif = None;
+            if cmd_end != slash_pos {
+                match Self::eval_modif(mod_str) {
+                    Ok(m) => modif = m,
+                    Err(e) => {
+                        println!("{}", e);
+                        continue;
+                    }
+                }
+            }
+            
+            let mut args = vec![];
+            for i in 1..(splitted_input.len()) {
+                match Self::eval_arg(splitted_input[i]) {
+                    Ok(arg) => args.push(arg),
+                    Err(e) => {
+                        println!("{}", e);
+                        continue 'promptlp;
+                    }
+                }
+            }
+
+            let cmd = match (cmd_name, modif, args.len()){
+                ("r" | "run", None, 0) => Command::RUN,
+                ("s" | "step", None, 0) => Command::STEP,
+                ("h" | "help", None, 0) => Command::HELP,
+                ("d" | "disassemble", None, 0) => Command::DISASSEMBLE,
+                _ => {
+                    println!("Invalid command");
                     Command::HELP
                 }
             };
@@ -125,6 +158,23 @@ impl<'a> DebugGB<'a> {
         }
 
         (mnemonic, 1)
+    }
+
+    fn eval_modif(mod_str: String) -> Result<Option<u16>, String> {
+        if mod_str == "" {
+            return Ok(None);
+        }
+        match mod_str.parse::<u16>() {
+            Ok(n) => Ok(Some(n)),
+            Err(_e) => Err(format!("Invalid modifier: {}", mod_str)), 
+        }
+    }
+
+    fn eval_arg(arg_str: &str) -> Result<u16, String> {
+        match arg_str.parse::<u16>() {
+            Ok(n) => Ok(n),
+            Err(_e) => Err(format!("Invalid argument: {}", arg_str)), 
+        }
     }
 }
 
