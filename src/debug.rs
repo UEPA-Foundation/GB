@@ -20,6 +20,7 @@ pub struct DebugGB<'a> {
 
 struct DbgConfig {
     disasm: bool,
+    regs: bool,
 }
 
 impl<'a> DebugGB<'a> {
@@ -30,7 +31,7 @@ impl<'a> DebugGB<'a> {
             breakpoints: vec![],
             stdin: std::io::stdin(),
             stdout: std::io::stdout(),
-            config: DbgConfig { disasm: false },
+            config: DbgConfig { disasm: false, regs: false},
         }
     }
 
@@ -125,6 +126,10 @@ impl<'a> DebugGB<'a> {
                 self.last_cmd = user_input.to_string();
             }
 
+            if self.config.regs {
+                self.regs_cmd();
+            }
+
             if self.config.disasm {
                 self.disasm_cmd(None, self.gb.cpu.pc);
             }
@@ -163,7 +168,8 @@ impl<'a> DebugGB<'a> {
     }
 
     fn regs_cmd(&mut self) {
-        println!("{}", self.gb.cpu)
+        println!("{}", self.gb.cpu);
+        println!();
     }
 
     fn breakpoint_cmd(&mut self, addr: u16) {
@@ -193,6 +199,7 @@ impl<'a> DebugGB<'a> {
     fn set_cmd(&mut self, config: String, state: bool) {
         match config.as_str() {
             "disasm" => self.config.disasm = state,
+            "regs" => self.config.regs = state,
             _ => println!("Invalid configuration flag: {}", config),
         }
     }
@@ -275,6 +282,7 @@ impl<'a> DebugGB<'a> {
                 println!("usage: set config on/off\n");
                 println!("Configuration flags:");
                 println!("disasm -- automatic printing of disassembly at current address");
+                println!("regs -- automatic printing of cpu regs");
                 println!();
             }
             _ => {
@@ -307,7 +315,7 @@ fn eval_arg(arg_str: &str) -> Result<Arg, String> {
         "help" | "continue" | "step" | "disassemble" | "break" | "delete" | "examine" | "registers" | "set" => {
             return Ok(Arg::Str(arg_str.to_string()));
         }
-        "disasm" => {
+        "disasm" | "regs" => {
             return Ok(Arg::Str(arg_str.to_string()));
         }
         _ => {}
