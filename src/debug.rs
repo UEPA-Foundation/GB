@@ -204,26 +204,24 @@ impl<'a> DebugGB<'a> {
         }
     }
 
-    fn disasm_cmd(&mut self, modif: Option<u16>, addr: u16) {
+    fn disasm_cmd(&mut self, modif: Option<u16>, mut addr: u16) {
         let count = match modif {
             None => 5,
             Some(n) => n,
         };
 
-        let mut offset = 0;
         for _ in 1..=count {
             let (dis, len) = disassemble(
                 self.gb.read(addr),
                 self.gb.read(u16::wrapping_add(addr, 1)),
                 self.gb.read(u16::wrapping_add(addr, 2)),
             );
-            let curr_addr = u16::wrapping_add(addr, offset as u16);
             let mut padding = "    ";
-            if curr_addr == self.gb.cpu.pc {
+            if addr == self.gb.cpu.pc {
                 padding = " -> ";
             }
-            println!("{}{:04X}: {}", padding, curr_addr, dis);
-            offset = u16::wrapping_add(offset, len as u16);
+            println!("{}{:04X}: {}", padding, addr, dis);
+            addr = u16::wrapping_add(addr, len as u16);
         }
     }
 
