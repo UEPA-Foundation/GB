@@ -189,7 +189,11 @@ fn eval_modif(mod_str: String) -> Result<Option<u16>, String> {
 }
 
 fn eval_arg(arg_str: &str) -> Result<u16, String> {
-    Ok(arg_str.parse::<u16>().or_else(|_| Err(format!("Invalid argument: {}", arg_str)))?)
+    if arg_str.starts_with('$') {
+        Ok(u16::from_str_radix(&arg_str[1..], 16).or_else(|_| Err(format!("Invalid argument: {}", arg_str)))?)
+    } else {
+        Ok(arg_str.parse::<u16>().or_else(|_| Err(format!("Invalid argument: {}", arg_str)))?)
+    }
 }
 
 #[rustfmt::skip]
