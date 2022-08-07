@@ -90,7 +90,7 @@ impl<'a> DebugGB<'a> {
             let mut arg1 = Arg::None;
             let mut arg2 = Arg::None;
             if splitted_input.len() > 1 {
-                arg1 = match eval_arg(splitted_input[1]) {
+                arg1 = match self.eval_arg(splitted_input[1]) {
                     Ok(arg) => arg,
                     Err(e) => {
                         println!("{}", e);
@@ -99,7 +99,7 @@ impl<'a> DebugGB<'a> {
                 }
             }
             if splitted_input.len() > 2 {
-                arg2 = match eval_arg(splitted_input[2]) {
+                arg2 = match self.eval_arg(splitted_input[2]) {
                     Ok(arg) => arg,
                     Err(e) => {
                         println!("{}", e);
@@ -291,6 +291,45 @@ impl<'a> DebugGB<'a> {
             }
         }
     }
+
+    fn eval_arg(&self, arg_str: &str) -> Result<Arg, String> {
+        match arg_str {
+            "on" => {
+                return Ok(Arg::Bool(true));
+            }
+            "off" => {
+                return Ok(Arg::Bool(false));
+            }
+            "help" | "continue" | "step" | "disassemble" | "break" | "delete" | "examine" | "registers" | "set" => {
+                return Ok(Arg::Str(arg_str.to_string()));
+            }
+            "disasm" | "regs" => {
+                return Ok(Arg::Str(arg_str.to_string()));
+            }
+            "af" => return Ok(Arg::Numeric(self.gb.cpu.rd_af())),
+            "bc" => return Ok(Arg::Numeric(self.gb.cpu.rd_bc())),
+            "de" => return Ok(Arg::Numeric(self.gb.cpu.rd_de())),
+            "hl" => return Ok(Arg::Numeric(self.gb.cpu.rd_hl())),
+            "pc" => return Ok(Arg::Numeric(self.gb.cpu.pc)),
+            "sp" => return Ok(Arg::Numeric(self.gb.cpu.sp)),
+            _ => {}
+        };
+
+        let arg;
+        if arg_str.starts_with('$') {
+            arg = match u16::from_str_radix(&arg_str[1..], 16) {
+                Ok(n) => Ok(Arg::Numeric(n)),
+                Err(_e) => Err(format!("Invalid argument: {}", arg_str)),
+            }
+        } else {
+            arg = match arg_str.parse::<u16>() {
+                Ok(n) => Ok(Arg::Numeric(n)),
+                Err(_e) => Err(format!("Invalid argument: {}", arg_str)),
+            }
+        };
+
+        arg
+    }
 }
 
 fn eval_modif(mod_str: String) -> Result<Option<u16>, String> {
@@ -302,39 +341,6 @@ fn eval_modif(mod_str: String) -> Result<Option<u16>, String> {
     } else {
         Ok(Some(mod_str.parse::<u16>().or_else(|_| Err(format!("Invalid modifier: {}", mod_str)))?))
     }
-}
-
-fn eval_arg(arg_str: &str) -> Result<Arg, String> {
-    match arg_str {
-        "on" => {
-            return Ok(Arg::Bool(true));
-        }
-        "off" => {
-            return Ok(Arg::Bool(false));
-        }
-        "help" | "continue" | "step" | "disassemble" | "break" | "delete" | "examine" | "registers" | "set" => {
-            return Ok(Arg::Str(arg_str.to_string()));
-        }
-        "disasm" | "regs" => {
-            return Ok(Arg::Str(arg_str.to_string()));
-        }
-        _ => {}
-    };
-
-    let arg;
-    if arg_str.starts_with('$') {
-        arg = match u16::from_str_radix(&arg_str[1..], 16) {
-            Ok(n) => Ok(Arg::Numeric(n)),
-            Err(_e) => Err(format!("Invalid argument: {}", arg_str)),
-        }
-    } else {
-        arg = match arg_str.parse::<u16>() {
-            Ok(n) => Ok(Arg::Numeric(n)),
-            Err(_e) => Err(format!("Invalid argument: {}", arg_str)),
-        }
-    };
-
-    arg
 }
 
 pub fn disassemble(opcode: u8, param1: u8, param2: u8) -> (String, u8) {
