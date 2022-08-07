@@ -6,12 +6,14 @@ pub enum Command {
     CONTINUE,
     STEP,
     DISASSEMBLE,
+    BREAKPOINT(u16),
     EXAMINE(Option<u16>, u16),
     HELP,
 }
 
 pub struct DebugGB<'a> {
     pub gb: &'a mut GameBoy,
+    breakpoints: Vec<u16>,
     last_cmd: Command,
     disassemble: bool,
     stdin: std::io::Stdin,
@@ -20,7 +22,14 @@ pub struct DebugGB<'a> {
 
 impl<'a> DebugGB<'a> {
     pub fn init(gb: &'a mut GameBoy) -> Self {
-        Self { gb, last_cmd: Command::HELP, disassemble: false, stdin: std::io::stdin(), stdout: std::io::stdout() }
+        Self {
+            gb,
+            breakpoints: vec![],
+            last_cmd: Command::HELP,
+            disassemble: false,
+            stdin: std::io::stdin(),
+            stdout: std::io::stdout(),
+        }
     }
 
     pub fn prompt(&mut self) -> Command {
@@ -84,6 +93,7 @@ impl<'a> DebugGB<'a> {
                 ("s" | "step", None, 0) => Command::STEP,
                 ("h" | "help", None, 0) => Command::HELP,
                 ("d" | "disassemble", None, 0) => Command::DISASSEMBLE,
+                ("b" | "break", None, 1) => Command::BREAKPOINT(args[0]),
                 ("x" | "examine", _, 1) => Command::EXAMINE(modif, args[0]),
                 _ => {
                     println!("Invalid command");
@@ -97,6 +107,9 @@ impl<'a> DebugGB<'a> {
         match cmd {
             Command::CONTINUE => loop {
                 self.gb.fetch_exec();
+                if self.breakpoints.binary_search(&self.gb.cpu.pc).is_ok() {
+                    break;
+                }
             },
             Command::STEP => {
                 self.gb.fetch_exec();
@@ -114,10 +127,7 @@ impl<'a> DebugGB<'a> {
                     if byte_count % 16 == 0 {
                         s += &format!("${:04X}: ", addr + byte_count);
                     }
-                    s += &format!("{:02X}", self.gb.read(i));
-                    if byte_count % 2 == 1 {
-                        s += " ";
-                    }
+                    s += &format!("{:02X} ", self.gb.read(i));
                     if byte_count % 16 == 15 {
                         s += "\n";
                     }
@@ -125,6 +135,10 @@ impl<'a> DebugGB<'a> {
                 }
                 println!("{}", s);
             }
+            Command::BREAKPOINT(addr) => match self.breakpoints.binary_search(&addr) {
+                Ok(_) => {}
+                Err(pos) => self.breakpoints.insert(pos, addr),
+            },
             Command::HELP => {
                 println!("List of commands:\n");
 
