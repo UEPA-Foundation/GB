@@ -46,7 +46,7 @@ impl<'a> DebugGB<'a> {
         }
     }
 
-    pub fn prompt(&mut self) -> Command {
+    pub fn prompt(&mut self) {
         loop {
             print!("> ");
             if !self.stdout.flush().is_ok() {
@@ -66,7 +66,7 @@ impl<'a> DebugGB<'a> {
             };
 
             if stripped_input.is_empty() {
-                return self.last_cmd.clone();
+                self.last_cmd.clone();
             }
 
             let splitted_input: Vec<&str> = stripped_input.split_whitespace().collect();
@@ -117,38 +117,21 @@ impl<'a> DebugGB<'a> {
                 }
             }
 
-            return match (cmd_name, modif) {
-                ("c" | "continue", None) => Command::CONTINUE,
-                ("s" | "step", None) => Command::STEP,
-                ("h" | "help", None) => Command::HELP("".to_string()),
-                ("b" | "break", None) => Command::BREAKPOINT(arg1.clone()),
-                ("de" | "delete", None) => Command::DELETE(arg1.clone()),
-                ("d" | "disassemble", _) => Command::DISASSEMBLE(modif, arg1.clone()),
-                ("x" | "examine", _) => Command::EXAMINE(modif, arg1.clone()),
-                ("set", _) => Command::SET(arg1.clone(), arg2.clone()),
-                _ => Command::HELP(cmd_name.to_string()),
+            match (cmd_name, modif, arg1, arg2) {
+                ("c" | "continue", None, Arg::None, Arg::None) => self.continue_cmd(),
+                ("s" | "step", None, Arg::None, Arg::None) => self.step_cmd(),
+                ("h" | "help", None, Arg::Str(cmd_name), Arg::None) => self.help_cmd(cmd_name),
+                ("b" | "break", None, Arg::Numeric(addr), Arg::None) => self.breakpoint_cmd(addr),
+                ("de" | "delete", None, Arg::Numeric(addr), Arg::None) => self.delete_cmd(addr),
+                ("d" | "disassemble", _, Arg::Numeric(addr), Arg::None) => self.disasm_cmd(modif, addr),
+                ("x" | "examine", _, Arg::Numeric(addr), Arg::None) => self.examine_cmd(modif, addr),
+                ("set", _, Arg::Str(config), Arg::Bool(state)) => self.set_cmd(config, state),
+                _ => self.help_cmd(cmd_name.to_string()),
             };
-        }
-    }
 
-    pub fn exec(&mut self, cmd: Command) {
-        self.last_cmd = cmd.clone();
-        match cmd {
-            Command::CONTINUE => self.continue_cmd(),
-            Command::STEP => self.step_cmd(),
-            Command::DISASSEMBLE(modif, Arg::Numeric(addr)) => self.disasm_cmd(modif, addr),
-            Command::EXAMINE(modif, Arg::Numeric(addr)) => self.examine_cmd(modif, addr),
-            Command::BREAKPOINT(Arg::Numeric(addr)) => self.breakpoint_cmd(addr),
-            Command::DELETE(Arg::Numeric(addr)) => self.delete_cmd(addr),
-            Command::HELP(cmd_name) => self.help_cmd(cmd_name),
-            Command::SET(Arg::Str(config), Arg::Bool(state)) => self.set_cmd(config, state),
-            _ => {
-                println!("Invalid argument")
+            if self.config.print_disasm {
+                self.disasm_cmd(None, self.gb.cpu.pc);
             }
-        }
-
-        if self.config.print_disasm {
-            self.disasm_cmd(None, self.gb.cpu.pc);
         }
     }
 
