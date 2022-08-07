@@ -54,10 +54,11 @@ impl<'a> DebugGB<'a> {
                 Some(stripped) => stripped,
             };
 
-            let mut empty_input = false;
             if stripped_input.is_empty() {
                 stripped_input = self.last_cmd.as_str();
-                empty_input = true;
+            }
+            else {
+                self.last_cmd = stripped_input.to_string();
             }
 
             let splitted_input: Vec<&str> = stripped_input.split_whitespace().collect();
@@ -122,10 +123,6 @@ impl<'a> DebugGB<'a> {
                 ("cl" | "clear", None, Arg::None, Arg::None) => self.clear_cmd(),
                 _ => self.help_cmd(cmd_name.to_string()),
             };
-
-            if !empty_input {
-                self.last_cmd = user_input.to_string();
-            }
 
             if self.config.regs {
                 self.regs_cmd();
