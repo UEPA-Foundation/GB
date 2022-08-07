@@ -209,7 +209,7 @@ impl<'a> DebugGB<'a> {
                 self.gb.read(u16::wrapping_add(addr, 2)),
             );
             println!("    {:04X}: {}", u16::wrapping_add(addr, offset as u16), dis);
-            offset += len;
+            offset = u16::wrapping_add(offset, len as u16);
         }
     }
 
