@@ -9,7 +9,7 @@ pub enum Command {
     BREAKPOINT(u16),
     DELETE(u16),
     EXAMINE(Option<u16>, u16),
-    HELP,
+    HELP(String),
 }
 
 pub struct DebugGB<'a> {
@@ -23,14 +23,7 @@ pub struct DebugGB<'a> {
 
 impl<'a> DebugGB<'a> {
     pub fn init(gb: &'a mut GameBoy) -> Self {
-        Self {
-            gb,
-            breakpoints: vec![],
-            last_cmd: Command::HELP,
-            disassemble: false,
-            stdin: std::io::stdin(),
-            stdout: std::io::stdout(),
-        }
+        Self { gb, last_cmd: Command::HELP("".to_string()), disassemble: false, stdin: std::io::stdin(), stdout: std::io::stdout() }
     }
 
     pub fn prompt(&mut self) -> Command {
@@ -92,20 +85,18 @@ impl<'a> DebugGB<'a> {
             return match (cmd_name, modif, args.len()) {
                 ("c" | "continue", None, 0) => Command::CONTINUE,
                 ("s" | "step", None, 0) => Command::STEP,
-                ("h" | "help", None, 0) => Command::HELP,
+                ("h" | "help", None, 0) => Command::HELP("".to_string()),
                 ("d" | "disassemble", None, 0) => Command::DISASSEMBLE,
                 ("b" | "break", None, 1) => Command::BREAKPOINT(args[0]),
                 ("de" | "delete", None, 1) => Command::DELETE(args[0]),
                 ("x" | "examine", _, 1) => Command::EXAMINE(modif, args[0]),
-                _ => {
-                    println!("Invalid command");
-                    Command::HELP
-                }
+                _ => Command::HELP(cmd_name.to_string()),
             };
         }
     }
 
     pub fn exec(&mut self, cmd: Command) {
+        self.last_cmd = cmd.clone();
         match cmd {
             Command::CONTINUE => loop {
                 self.gb.fetch_exec();
@@ -155,17 +146,7 @@ impl<'a> DebugGB<'a> {
                     println!("No breakpoint at ${:04X}", addr);
                 }
             },
-            Command::HELP => {
-                println!("List of commands:\n");
-
-                // TODO: actually describe what each command does
-                println!("{}run{}", BOLD, RESET);
-                println!("{}step{}", BOLD, RESET);
-                println!("{}disassemble{}", BOLD, RESET);
-                println!("{}help{} -- prints the list of commands", BOLD, RESET);
-                println!();
-                return;
-            }
+            Command::HELP(cmd_name) => help_cmd(cmd_name),
         }
 
         if self.disassemble {
@@ -178,8 +159,6 @@ impl<'a> DebugGB<'a> {
                 offset += len;
             }
         }
-
-        self.last_cmd = cmd;
     }
 
     pub fn disassemble(&self, offset: i8) -> (String, u8) {
@@ -231,6 +210,43 @@ fn eval_arg(arg_str: &str) -> Result<u16, String> {
         Ok(u16::from_str_radix(&arg_str[1..], 16).or_else(|_| Err(format!("Invalid argument: {}", arg_str)))?)
     } else {
         Ok(arg_str.parse::<u16>().or_else(|_| Err(format!("Invalid argument: {}", arg_str)))?)
+    }
+}
+
+fn help_cmd(cmd_name: String) {
+    match cmd_name.as_str() {
+        "" => {
+            println!("List of commands:\n");
+            println!("{}run{} -- continues execution without stopping", BOLD, RESET);
+            println!("{}step{} -- executes next instruction", BOLD, RESET);
+            println!("{}disassemble{} -- disassembles instructions at a specified address", BOLD, RESET);
+            println!("{}help{} -- displays this message", BOLD, RESET);
+            println!("{}examine{} -- displays a range of values from memory", BOLD, RESET);
+            println!();
+        },
+        "r" | "run" => {
+            println!("run -- continues execution without stopping");
+            println!("usage: run");
+        },
+        "s" | "step" => {
+            println!("step -- executes next instruction");
+            println!("usage: step");
+        },
+        "d" | "disassemble" => {
+            println!("disassemble -- disassembles instructions at a specified address");
+            println!("usage: disassemble offset");
+        },
+        "x" | "examine" => {
+            println!("{}examine{} -- displays a range of values from memory", BOLD, RESET);
+            println!("usage: examine[/count] address");
+        },
+        "h" | "help" => {
+            println!("displays help message");
+            println!("usage: help");
+        }
+        _ => {
+            println!("{}", format!("Invalid command: {}", cmd_name));
+        }
     }
 }
 
