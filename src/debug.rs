@@ -141,7 +141,6 @@ impl<'a> DebugGB<'a> {
 
     fn step_cmd(&mut self) {
         self.gb.fetch_exec();
-        println!("{}", self.gb.cpu);
     }
 
     fn examine_cmd(&mut self, modif: Option<u16>, addr: u16) {
