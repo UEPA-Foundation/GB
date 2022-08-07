@@ -10,6 +10,7 @@ pub enum Command {
     DISASSEMBLE(Option<u16>, Arg),
     EXAMINE(Option<u16>, Arg),
     HELP(String),
+    SET(Arg, Arg),
 }
 
 #[derive(Clone)]
@@ -25,6 +26,11 @@ pub struct DebugGB<'a> {
     last_cmd: Command,
     stdin: std::io::Stdin,
     stdout: std::io::Stdout,
+    config: DbgConfig,
+}
+
+struct DbgConfig {
+    print_disasm: bool,
 }
 
 impl<'a> DebugGB<'a> {
@@ -35,6 +41,7 @@ impl<'a> DebugGB<'a> {
             breakpoints: vec![],
             stdin: std::io::stdin(),
             stdout: std::io::stdout(),
+            config: DbgConfig { print_disasm: false },
         }
     }
 
@@ -102,6 +109,7 @@ impl<'a> DebugGB<'a> {
                 ("de" | "delete", None, 1) => Command::DELETE(args[0].clone()),
                 ("d" | "disassemble", _, 1) => Command::DISASSEMBLE(modif, args[0].clone()),
                 ("x" | "examine", _, 1) => Command::EXAMINE(modif, args[0].clone()),
+                ("set", _, 2) => Command::SET(args[0].clone(), args[1].clone()),
                 _ => Command::HELP(cmd_name.to_string()),
             };
         }
@@ -159,7 +167,17 @@ impl<'a> DebugGB<'a> {
                 }
             },
             Command::HELP(cmd_name) => help_cmd(cmd_name),
+            Command::SET(Arg::Str(config), Arg::Bool(state)) => {
+                match config.as_str() {
+                    "disassemble" => self.config.print_disasm = state,
+                    _ => println!("You've met with a terrible fate, haven't you?")
+                }
+            },
             _ => { println!("Invalid argument")},
+        }
+
+        if self.config.print_disasm {
+            self.disasm_cmd(None, self.gb.cpu.pc);
         }
     }
 
@@ -190,6 +208,13 @@ fn eval_modif(mod_str: String) -> Result<Option<u16>, String> {
 }
 
 fn eval_arg(arg_str: &str) -> Result<Arg, String> {
+    match arg_str {
+        "on" => { return Ok(Arg::Bool(true)); },
+        "off" => { return Ok(Arg::Bool(false)); },
+        "disassemble" => { return Ok(Arg::Str("disassemble".to_string())); },
+        _ => {},
+    };
+
     let arg;
     if arg_str.starts_with('$') {
         arg = match u16::from_str_radix(&arg_str[1..], 16) {
