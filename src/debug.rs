@@ -2,18 +2,6 @@ use crate::gameboy::GameBoy;
 use std::io::Write;
 
 #[derive(Clone)]
-pub enum Command {
-    CONTINUE,
-    STEP,
-    BREAKPOINT(Arg),
-    DELETE(Arg),
-    DISASSEMBLE(Option<u16>, Arg),
-    EXAMINE(Option<u16>, Arg),
-    HELP(String),
-    SET(Arg, Arg),
-}
-
-#[derive(Clone)]
 pub enum Arg {
     Numeric(u16),
     Bool(bool),
@@ -24,7 +12,7 @@ pub enum Arg {
 pub struct DebugGB<'a> {
     pub gb: &'a mut GameBoy,
     breakpoints: Vec<u16>,
-    last_cmd: Command,
+    last_cmd: String,
     stdin: std::io::Stdin,
     stdout: std::io::Stdout,
     config: DbgConfig,
@@ -38,7 +26,7 @@ impl<'a> DebugGB<'a> {
     pub fn init(gb: &'a mut GameBoy) -> Self {
         Self {
             gb,
-            last_cmd: Command::HELP("".to_string()),
+            last_cmd: "help".to_string(),
             breakpoints: vec![],
             stdin: std::io::stdin(),
             stdout: std::io::stdout(),
@@ -60,13 +48,15 @@ impl<'a> DebugGB<'a> {
                 continue;
             }
 
-            let stripped_input = match user_input.strip_suffix("\n") {
+            let mut stripped_input = match user_input.strip_suffix("\n") {
                 None => user_input.as_str(),
                 Some(stripped) => stripped,
             };
 
+            let mut empty_input = false;
             if stripped_input.is_empty() {
-                self.last_cmd.clone();
+                stripped_input = self.last_cmd.as_str();
+                empty_input = true;
             }
 
             let splitted_input: Vec<&str> = stripped_input.split_whitespace().collect();
@@ -128,6 +118,10 @@ impl<'a> DebugGB<'a> {
                 ("set", _, Arg::Str(config), Arg::Bool(state)) => self.set_cmd(config, state),
                 _ => self.help_cmd(cmd_name.to_string()),
             };
+
+            if !empty_input {
+                self.last_cmd = user_input.to_string();
+            }
 
             if self.config.print_disasm {
                 self.disasm_cmd(None, self.gb.cpu.pc);
