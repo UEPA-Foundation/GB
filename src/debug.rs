@@ -3,7 +3,7 @@ use std::io::Write;
 
 #[derive(Clone)]
 pub enum Command {
-    RUN,
+    CONTINUE,
     STEP,
     DISASSEMBLE,
     EXAMINE(Option<u16>, u16),
@@ -80,7 +80,7 @@ impl<'a> DebugGB<'a> {
             }
 
             return match (cmd_name, modif, args.len()) {
-                ("r" | "run", None, 0) => Command::RUN,
+                ("c" | "continue", None, 0) => Command::CONTINUE,
                 ("s" | "step", None, 0) => Command::STEP,
                 ("h" | "help", None, 0) => Command::HELP,
                 ("d" | "disassemble", None, 0) => Command::DISASSEMBLE,
@@ -95,7 +95,7 @@ impl<'a> DebugGB<'a> {
 
     pub fn exec(&mut self, cmd: Command) {
         match cmd {
-            Command::RUN => loop {
+            Command::CONTINUE => loop {
                 self.gb.fetch_exec();
             },
             Command::STEP => {
