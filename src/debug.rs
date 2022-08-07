@@ -116,6 +116,7 @@ impl<'a> DebugGB<'a> {
                 ("de" | "delete", None, Arg::Numeric(addr), Arg::None) => self.delete_cmd(addr),
                 ("d" | "disassemble", _, Arg::Numeric(addr), Arg::None) => self.disasm_cmd(modif, addr),
                 ("x" | "examine", _, Arg::Numeric(addr), Arg::None) => self.examine_cmd(modif, addr),
+                ("r" | "regs" | "registers", None, Arg::None, Arg::None) => self.regs_cmd(),
                 ("set", _, Arg::Str(config), Arg::Bool(state)) => self.set_cmd(config, state),
                 _ => self.help_cmd(cmd_name.to_string()),
             };
@@ -159,6 +160,10 @@ impl<'a> DebugGB<'a> {
             }
         }
         println!("{}", s);
+    }
+
+    fn regs_cmd(&mut self) {
+        println!("{}", self.gb.cpu)
     }
 
     fn breakpoint_cmd(&mut self, addr: u16) {
@@ -218,6 +223,7 @@ impl<'a> DebugGB<'a> {
                 println!("{}c{}ontinue -- continues execution without stopping", ULINE, RESET);
                 println!("{}s{}tep -- executes next instruction", ULINE, RESET);
                 println!("e{}x{}amine -- displays a range of values from memory", ULINE, RESET);
+                println!("{}r{}egisters -- displays value of cpu registers", ULINE, RESET);
                 println!("{}d{}isassemble -- disassembles instructions at a specified address", ULINE, RESET);
                 println!("{}b{}reak -- create a breakpoint at a specified address", ULINE, RESET);
                 println!("{}d{}elete -- deletes a breakpoint at a specified address", ULINE, RESET);
@@ -242,6 +248,11 @@ impl<'a> DebugGB<'a> {
             "x" | "examine" => {
                 println!("e{}x{}amine -- displays a range of values from memory", ULINE, RESET);
                 println!("usage: examine[/count] address");
+                println!();
+            }
+            "r" | "regs" | "registers" => {
+                println!("{}r{}egisters -- displays value of cpu registers", ULINE, RESET);
+                println!("usage: registers");
                 println!();
             }
             "d" | "disassemble" => {
@@ -293,7 +304,7 @@ fn eval_arg(arg_str: &str) -> Result<Arg, String> {
         "off" => {
             return Ok(Arg::Bool(false));
         }
-        "help" | "continue" | "step" | "disassemble" | "break" | "delete" | "examine" | "set" => {
+        "help" | "continue" | "step" | "disassemble" | "break" | "delete" | "examine" | "registers" | "set" => {
             return Ok(Arg::Str(arg_str.to_string()));
         }
         "disasm" => {
