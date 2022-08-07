@@ -149,17 +149,15 @@ impl<'a> DebugGB<'a> {
             None => 32,
             Some(n) => n,
         };
-        let mut byte_count = 0;
         let mut s = String::new();
-        for i in addr..(addr + count) {
-            if byte_count % 16 == 0 {
-                s += &format!("${:04X}: ", addr + byte_count);
+        for i in 0..=count {
+            if i % 16 == 0 {
+                s += &format!("${:04X}: ", u16::wrapping_add(addr, i));
             }
-            s += &format!("{:02X} ", self.gb.read(i));
-            if byte_count % 16 == 15 {
+            s += &format!("{:02X} ", self.gb.read(u16::wrapping_add(addr, i)));
+            if i % 16 == 15 {
                 s += "\n";
             }
-            byte_count += 1;
         }
         println!("{}", s);
     }
