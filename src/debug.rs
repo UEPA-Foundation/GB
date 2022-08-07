@@ -73,7 +73,7 @@ impl<'a> DebugGB<'a> {
                 }
             }
 
-            let cmd = match (cmd_name, modif, args.len()){
+            return match (cmd_name, modif, args.len()) {
                 ("r" | "run", None, 0) => Command::RUN,
                 ("s" | "step", None, 0) => Command::STEP,
                 ("h" | "help", None, 0) => Command::HELP,
@@ -84,20 +84,6 @@ impl<'a> DebugGB<'a> {
                     Command::HELP
                 }
             };
-
-            match cmd {
-                Command::HELP => {
-                    println!("List of commands:\n");
-
-                    // TODO: actually describe what each command does
-                    println!("{}run{}", BOLD, RESET);
-                    println!("{}step{}", BOLD, RESET);
-                    println!("{}disassemble{}", BOLD, RESET);
-                    println!("{}help{} -- prints the list of commands", BOLD, RESET);
-                    println!();
-                }
-                _ => return cmd,
-            }
         }
     }
 
@@ -132,8 +118,18 @@ impl<'a> DebugGB<'a> {
                     byte_count += 1;
                 }
                 println!("{}", s);
-            },
-            Command::HELP => {}
+            }
+            Command::HELP => {
+                println!("List of commands:\n");
+
+                // TODO: actually describe what each command does
+                println!("{}run{}", BOLD, RESET);
+                println!("{}step{}", BOLD, RESET);
+                println!("{}disassemble{}", BOLD, RESET);
+                println!("{}help{} -- prints the list of commands", BOLD, RESET);
+                println!();
+                return;
+            }
         }
 
         if self.disassemble {
