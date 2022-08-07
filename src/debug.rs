@@ -118,66 +118,85 @@ impl<'a> DebugGB<'a> {
     pub fn exec(&mut self, cmd: Command) {
         self.last_cmd = cmd.clone();
         match cmd {
-            Command::CONTINUE => loop {
-                self.gb.fetch_exec();
-                if self.breakpoints.binary_search(&self.gb.cpu.pc).is_ok() {
-                    break;
-                }
-            },
-            Command::STEP => {
-                self.gb.fetch_exec();
-                println!("{}", self.gb.cpu);
-            }
+            Command::CONTINUE => self.continue_cmd(),
+            Command::STEP => self.step_cmd(),
             Command::DISASSEMBLE(modif, Arg::Numeric(addr)) => self.disasm_cmd(modif, addr),
-            Command::EXAMINE(modif, Arg::Numeric(addr)) => {
-                let count = match modif {
-                    None => 32,
-                    Some(n) => n,
-                };
-                let mut byte_count = 0;
-                let mut s = String::new();
-                for i in addr..(addr + count) {
-                    if byte_count % 16 == 0 {
-                        s += &format!("${:04X}: ", addr + byte_count);
-                    }
-                    s += &format!("{:02X} ", self.gb.read(i));
-                    if byte_count % 16 == 15 {
-                        s += "\n";
-                    }
-                    byte_count += 1;
-                }
-                println!("{}", s);
-            }
-            Command::BREAKPOINT(Arg::Numeric(addr)) => match self.breakpoints.binary_search(&addr) {
-                Ok(_) => {
-                    println!("Breakpoint already at ${:04X}", addr);
-                }
-                Err(pos) => {
-                    self.breakpoints.insert(pos, addr);
-                    println!("Breakpoint set at ${:04X}", addr);
-                }
-            },
-            Command::DELETE(Arg::Numeric(addr)) => match self.breakpoints.binary_search(&addr) {
-                Ok(pos) => {
-                    _ = self.breakpoints.remove(pos);
-                    println!("Deleted breakpoint at ${:04X}", addr);
-                }
-                Err(_) => {
-                    println!("No breakpoint at ${:04X}", addr);
-                }
-            },
-            Command::HELP(cmd_name) => help_cmd(cmd_name),
-            Command::SET(Arg::Str(config), Arg::Bool(state)) => {
-                match config.as_str() {
-                    "disassemble" => self.config.print_disasm = state,
-                    _ => println!("You've met with a terrible fate, haven't you?")
-                }
-            },
+            Command::EXAMINE(modif, Arg::Numeric(addr)) => self.examine_cmd(modif, addr),
+            Command::BREAKPOINT(Arg::Numeric(addr)) => self.breakpoint_cmd(addr),
+            Command::DELETE(Arg::Numeric(addr)) => self.delete_cmd(addr),
+            Command::HELP(cmd_name) => self.help_cmd(cmd_name),
+            Command::SET(Arg::Str(config), Arg::Bool(state)) => self.set_cmd(config, state),
             _ => { println!("Invalid argument")},
         }
 
         if self.config.print_disasm {
             self.disasm_cmd(None, self.gb.cpu.pc);
+        }
+    }
+
+    fn continue_cmd(&mut self) {
+        loop {
+            self.gb.fetch_exec();
+            if self.breakpoints.binary_search(&self.gb.cpu.pc).is_ok() {
+                break;
+            }
+        }
+    }
+    
+    fn step_cmd(&mut self) {
+        self.gb.fetch_exec();
+        println!("{}", self.gb.cpu);
+    }
+
+    fn examine_cmd(&mut self, modif: Option<u16>, addr: u16)
+    {
+        let count = match modif {
+            None => 32,
+            Some(n) => n,
+        };
+        let mut byte_count = 0;
+        let mut s = String::new();
+        for i in addr..(addr + count) {
+            if byte_count % 16 == 0 {
+                s += &format!("${:04X}: ", addr + byte_count);
+            }
+            s += &format!("{:02X} ", self.gb.read(i));
+            if byte_count % 16 == 15 {
+                s += "\n";
+            }
+            byte_count += 1;
+        }
+        println!("{}", s);
+    }
+
+    fn breakpoint_cmd(&mut self, addr: u16) {
+        match self.breakpoints.binary_search(&addr) {
+            Ok(_) => {
+                println!("Breakpoint already at ${:04X}", addr);
+            }
+            Err(pos) => {
+                self.breakpoints.insert(pos, addr);
+                println!("Breakpoint set at ${:04X}", addr);
+            }
+        }
+    }
+    
+    fn delete_cmd(&mut self, addr: u16) {
+        match self.breakpoints.binary_search(&addr) {
+            Ok(pos) => {
+                _ = self.breakpoints.remove(pos);
+                println!("Deleted breakpoint at ${:04X}", addr);
+            }
+            Err(_) => {
+                println!("No breakpoint at ${:04X}", addr);
+            }
+        }
+    }
+
+    fn set_cmd(&mut self, config: String, state: bool) {
+        match config.as_str() {
+            "disassemble" => self.config.print_disasm = state,
+            _ => println!("You've met with a terrible fate, haven't you?")
         }
     }
 
@@ -196,6 +215,43 @@ impl<'a> DebugGB<'a> {
             );
             println!("    {:04X}: {}", u16::wrapping_add(addr, offset as u16), dis);
             offset += len;
+        }
+    }
+
+    fn help_cmd(&mut self, cmd_name: String) {
+        match cmd_name.as_str() {
+            "" => {
+                println!("List of commands:\n");
+                println!("{}run{} -- continues execution without stopping", BOLD, RESET);
+                println!("{}step{} -- executes next instruction", BOLD, RESET);
+                println!("{}disassemble{} -- disassembles instructions at a specified address", BOLD, RESET);
+                println!("{}help{} -- displays this message", BOLD, RESET);
+                println!("{}examine{} -- displays a range of values from memory", BOLD, RESET);
+                println!();
+            }
+            "r" | "run" => {
+                println!("run -- continues execution without stopping");
+                println!("usage: run");
+            }
+            "s" | "step" => {
+                println!("step -- executes next instruction");
+                println!("usage: step");
+            }
+            "d" | "disassemble" => {
+                println!("disassemble -- disassembles instructions at a specified address");
+                println!("usage: disassemble[/count] address");
+            }
+            "x" | "examine" => {
+                println!("{}examine{} -- displays a range of values from memory", BOLD, RESET);
+                println!("usage: examine[/count] address");
+            }
+            "h" | "help" => {
+                println!("displays help message");
+                println!("usage: help");
+            }
+            _ => {
+                println!("{}", format!("Invalid command: {}", cmd_name));
+            }
         }
     }
 }
@@ -229,43 +285,6 @@ fn eval_arg(arg_str: &str) -> Result<Arg, String> {
     };
 
     arg
-}
-
-fn help_cmd(cmd_name: String) {
-    match cmd_name.as_str() {
-        "" => {
-            println!("List of commands:\n");
-            println!("{}run{} -- continues execution without stopping", BOLD, RESET);
-            println!("{}step{} -- executes next instruction", BOLD, RESET);
-            println!("{}disassemble{} -- disassembles instructions at a specified address", BOLD, RESET);
-            println!("{}help{} -- displays this message", BOLD, RESET);
-            println!("{}examine{} -- displays a range of values from memory", BOLD, RESET);
-            println!();
-        }
-        "r" | "run" => {
-            println!("run -- continues execution without stopping");
-            println!("usage: run");
-        }
-        "s" | "step" => {
-            println!("step -- executes next instruction");
-            println!("usage: step");
-        }
-        "d" | "disassemble" => {
-            println!("disassemble -- disassembles instructions at a specified address");
-            println!("usage: disassemble[/count] address");
-        }
-        "x" | "examine" => {
-            println!("{}examine{} -- displays a range of values from memory", BOLD, RESET);
-            println!("usage: examine[/count] address");
-        }
-        "h" | "help" => {
-            println!("displays help message");
-            println!("usage: help");
-        }
-        _ => {
-            println!("{}", format!("Invalid command: {}", cmd_name));
-        }
-    }
 }
 
 pub fn disassemble(opcode: u8, param1: u8, param2: u8) -> (String, u8) {
