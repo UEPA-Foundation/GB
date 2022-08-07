@@ -110,7 +110,7 @@ impl<'a> DebugGB<'a> {
 
             match (cmd_name, modif, arg1, arg2) {
                 ("c" | "continue", None, Arg::None, Arg::None) => self.continue_cmd(),
-                ("s" | "step", None, Arg::None, Arg::None) => self.step_cmd(),
+                ("s" | "step", _, Arg::None, Arg::None) => self.step_cmd(modif),
                 ("h" | "help", None, Arg::None, Arg::None) => self.help_cmd("".to_string()),
                 ("h" | "help", None, Arg::Str(cmd_name), Arg::None) => self.help_cmd(cmd_name),
                 ("b" | "break", None, Arg::Numeric(addr), Arg::None) => self.breakpoint_cmd(addr),
@@ -145,8 +145,14 @@ impl<'a> DebugGB<'a> {
         }
     }
 
-    fn step_cmd(&mut self) {
-        self.gb.fetch_exec();
+    fn step_cmd(&mut self, modif: Option<u16>) {
+        let steps = match modif {
+            None => 1,
+            Some(n) => n,
+        };
+        for _ in 0..steps {
+            self.gb.fetch_exec();
+        }
     }
 
     fn examine_cmd(&mut self, modif: Option<u16>, addr: u16) {
@@ -231,7 +237,7 @@ impl<'a> DebugGB<'a> {
                 println!("List of commands:\n");
                 println!("{}h{}elp -- displays this message", ULINE, RESET);
                 println!("{}c{}ontinue -- continues execution without stopping", ULINE, RESET);
-                println!("{}s{}tep -- executes next instruction", ULINE, RESET);
+                println!("{}s{}tep -- executes next instruction(s)", ULINE, RESET);
                 println!("e{}x{}amine -- displays a range of values from memory", ULINE, RESET);
                 println!("{}r{}egisters -- displays value of cpu registers", ULINE, RESET);
                 println!("{}d{}isassemble -- disassembles instructions at a specified address", ULINE, RESET);
@@ -251,7 +257,7 @@ impl<'a> DebugGB<'a> {
                 println!();
             }
             "s" | "step" => {
-                println!("{}s{}tep -- executes next instruction", ULINE, RESET);
+                println!("{}s{}tep[/count] -- executes [count] next instruction(s)", ULINE, RESET);
                 println!("usage: step");
                 println!();
             }
