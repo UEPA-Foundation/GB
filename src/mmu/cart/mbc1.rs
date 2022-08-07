@@ -19,9 +19,9 @@ enum Ram {
 impl Mbc1 {
     pub fn init(ram: bool) -> Self {
         if ram {
-            Self { rom: vec![], ram: Ram::RAM(vec![]), mode: 0, ram_enable: false, mask: 0, bank_lo: 0, bank_hi: 0 }
+            Self { rom: vec![], ram: Ram::RAM(vec![]), mode: 0, ram_enable: false, mask: 0, bank_lo: 1, bank_hi: 0 }
         } else {
-            Self { rom: vec![], ram: Ram::NONE, mode: 0, ram_enable: false, mask: 0, bank_lo: 0, bank_hi: 0 }
+            Self { rom: vec![], ram: Ram::NONE, mode: 0, ram_enable: false, mask: 0, bank_lo: 1, bank_hi: 0 }
         }
     }
 
