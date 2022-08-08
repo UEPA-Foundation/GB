@@ -9,9 +9,16 @@ pub enum Arg {
     None,
 }
 
+struct WatchPoint {
+    // TODO: this does not keep track of what ROM/RAM bank the address belongs to
+    addr: u16,
+    last_val: u8,
+}
+
 pub struct DebugGB<'a> {
     pub gb: &'a mut GameBoy,
     breakpoints: Vec<u16>,
+    watchpoints: Vec<WatchPoint>,
     last_cmd: String,
     stdin: std::io::Stdin,
     stdout: std::io::Stdout,
@@ -29,6 +36,7 @@ impl<'a> DebugGB<'a> {
             gb,
             last_cmd: "help".to_string(),
             breakpoints: vec![],
+            watchpoints: vec![],
             stdin: std::io::stdin(),
             stdout: std::io::stdout(),
             config: DbgConfig { disasm: false, regs: false },
@@ -116,6 +124,7 @@ impl<'a> DebugGB<'a> {
                 ("h" | "help", None, Arg::Str(cmd_name), Arg::None) => self.help_cmd(cmd_name),
                 ("b" | "break", None, Arg::Numeric(addr), Arg::None) => self.breakpoint_cmd(addr),
                 ("de" | "delete", None, Arg::Numeric(addr), Arg::None) => self.delete_cmd(addr),
+                ("w" | "watch", None, Arg::Numeric(addr), Arg::None) => self.watchpoint_cmd(addr),
                 ("d" | "disassemble", _, Arg::Numeric(addr), Arg::None) => self.disasm_cmd(modif, addr),
                 ("x" | "examine", _, Arg::Numeric(addr), Arg::None) => self.examine_cmd(modif, addr),
                 ("r" | "regs" | "registers", None, Arg::None, Arg::None) => self.regs_cmd(),
@@ -135,8 +144,27 @@ impl<'a> DebugGB<'a> {
     }
 
     fn continue_cmd(&mut self) {
+        for i in 0..self.watchpoints.len() {
+            self.watchpoints[i].last_val = self.gb.read(self.watchpoints[i].addr);
+        }
+
         loop {
             self.gb.fetch_exec();
+
+            let mut changes = vec![];
+            for i in 0..self.watchpoints.len() {
+                let val = self.gb.read(self.watchpoints[i].addr);
+                if val != self.watchpoints[i].last_val {
+                    changes.push((i + 1, val, self.watchpoints[i].addr))
+                }
+            }
+            if !changes.is_empty() {
+                for i in 0..changes.len() {
+                    println!("Watchpoint {}: value ${:02X} written to address ${:04X}", changes[i].0, changes[i].1, changes[i].2);
+                }
+                break;
+            }
+
             if self.breakpoints.binary_search(&self.gb.cpu.pc).is_ok() {
                 break;
             }
@@ -200,6 +228,18 @@ impl<'a> DebugGB<'a> {
         }
     }
 
+    fn watchpoint_cmd(&mut self, addr: u16) {
+        match self.watchpoints.binary_search_by(|wp| wp.addr.cmp(&addr)) {
+            Ok(_) => {
+                println!("Watchpoint already at ${:04X}", addr);
+            }
+            Err(pos) => {
+                self.watchpoints.insert(pos, WatchPoint{ addr: addr, last_val: self.gb.read(addr) });
+                println!("Watchpoint set at ${:04X}", addr);
+            }
+        }
+    }
+
     fn set_cmd(&mut self, config: String, state: bool) {
         match config.as_str() {
             "disasm" => self.config.disasm = state,
@@ -241,6 +281,7 @@ impl<'a> DebugGB<'a> {
                 println!("{}d{}isassemble -- disassembles instructions at a specified address", ULINE, RESET);
                 println!("{}b{}reak -- create a breakpoint at a specified address", ULINE, RESET);
                 println!("{}d{}elete -- deletes a breakpoint at a specified address", ULINE, RESET);
+                println!("{}w{}atch -- create a watchpoint at a specified address", ULINE, RESET);
                 println!("{}s{}et -- sets a configuration flag", ULINE, RESET);
                 println!("{}cl{}ear -- clears terminal", ULINE, RESET);
                 println!();
@@ -277,12 +318,19 @@ impl<'a> DebugGB<'a> {
             }
             "b" | "break" => {
                 println!("{}b{}reak -- creates a breakpoint at a specified address", ULINE, RESET);
+                println!("             program execution will stop when arriving at a breakpoint");
                 println!("usage: break address");
                 println!();
             }
             "del" | "delete" => {
                 println!("{}del{}ete -- deletes a breakpoint at a specified address", ULINE, RESET);
                 println!("usage: delete address");
+                println!();
+            }
+            "w" | "watch" => {
+                println!("{}w{}atch -- creates a watchpoint at a specified address", ULINE, RESET);
+                println!("             program execution will stop when value at a watchpoint changes");
+                println!("usage: break address");
                 println!();
             }
             "set" => {
