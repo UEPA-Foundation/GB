@@ -125,6 +125,7 @@ impl<'a> DebugGB<'a> {
                 ("de" | "delete", None, Arg::Numeric(addr), Arg::None) => self.delete_cmd(addr),
                 ("w" | "watch", None, Arg::Numeric(addr), Arg::None) => self.watchpoint_cmd(addr),
                 ("dw" | "delwatch", None, Arg::Numeric(addr), Arg::None) => self.delwatch_cmd(addr),
+                ("l" | "list", None, Arg::None, Arg::None) => self.list_cmd(),
                 ("d" | "disassemble", _, Arg::Numeric(addr), Arg::None) => self.disasm_cmd(modif, addr),
                 ("x" | "examine", _, Arg::Numeric(addr), Arg::None) => self.examine_cmd(modif, addr),
                 ("r" | "regs" | "registers", None, Arg::None, Arg::None) => self.regs_cmd(),
@@ -255,6 +256,20 @@ impl<'a> DebugGB<'a> {
         }
     }
 
+    fn list_cmd(&mut self) {
+        println!("BREAKPOINTS");
+        for i in 0..self.breakpoints.len() {
+            println!("Breakpoint {}: ${:X}", i + 1, self.breakpoints[i]);
+        }
+        println!();
+
+        println!("WATCHPOINTS");
+        for i in 0..self.watchpoints.len() {
+            println!("Watchpoint {}: ${:X}", i + 1, self.watchpoints[i].addr);
+        }
+        println!();
+    }
+
     fn set_cmd(&mut self, config: String, state: bool) {
         match config.as_str() {
             "disasm" => self.config.disasm = state,
@@ -294,10 +309,11 @@ impl<'a> DebugGB<'a> {
                 println!("e{}x{}amine -- displays a range of values from memory", ULINE, RESET);
                 println!("{}r{}egisters -- displays value of cpu registers", ULINE, RESET);
                 println!("{}d{}isassemble -- disassembles instructions at a specified address", ULINE, RESET);
-                println!("{}b{}reak -- create a breakpoint at a specified address", ULINE, RESET);
-                println!("{}de{}lete -- delete a breakpoint at a specified address", ULINE, RESET);
-                println!("{}w{}atch -- create a watchpoint at a specified address", ULINE, RESET);
-                println!("{}d{}el{}w{}atch -- delete a watchpoint at a specified address", ULINE, RESET, ULINE, RESET);
+                println!("{}b{}reak -- creates a breakpoint at a specified address", ULINE, RESET);
+                println!("{}de{}lete -- deletes a breakpoint at a specified address", ULINE, RESET);
+                println!("{}w{}atch -- creates a watchpoint at a specified address", ULINE, RESET);
+                println!("{}d{}el{}w{}atch -- deletes a watchpoint at a specified address", ULINE, RESET, ULINE, RESET);
+                println!("{}l{}ist -- lists live breakpoints and watchpoints", ULINE, RESET);
                 println!("{}s{}et -- sets a configuration flag", ULINE, RESET);
                 println!("{}cl{}ear -- clears terminal", ULINE, RESET);
                 println!();
@@ -346,12 +362,17 @@ impl<'a> DebugGB<'a> {
             "w" | "watch" => {
                 println!("{}w{}atch -- creates a watchpoint at a specified address", ULINE, RESET);
                 println!("             program execution will stop when value at a watchpoint changes");
-                println!("usage: break address");
+                println!("usage: watch address");
                 println!();
             }
             "dw" | "delwatch" => {
-                println!("{}de{}l{}w{}atch -- deletes a breakpoint at a specified address", ULINE, RESET, ULINE, RESET);
-                println!("usage: delete address");
+                println!("{}de{}l{}w{}atch -- deletes a watchpoint at a specified address", ULINE, RESET, ULINE, RESET);
+                println!("usage: delwatch address");
+                println!();
+            }
+            "l" | "list" => {
+                println!("{}l{}ist -- lists live breakpoints and watchpoints", ULINE, RESET);
+                println!("usage: list");
                 println!();
             }
             "set" => {
@@ -386,8 +407,8 @@ impl<'a> DebugGB<'a> {
             "off" => {
                 return Ok(Arg::Bool(false));
             }
-            "help" | "continue" | "step" | "disassemble" | "break" | "delete" | "watch" | "delwatch" | "examine"
-            | "registers" | "set" | "clear" => {
+            "help" | "continue" | "step" | "disassemble" | "break" | "delete" | "watch" | "delwatch" | "list"
+            | "examine" | "registers" | "set" | "clear" => {
                 return Ok(Arg::Str(arg_str.to_string()));
             }
             "disasm" | "regs" => {
