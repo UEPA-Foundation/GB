@@ -64,8 +64,7 @@ impl<'a> DebugGB<'a> {
 
             if stripped_input.is_empty() {
                 stripped_input = self.last_cmd.as_str();
-            }
-            else {
+            } else {
                 self.last_cmd = stripped_input.to_string();
             }
 
@@ -125,6 +124,7 @@ impl<'a> DebugGB<'a> {
                 ("b" | "break", None, Arg::Numeric(addr), Arg::None) => self.breakpoint_cmd(addr),
                 ("de" | "delete", None, Arg::Numeric(addr), Arg::None) => self.delete_cmd(addr),
                 ("w" | "watch", None, Arg::Numeric(addr), Arg::None) => self.watchpoint_cmd(addr),
+                ("dw" | "delwatch", None, Arg::Numeric(addr), Arg::None) => self.delwatch_cmd(addr),
                 ("d" | "disassemble", _, Arg::Numeric(addr), Arg::None) => self.disasm_cmd(modif, addr),
                 ("x" | "examine", _, Arg::Numeric(addr), Arg::None) => self.examine_cmd(modif, addr),
                 ("r" | "regs" | "registers", None, Arg::None, Arg::None) => self.regs_cmd(),
@@ -160,7 +160,10 @@ impl<'a> DebugGB<'a> {
             }
             if !changes.is_empty() {
                 for i in 0..changes.len() {
-                    println!("Watchpoint {}: value ${:02X} written to address ${:04X}", changes[i].0, changes[i].1, changes[i].2);
+                    println!(
+                        "Watchpoint {}: value ${:02X} written to address ${:04X}",
+                        changes[i].0, changes[i].1, changes[i].2
+                    );
                 }
                 break;
             }
@@ -234,8 +237,20 @@ impl<'a> DebugGB<'a> {
                 println!("Watchpoint already at ${:04X}", addr);
             }
             Err(pos) => {
-                self.watchpoints.insert(pos, WatchPoint{ addr: addr, last_val: self.gb.read(addr) });
+                self.watchpoints.insert(pos, WatchPoint { addr, last_val: self.gb.read(addr) });
                 println!("Watchpoint set at ${:04X}", addr);
+            }
+        }
+    }
+
+    fn delwatch_cmd(&mut self, addr: u16) {
+        match self.watchpoints.binary_search_by(|wp| wp.addr.cmp(&addr)) {
+            Ok(pos) => {
+                _ = self.watchpoints.remove(pos);
+                println!("Deleted watchpoint at ${:04X}", addr);
+            }
+            Err(_) => {
+                println!("No breakpoint at ${:04X}", addr);
             }
         }
     }
@@ -280,8 +295,9 @@ impl<'a> DebugGB<'a> {
                 println!("{}r{}egisters -- displays value of cpu registers", ULINE, RESET);
                 println!("{}d{}isassemble -- disassembles instructions at a specified address", ULINE, RESET);
                 println!("{}b{}reak -- create a breakpoint at a specified address", ULINE, RESET);
-                println!("{}d{}elete -- deletes a breakpoint at a specified address", ULINE, RESET);
+                println!("{}de{}lete -- delete a breakpoint at a specified address", ULINE, RESET);
                 println!("{}w{}atch -- create a watchpoint at a specified address", ULINE, RESET);
+                println!("{}d{}el{}w{}atch -- delete a watchpoint at a specified address", ULINE, RESET, ULINE, RESET);
                 println!("{}s{}et -- sets a configuration flag", ULINE, RESET);
                 println!("{}cl{}ear -- clears terminal", ULINE, RESET);
                 println!();
@@ -322,8 +338,8 @@ impl<'a> DebugGB<'a> {
                 println!("usage: break address");
                 println!();
             }
-            "del" | "delete" => {
-                println!("{}del{}ete -- deletes a breakpoint at a specified address", ULINE, RESET);
+            "de" | "delete" => {
+                println!("{}de{}lete -- deletes a breakpoint at a specified address", ULINE, RESET);
                 println!("usage: delete address");
                 println!();
             }
@@ -331,6 +347,11 @@ impl<'a> DebugGB<'a> {
                 println!("{}w{}atch -- creates a watchpoint at a specified address", ULINE, RESET);
                 println!("             program execution will stop when value at a watchpoint changes");
                 println!("usage: break address");
+                println!();
+            }
+            "dw" | "delwatch" => {
+                println!("{}de{}l{}w{}atch -- deletes a breakpoint at a specified address", ULINE, RESET, ULINE, RESET);
+                println!("usage: delete address");
                 println!();
             }
             "set" => {
@@ -365,8 +386,8 @@ impl<'a> DebugGB<'a> {
             "off" => {
                 return Ok(Arg::Bool(false));
             }
-            "help" | "continue" | "step" | "disassemble" | "break" | "delete" | "examine" | "registers" | "set"
-            | "clear" => {
+            "help" | "continue" | "step" | "disassemble" | "break" | "delete" | "watch" | "delwatch" | "examine"
+            | "registers" | "set" | "clear" => {
                 return Ok(Arg::Str(arg_str.to_string()));
             }
             "disasm" | "regs" => {
