@@ -53,7 +53,7 @@ impl Cartridge for Mbc2 {
     }
 
     fn romx_read(&self, addr: u16) -> u8 {
-        self.rom[self.bank as usize][addr as usize]
+        self.rom[self.bank as usize][(addr - 0x4000) as usize]
     }
 
     fn sram_read(&self, addr: u16) -> u8 {
