@@ -3,6 +3,7 @@ use snafu::prelude::*;
 mod mbc1;
 mod mbc2;
 mod mbc3;
+mod mbc5;
 mod no_mbc;
 
 pub type RomBank = [u8; 0x4000];
@@ -126,6 +127,10 @@ fn boxed_cartridge(code: u8) -> Result<Box<dyn Cartridge>, CartridgeError> {
         0x10 => Box::new(mbc3::Mbc3::init(true, true)),
         0x11 => Box::new(mbc3::Mbc3::init(false, false)),
         0x12 | 0x13 => Box::new(mbc3::Mbc3::init(true, false)),
+        0x19 => Box::new(mbc5::Mbc5::init(false, false)),
+        0x1A | 0x1B => Box::new(mbc5::Mbc5::init(true, false)),
+        0x1C => Box::new(mbc5::Mbc5::init(false, true)),
+        0x1D | 0x1E => Box::new(mbc5::Mbc5::init(false, false)),
         val => return Err(CartridgeError::InvalidType { tp: val }),
     })
 }
