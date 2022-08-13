@@ -57,7 +57,10 @@ impl Cartridge for Mbc2 {
     }
 
     fn sram_read(&self, addr: u16) -> u8 {
-        self.ram[(addr & 0x01FF) as usize] | 0xF0
+        if self.ram_enable {
+            return self.ram[(addr & 0x01FF) as usize] | 0xF0;
+        }
+        0xFF
     }
 
     fn rom0_write(&mut self, addr: u16, val: u8) {
@@ -74,6 +77,8 @@ impl Cartridge for Mbc2 {
     fn romx_write(&mut self, _addr: u16, _val: u8) {}
 
     fn sram_write(&mut self, addr: u16, val: u8) {
-        self.ram[(addr & 0x01FF) as usize] = val;
+        if self.ram_enable {
+            self.ram[(addr & 0x01FF) as usize] = val;
+        }
     }
 }
