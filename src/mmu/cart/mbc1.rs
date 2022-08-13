@@ -105,15 +105,19 @@ impl Cartridge for Mbc1 {
     }
 
     fn sram_read(&self, addr: u16) -> u8 {
-        let ram_addr = (addr - 0xA000) as usize;
-        match self.ram {
-            Ram::NONE => 0xFF,
-            Ram::RAM(ref ram) => match self.mode {
-                0 => ram[0][ram_addr],
-                1 => ram[self.bank_hi as usize][ram_addr],
-                _ => panic!("MBC1 mode somehow isn't 0 or 1, wtf?"),
-            },
+        if self.ram_enable {
+            let ram_addr = (addr - 0xA000) as usize;
+            match self.ram {
+                Ram::NONE => return 0xFF,
+                Ram::RAM(ref ram) => match self.mode {
+                    0 => return ram[0][ram_addr],
+                    1 => return ram[self.bank_hi as usize][ram_addr],
+                    _ => panic!("MBC1 mode somehow isn't 0 or 1, wtf?"),
+                },
+            }
         }
+
+        0xFF
     }
 
     fn rom0_write(&mut self, addr: u16, val: u8) {
@@ -125,14 +129,16 @@ impl Cartridge for Mbc1 {
     }
 
     fn sram_write(&mut self, addr: u16, val: u8) {
-        let ram_addr = (addr - 0xA000) as usize;
-        match self.ram {
-            Ram::NONE => {}
-            Ram::RAM(ref mut ram) => match self.mode {
-                0 => ram[0][ram_addr] = val,
-                1 => ram[self.bank_hi as usize][ram_addr] = val,
-                _ => panic!("MBC1 mode somehow isn't 0 or 1, wtf?"),
-            },
+        if self.ram_enable {
+            let ram_addr = (addr - 0xA000) as usize;
+            match self.ram {
+                Ram::NONE => {}
+                Ram::RAM(ref mut ram) => match self.mode {
+                    0 => ram[0][ram_addr] = val,
+                    1 => ram[self.bank_hi as usize][ram_addr] = val,
+                    _ => panic!("MBC1 mode somehow isn't 0 or 1, wtf?"),
+                },
+            }
         }
     }
 }
