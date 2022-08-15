@@ -126,6 +126,7 @@ impl<'a> DebugGB<'a> {
                 ("w" | "watch", None, Arg::Numeric(addr), Arg::None) => self.watchpoint_cmd(addr),
                 ("dw" | "delwatch", None, Arg::Numeric(addr), Arg::None) => self.delwatch_cmd(addr),
                 ("l" | "list", None, Arg::None, Arg::None) => self.list_cmd(),
+                ("d" | "disassemble", _, Arg::None, Arg::None) => self.disasm_cmd(modif, self.gb.cpu.pc),
                 ("d" | "disassemble", _, Arg::Numeric(addr), Arg::None) => self.disasm_cmd(modif, addr),
                 ("x" | "examine", _, Arg::Numeric(addr), Arg::None) => self.examine_cmd(modif, addr),
                 ("r" | "regs" | "registers", None, Arg::None, Arg::None) => self.regs_cmd(),
@@ -304,7 +305,7 @@ impl<'a> DebugGB<'a> {
                 println!("{}s{}tep -- executes next instruction(s)", ULINE, RESET);
                 println!("e{}x{}amine -- displays a range of values from memory", ULINE, RESET);
                 println!("{}r{}egisters -- displays value of cpu registers", ULINE, RESET);
-                println!("{}d{}isassemble -- disassembles instructions at a specified address", ULINE, RESET);
+                println!("{}d{}isassemble -- disassembles instructions at PC or at a specified address", ULINE, RESET);
                 println!("{}b{}reak -- creates a breakpoint at a specified address", ULINE, RESET);
                 println!("{}de{}lete -- deletes a breakpoint at a specified address", ULINE, RESET);
                 println!("{}w{}atch -- creates a watchpoint at a specified address", ULINE, RESET);
