@@ -726,7 +726,7 @@ macro_rules! rr {
         |gb: &mut GameBoy| {
             let carry = gb.cpu.c_flag() as u8;
             gb.cpu.f = 0;
-            gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 5;
+            gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 4;
             gb.cpu.$r8 = gb.cpu.$r8 >> 1;
             gb.cpu.$r8 |= carry << 7;
             if gb.cpu.$r8 == 0 {
@@ -741,7 +741,7 @@ macro_rules! rr {
             let addr = gb.cpu.rd_hl();
             let mut dhl = gb.read(addr);
             gb.cpu.f = 0;
-            gb.cpu.f |= (dhl & 0x01) << 5;
+            gb.cpu.f |= (dhl & 0x01) << 4;
             dhl = dhl >> 1;
             dhl |= carry << 7;
             if dhl == 0 {
@@ -755,7 +755,7 @@ macro_rules! rr {
 fn rra(gb: &mut GameBoy) {
     let carry = gb.cpu.c_flag() as u8;
     gb.cpu.f = 0;
-    gb.cpu.f |= (gb.cpu.a & 0x01) << 5;
+    gb.cpu.f |= (gb.cpu.a & 0x01) << 4;
     gb.cpu.a = gb.cpu.a >> 1;
     gb.cpu.a |= carry << 7;
 }
@@ -764,7 +764,7 @@ macro_rules! rrc {
     ($r8: ident) => {
         |gb: &mut GameBoy| {
             gb.cpu.f = 0;
-            gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 5;
+            gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 4;
             gb.cpu.$r8 = u8::rotate_right(gb.cpu.$r8, 1);
             if gb.cpu.$r8 == 0 {
                 gb.cpu.f |= Z_FLAG;
@@ -777,7 +777,7 @@ macro_rules! rrc {
             let addr = gb.cpu.rd_hl();
             let mut dhl = gb.read(addr);
             gb.cpu.f = 0;
-            gb.cpu.f |= (dhl & 0x01) << 5;
+            gb.cpu.f |= (dhl & 0x01) << 4;
             dhl = u8::rotate_right(dhl, 1);
             if dhl == 0 {
                 gb.cpu.f |= Z_FLAG;
@@ -789,7 +789,7 @@ macro_rules! rrc {
 
 fn rrca(gb: &mut GameBoy) {
     gb.cpu.f = 0;
-    gb.cpu.f |= (gb.cpu.a & 0x01) << 5;
+    gb.cpu.f |= (gb.cpu.a & 0x01) << 4;
     gb.cpu.a = u8::rotate_right(gb.cpu.a, 1);
 }
 
@@ -824,7 +824,7 @@ macro_rules! sra {
     ($r8: ident) => {
         |gb: &mut GameBoy| {
             gb.cpu.f = 0;
-            gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 5;
+            gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 4;
             gb.cpu.$r8 = (gb.cpu.$r8 as i8 >> 1) as u8;
             if gb.cpu.$r8 == 0 {
                 gb.cpu.f |= Z_FLAG;
@@ -837,7 +837,7 @@ macro_rules! sra {
             let addr = gb.cpu.rd_hl();
             let mut dhl = gb.read(addr);
             gb.cpu.f = 0;
-            gb.cpu.f |= (dhl & 0x01) << 5;
+            gb.cpu.f |= (dhl & 0x01) << 4;
             dhl = (dhl as i8 >> 1) as u8;
             if dhl == 0 {
                 gb.cpu.f |= Z_FLAG;
@@ -850,7 +850,7 @@ macro_rules! srl {
     ($r8: ident) => {
         |gb: &mut GameBoy| {
             gb.cpu.f = 0;
-            gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 5;
+            gb.cpu.f |= (gb.cpu.$r8 & 0x01) << 4;
             gb.cpu.$r8 >>= 1;
             if gb.cpu.$r8 == 0 {
                 gb.cpu.f |= Z_FLAG;
@@ -863,7 +863,7 @@ macro_rules! srl {
             let addr = gb.cpu.rd_hl();
             let mut dhl = gb.read(addr);
             gb.cpu.f = 0;
-            gb.cpu.f |= (dhl & 0x01) << 5;
+            gb.cpu.f |= (dhl & 0x01) << 4;
             dhl >>= 1;
             if dhl == 0 {
                 gb.cpu.f |= Z_FLAG;
@@ -1222,7 +1222,6 @@ macro_rules! pop {
     ($r16: ident) => {
         |gb: &mut GameBoy| {
             paste::paste! {
-
                 let val = {
                     let lsb = gb.read(gb.cpu.sp) as u16;
                     gb.cpu.sp.inc();
