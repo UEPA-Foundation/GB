@@ -975,7 +975,7 @@ fn ld_a_n16(gb: &mut GameBoy) {
         gb.cpu.pc.inc();
         (msb << 8) + lsb
     };
-    gb.write(addr, gb.cpu.a);
+    gb.cpu.a = gb.read(addr);
 }
 
 fn ldh_a_n8(gb: &mut GameBoy) {
