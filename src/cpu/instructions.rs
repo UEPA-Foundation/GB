@@ -1165,7 +1165,7 @@ fn add_sp_e8(gb: &mut GameBoy) {
     if (old_sp & 0x000F) + (offset & 0x000F) as u16 > 0x000F {
         gb.cpu.f |= H_FLAG;
     }
-    if (old_sp & 0x00FF) + offset as u16 > 0x00FF {
+    if u16::wrapping_add(old_sp & 0x00FF, offset as u16) > 0x00FF {
         gb.cpu.f |= C_FLAG;
     }
 }
