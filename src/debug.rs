@@ -285,11 +285,7 @@ impl<'a> DebugGB<'a> {
         };
 
         for _ in 1..=count {
-            let (dis, len) = disassemble(
-                self.gb.read(addr),
-                self.gb.read(u16::wrapping_add(addr, 1)),
-                self.gb.read(u16::wrapping_add(addr, 2)),
-            );
+            let (dis, len) = self.disassemble(addr);
             let mut padding = "    ";
             if addr == self.gb.cpu.pc {
                 padding = " -> ";
@@ -438,6 +434,42 @@ impl<'a> DebugGB<'a> {
 
         arg
     }
+
+    pub fn disassemble(&self, addr: u16) -> (String, u8) {
+        let opcode = self.gb.read(addr);
+        let mut mnemonic = OPCODES_STR[opcode as usize].to_string();
+
+        if mnemonic == "CB" {
+            let param = self.gb.read(u16::wrapping_add(addr, 1));
+            return (OPCODES_CB_STR[param as usize].to_string(), 2);
+        }
+
+        if mnemonic.contains("U8") {
+            let param = self.gb.read(u16::wrapping_add(addr, 1));
+            mnemonic = mnemonic.replace("U8", &format!("${:02X}", param));
+            return (mnemonic, 2);
+        }
+
+        if mnemonic.contains("U16") {
+            let param1 = self.gb.read(u16::wrapping_add(addr, 1));
+            let param2 = self.gb.read(u16::wrapping_add(addr, 2));
+            mnemonic = mnemonic.replace("U16", &format!("${:04X}", (((param2 as u16) << 8) + param1 as u16)));
+            return (mnemonic, 3);
+        }
+
+        if mnemonic.contains("I8") {
+            let param = self.gb.read(u16::wrapping_add(addr, 1));
+            mnemonic = mnemonic.replace("I8", &format!("${:02X}", param));
+            mnemonic += " (";
+            if param as i8 > 0 {
+                mnemonic += "+";
+            }
+            mnemonic += &format!("{})", param as i8);
+            return (mnemonic, 2);
+        }
+
+        (mnemonic, 1)
+    }
 }
 
 fn eval_modif(mod_str: String) -> Result<Option<u16>, String> {
@@ -449,36 +481,6 @@ fn eval_modif(mod_str: String) -> Result<Option<u16>, String> {
     } else {
         Ok(Some(mod_str.parse::<u16>().or_else(|_| Err(format!("Invalid modifier: {}", mod_str)))?))
     }
-}
-
-pub fn disassemble(opcode: u8, param1: u8, param2: u8) -> (String, u8) {
-    let mut mnemonic = OPCODES_STR[opcode as usize].to_string();
-
-    if mnemonic == "CB" {
-        return (OPCODES_CB_STR[param1 as usize].to_string(), 2);
-    }
-
-    if mnemonic.contains("U8") {
-        mnemonic = mnemonic.replace("U8", &format!("${:02X}", param1));
-        return (mnemonic, 2);
-    }
-
-    if mnemonic.contains("U16") {
-        mnemonic = mnemonic.replace("U16", &format!("${:04X}", (((param2 as u16) << 8) + param1 as u16)));
-        return (mnemonic, 3);
-    }
-
-    if mnemonic.contains("I8") {
-        mnemonic = mnemonic.replace("I8", &format!("${:02X}", param1));
-        mnemonic += " (";
-        if param1 as i8 > 0 {
-            mnemonic += "+";
-        }
-        mnemonic += &format!("{})", param1 as i8);
-        return (mnemonic, 2);
-    }
-
-    (mnemonic, 1)
 }
 
 #[rustfmt::skip]
