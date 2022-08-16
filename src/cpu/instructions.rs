@@ -362,7 +362,7 @@ macro_rules! sbc {
             if (old_a & 0x0F) < (val & 0x0F) + carry as u8 {
                 gb.cpu.f |= H_FLAG;
             }
-            if old_a < u8::wrapping_add(val, carry as u8) {
+            if old_a < u8::wrapping_add(val, (carry as u8)) || (val == 0xFF && carry) {
                 gb.cpu.f |= C_FLAG;
             }
         }
@@ -383,7 +383,7 @@ macro_rules! sbc {
             if (old_a & 0x0F) < (gb.cpu.$r8 & 0x0F) + carry as u8 {
                 gb.cpu.f |= H_FLAG;
             }
-            if old_a < u8::wrapping_add(gb.cpu.$r8, carry as u8) {
+            if old_a < u8::wrapping_add(gb.cpu.$r8, carry as u8) || (gb.cpu.$r8 == 0xFF && carry) {
                 gb.cpu.f |= C_FLAG;
             }
         }
