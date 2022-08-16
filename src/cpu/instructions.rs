@@ -1157,17 +1157,17 @@ macro_rules! rst {
 // Stack Operations
 
 fn add_sp_e8(gb: &mut GameBoy) {
-    let offset = gb.read_instr(0) as i8;
+    let offset = (gb.read_instr(0) as i8) as u16;
     gb.cpu.pc.inc();
 
     let old_sp = gb.cpu.sp;
-    gb.cpu.sp = u16::wrapping_add(old_sp, offset as u16);
+    gb.cpu.sp = u16::wrapping_add(old_sp, offset);
 
     gb.cpu.f = 0;
-    if (old_sp & 0x000F) + (offset & 0x000F) as u16 > 0x000F {
+    if (old_sp & 0x000F) + (offset & 0x000F) > 0x000F {
         gb.cpu.f |= H_FLAG;
     }
-    if u16::wrapping_add(old_sp & 0x00FF, offset as u16) > 0x00FF {
+    if u16::wrapping_add(old_sp & 0x00FF, offset & 0x00FF) > 0x00FF {
         gb.cpu.f |= C_FLAG;
     }
 }
@@ -1353,7 +1353,7 @@ pub const OPCODES: [fn(&mut GameBoy); 256] = [
               ret!(c),      reti,         jp!(c),       undefined,    call!(c),     undefined,    sbc!(),       rst!(0x18),
 /* EX */      ldh_n8_a,     pop!(hl),     ldh_c_a,      undefined,    undefined,    push!(h, l),  and!(),       rst!(0x20),
               add_sp_e8,    jp!(hl),      ld_n16_a,     undefined,    undefined,    undefined,    xor!(),       rst!(0x28),
-/* fX */      ldh_a_n8,     pop_af,       ldh_a_c,      di,           undefined,    push_af,      or!(),        rst!(0x30),
+/* FX */      ldh_a_n8,     pop_af,       ldh_a_c,      di,           undefined,    push_af,      or!(),        rst!(0x30),
               ld_hl_sp_e8,  ld_sp_hl,     ld_a_n16,     ei,           undefined,    undefined,    cp!(),        rst!(0x38),
 ];
 
