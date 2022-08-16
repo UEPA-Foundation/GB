@@ -516,14 +516,15 @@ macro_rules! add16 {
     (sp) => {
         |gb: &mut GameBoy| {
             let old_hl = gb.cpu.rd_hl();
-            let val = u16::wrapping_add(old_hl, gb.cpu.sp);
-            gb.cpu.wr_hl(val);
+            let val = gb.cpu.sp;
+            let res = u16::wrapping_add(old_hl, val);
+            gb.cpu.wr_hl(res);
 
-            gb.cpu.f = !(N_FLAG | H_FLAG | C_FLAG);
+            gb.cpu.f &= !(N_FLAG | H_FLAG | C_FLAG);
             if (old_hl & 0x0FFF) + (val & 0x0FFF) > 0x0FFF {
                 gb.cpu.f |= H_FLAG;
             }
-            if val < old_hl {
+            if res < old_hl {
                 gb.cpu.f |= C_FLAG;
             }
         }
@@ -533,14 +534,15 @@ macro_rules! add16 {
         |gb: &mut GameBoy| {
             paste::paste! {
                 let old_hl = gb.cpu.rd_hl();
-                let val = u16::wrapping_add(old_hl, gb.cpu.[<rd_ $r16>]());
-                gb.cpu.wr_hl(val);
+                let val = gb.cpu.[<rd_ $r16>]();
+                let res = u16::wrapping_add(old_hl, val);
+                gb.cpu.wr_hl(res);
 
-                gb.cpu.f = !(N_FLAG | H_FLAG | C_FLAG);
+                gb.cpu.f &= !(N_FLAG | H_FLAG | C_FLAG);
                 if (old_hl & 0x0FFF) + (val & 0x0FFF) > 0x0FFF {
                     gb.cpu.f |= H_FLAG;
                 }
-                if val < old_hl {
+                if res < old_hl {
                     gb.cpu.f |= C_FLAG;
                 }
             }
