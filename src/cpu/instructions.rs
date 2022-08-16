@@ -1194,17 +1194,17 @@ fn ld_n16_sp(gb: &mut GameBoy) {
 }
 
 fn ld_hl_sp_e8(gb: &mut GameBoy) {
-    let offset = gb.read_instr(0) as i8;
+    let offset = (gb.read_instr(0) as i8) as u16;
     gb.cpu.pc.inc();
 
-    let val = u16::wrapping_add(gb.cpu.sp, offset as u16);
+    let val = u16::wrapping_add(gb.cpu.sp, offset);
     gb.cpu.wr_hl(val);
 
     gb.cpu.f = 0;
-    if (gb.cpu.sp & 0x000F) + (offset & 0x0F) as u16 > 0x000F {
+    if (gb.cpu.sp & 0x000F) + (offset & 0x000F) > 0x000F {
         gb.cpu.f |= H_FLAG;
     }
-    if val < gb.cpu.sp {
+    if (gb.cpu.sp & 0x00FF) + (offset & 0x00FF) > 0xFF {
         gb.cpu.f |= C_FLAG;
     }
 }
