@@ -2,6 +2,7 @@ mod cpu;
 mod debug;
 mod gameboy;
 mod mmu;
+mod test;
 
 extern crate num;
 extern crate num_derive;
