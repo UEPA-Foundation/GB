@@ -846,6 +846,7 @@ macro_rules! sra {
             if dhl == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
+            gb.write(addr, dhl);
         }
     };
 }
