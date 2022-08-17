@@ -1149,7 +1149,12 @@ fn reti(gb: &mut GameBoy) {
 macro_rules! rst {
     ($hx: expr) => {
         |gb: &mut GameBoy| {
-            gb.cpu.sp = $hx;
+            let addr = u16::to_le_bytes(gb.cpu.pc);
+            gb.cpu.sp.dec();
+            gb.write(gb.cpu.sp, addr[1]);
+            gb.cpu.sp.dec();
+            gb.write(gb.cpu.sp, addr[0]);
+            gb.cpu.pc = $hx;
         }
     };
 }
