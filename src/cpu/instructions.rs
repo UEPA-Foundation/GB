@@ -1219,7 +1219,7 @@ fn ld_sp_hl(gb: &mut GameBoy) {
 }
 
 fn pop_af(gb: &mut GameBoy) {
-    gb.cpu.f = gb.read(gb.cpu.sp);
+    gb.cpu.f = gb.read(gb.cpu.sp) & 0xF0;
     gb.cpu.sp.inc();
     gb.cpu.a = gb.read(gb.cpu.sp);
     gb.cpu.sp.inc();
