@@ -467,7 +467,7 @@ macro_rules! sub {
             if (old_a & 0x0F) < (gb.read(addr) & 0x0F) {
                 gb.cpu.f |= H_FLAG;
             }
-            if gb.cpu.a < gb.read(addr) {
+            if old_a < gb.read(addr) {
                 gb.cpu.f |= C_FLAG;
             }
         }
