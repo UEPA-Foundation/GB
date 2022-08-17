@@ -1274,6 +1274,7 @@ fn cpl(gb: &mut GameBoy) {
 
 fn daa(gb: &mut GameBoy) {
     let mut res = (gb.cpu.a as i16) & 0xFF;
+
     if gb.cpu.n_flag() {
         if gb.cpu.h_flag() {
             res = (res - 0x06) & 0xFF;
@@ -1292,7 +1293,7 @@ fn daa(gb: &mut GameBoy) {
 
     gb.cpu.a = res as u8;
 
-    gb.cpu.f &= !H_FLAG;
+    gb.cpu.f &= !(Z_FLAG | H_FLAG);
     if res & 0x100 == 0x100 {
         gb.cpu.f |= C_FLAG;
     }
