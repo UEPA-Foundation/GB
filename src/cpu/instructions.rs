@@ -407,7 +407,7 @@ macro_rules! sbc {
             if (old_a & 0x0F) < (gb.read(addr) & 0x0F) + carry as u8 {
                 gb.cpu.f |= H_FLAG;
             }
-            if gb.cpu.a < u8::wrapping_add(gb.read(addr), carry as u8) {
+            if old_a < u8::wrapping_add(gb.read(addr), carry as u8) || (gb.read(addr) == 0xFF && carry) {
                 gb.cpu.f |= C_FLAG;
             }
         }
