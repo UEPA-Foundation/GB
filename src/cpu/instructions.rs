@@ -622,7 +622,7 @@ macro_rules! set {
     ($i: expr, d hl) => {
         |gb: &mut GameBoy| {
             let hl = gb.cpu.rd_hl();
-            gb.write(hl, gb.read(hl) | !(1 << $i));
+            gb.write(hl, gb.read(hl) | (1 << $i));
         }
     };
 }
