@@ -93,10 +93,32 @@ impl Cpu {
 
 impl GameBoy {
     pub fn fetch_exec(&mut self) {
-        let _current_ime = true;
+        let current_ime = self.ime;
         if self.enabling_int {
             self.ime = true;
             self.enabling_int = false;
+        }
+
+        if current_ime {
+            match self.fetch_interrupt() {
+                Some(intr) => {
+                    // WARN: timing here has a lot of intricacies, which are ignored for now
+
+                    // store current pc addr in stack
+                    let addr = u16::to_le_bytes(self.cpu.pc);
+                    self.cpu.sp.dec();
+                    self.write(self.cpu.sp, addr[1]);
+                    self.cpu.sp.dec();
+                    self.write(self.cpu.sp, addr[0]);
+
+                    // jump to intr handler addr
+                    self.cpu.pc = (intr * 8) as u16 + 0x40;
+
+                    self.reset_if(intr);
+                    self.ime = false;
+                }
+                None => {}
+            }
         }
 
         let opcode = self.read_instr(0);

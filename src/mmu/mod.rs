@@ -80,4 +80,24 @@ impl GameBoy {
             0xFFFF => self.mmu.ie = val,
         }
     }
+
+    #[inline(always)]
+    pub fn fetch_interrupt(&self) -> Option<u8> {
+        match self.io_read(0xFF0F) & self.mmu.ie & 0x1F {
+            0 => None,
+            intrs => Some(intrs.trailing_zeros() as u8),
+        }
+    }
+
+    #[inline(always)]
+    pub fn set_if(&mut self, intr: u8) {
+        let iflags = self.io_read(0xFF0F);
+        self.io_write(0xFF0F, iflags | intr);
+    }
+
+    #[inline(always)]
+    pub fn reset_if(&mut self, intr: u8) {
+        let iflags = self.io_read(0xFF0F);
+        self.io_write(0xFF0F, iflags & intr);
+    }
 }
