@@ -157,7 +157,7 @@ macro_rules! and {
 
     ($r8: ident) => {
         |gb: &mut GameBoy| {
-            gb.cpu.a &= gb.read(gb.cpu.rd_hl());
+            gb.cpu.a &= gb.cpu.$r8;
 
             gb.cpu.f = H_FLAG;
             if gb.cpu.a == 0 {
@@ -168,10 +168,7 @@ macro_rules! and {
 
     (d hl) => {
         |gb: &mut GameBoy| {
-            let val = gb.read_instr(0);
-            gb.cpu.pc.inc();
-
-            gb.cpu.a &= val;
+            gb.cpu.a &= gb.read(gb.cpu.rd_hl());
 
             gb.cpu.f = H_FLAG;
             if gb.cpu.a == 0 {
