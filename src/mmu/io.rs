@@ -3,6 +3,7 @@ use crate::gameboy::GameBoy;
 pub struct IoRegisters {
     serial_data: u8,
     serial_ctrl: u8,
+    iflags: u8,
     timer: Timer,
 }
 
@@ -15,7 +16,12 @@ struct Timer {
 
 impl IoRegisters {
     pub fn init() -> Self {
-        Self { serial_data: 0, serial_ctrl: 1, timer: Timer { divider: 0, counter: 0, modulo: 0, control: 0 } }
+        Self {
+            serial_data: 0,
+            serial_ctrl: 1,
+            iflags: 0,
+            timer: Timer { divider: 0, counter: 0, modulo: 0, control: 0 },
+        }
     }
 }
 
@@ -28,7 +34,8 @@ impl GameBoy {
             0xFF05 => self.mmu.io.timer.counter,
             0xFF06 => self.mmu.io.timer.modulo,
             0xFF07 => self.mmu.io.timer.control | 0xF8,
-            _ => 0, // panic!("Io Register not yet implemented!"),
+            0xFF0F => self.mmu.io.iflags | 0xE0, // 3 upper bits always return 1
+            _ => 0,                              // panic!("Io Register not yet implemented!"),
         }
     }
 
@@ -54,6 +61,7 @@ impl GameBoy {
                 // emulated here. More research needed!
                 self.mmu.io.timer.control = val
             }
+            0xFF0F => self.mmu.io.iflags = val,
             _ => (), // panic!("Io Register not yet implemented!"),
         }
     }
