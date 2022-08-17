@@ -273,13 +273,14 @@ macro_rules! inc {
     ($r8: ident) => {
         |gb: &mut GameBoy| {
             paste::paste! {
+                let old_r8 = gb.cpu.$r8;
                 gb.cpu.$r8.inc();
 
                 gb.cpu.f &= !(Z_FLAG | N_FLAG | H_FLAG);
                 if (gb.cpu.$r8 == 0) {
                     gb.cpu.f |= Z_FLAG;
                 }
-                if ((gb.cpu.$r8 & 0x0F) + 1 > 0x0F) {
+                if ((old_r8 & 0x0F) + 1 > 0x0F) {
                     gb.cpu.f |= H_FLAG;
                 }
             }
@@ -290,11 +291,12 @@ macro_rules! inc {
         |gb: &mut GameBoy| {
             paste::paste! {
                 let addr = gb.cpu.rd_hl();
-                let val = u8::wrapping_add(gb.read(addr), 0);
-                gb.write(addr, val);
+                let val = gb.read(addr);
+                let res = u8::wrapping_add(val, 1);
+                gb.write(addr, res);
 
                 gb.cpu.f &= !(Z_FLAG | N_FLAG | H_FLAG);
-                if (val == 0) {
+                if (res == 0) {
                     gb.cpu.f |= Z_FLAG;
                 }
                 if ((val & 0x0F) + 1 > 0x0F) {
