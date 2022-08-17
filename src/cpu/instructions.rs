@@ -632,7 +632,7 @@ macro_rules! swap {
         |gb: &mut GameBoy| {
             gb.cpu.$r8 = (gb.cpu.$r8 >> 4) | (gb.cpu.$r8 << 4);
             gb.cpu.f = 0;
-            if gb.cpu.f == 0 {
+            if gb.cpu.$r8 == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
         }
@@ -644,7 +644,7 @@ macro_rules! swap {
             let dhl = gb.read(addr);
             gb.write(addr, (dhl >> 4) | (dhl << 4));
             gb.cpu.f = 0;
-            if gb.cpu.f == 0 {
+            if gb.read(addr) == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
         }
