@@ -682,7 +682,7 @@ macro_rules! rl {
         |gb: &mut GameBoy| {
             let carry = gb.cpu.c_flag() as u8;
             let addr = gb.cpu.rd_hl();
-            let mut dhl = gb.read(addr);
+            let mut dhl = gb.cycle_read(addr);
             gb.cpu.f = 0;
             gb.cpu.f |= (dhl & 0x80) >> 3;
             dhl = dhl << 1;
@@ -690,7 +690,7 @@ macro_rules! rl {
             if dhl == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            gb.write(addr, dhl);
+            gb.cycle_write(addr, dhl);
         }
     };
 }
@@ -718,14 +718,14 @@ macro_rules! rlc {
     (d hl) => {
         |gb: &mut GameBoy| {
             let addr = gb.cpu.rd_hl();
-            let mut dhl = gb.read(addr);
+            let mut dhl = gb.cycle_read(addr);
             gb.cpu.f = 0;
             gb.cpu.f |= (dhl & 0x80) >> 3;
             dhl = u8::rotate_left(dhl, 1);
             if dhl == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            gb.write(addr, dhl);
+            gb.cycle_write(addr, dhl);
         }
     };
 }
@@ -754,7 +754,7 @@ macro_rules! rr {
         |gb: &mut GameBoy| {
             let carry = gb.cpu.c_flag() as u8;
             let addr = gb.cpu.rd_hl();
-            let mut dhl = gb.read(addr);
+            let mut dhl = gb.cycle_read(addr);
             gb.cpu.f = 0;
             gb.cpu.f |= (dhl & 0x01) << 4;
             dhl = dhl >> 1;
@@ -762,7 +762,7 @@ macro_rules! rr {
             if dhl == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            gb.write(addr, dhl);
+            gb.cycle_write(addr, dhl);
         }
     };
 }
@@ -790,14 +790,14 @@ macro_rules! rrc {
     (d hl) => {
         |gb: &mut GameBoy| {
             let addr = gb.cpu.rd_hl();
-            let mut dhl = gb.read(addr);
+            let mut dhl = gb.cycle_read(addr);
             gb.cpu.f = 0;
             gb.cpu.f |= (dhl & 0x01) << 4;
             dhl = u8::rotate_right(dhl, 1);
             if dhl == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            gb.write(addr, dhl);
+            gb.cycle_write(addr, dhl);
         }
     };
 }
@@ -823,14 +823,14 @@ macro_rules! sla {
     (d hl) => {
         |gb: &mut GameBoy| {
             let addr = gb.cpu.rd_hl();
-            let mut dhl = gb.read(addr);
+            let mut dhl = gb.cycle_read(addr);
             gb.cpu.f = 0;
             gb.cpu.f |= (dhl & 0x80) >> 3;
             dhl = dhl << 1;
             if dhl == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            gb.write(addr, dhl);
+            gb.cycle_write(addr, dhl);
         }
     };
 }
@@ -850,14 +850,14 @@ macro_rules! sra {
     (d hl) => {
         |gb: &mut GameBoy| {
             let addr = gb.cpu.rd_hl();
-            let mut dhl = gb.read(addr);
+            let mut dhl = gb.cycle_read(addr);
             gb.cpu.f = 0;
             gb.cpu.f |= (dhl & 0x01) << 4;
             dhl = (dhl as i8 >> 1) as u8;
             if dhl == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            gb.write(addr, dhl);
+            gb.cycle_write(addr, dhl);
         }
     };
 }
@@ -877,14 +877,14 @@ macro_rules! srl {
     (d hl) => {
         |gb: &mut GameBoy| {
             let addr = gb.cpu.rd_hl();
-            let mut dhl = gb.read(addr);
+            let mut dhl = gb.cycle_read(addr);
             gb.cpu.f = 0;
             gb.cpu.f |= (dhl & 0x01) << 4;
             dhl >>= 1;
             if dhl == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            gb.write(addr, dhl);
+            gb.cycle_write(addr, dhl);
         }
     };
 }
