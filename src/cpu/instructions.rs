@@ -896,7 +896,8 @@ macro_rules! ld {
         |gb: &mut GameBoy| {
             paste::paste! {
                 let r16 = gb.cpu.[<rd_ $targ>]();
-                gb.write(r16, gb.dpc(0));
+                let val = gb.cycle_dpc(0);
+                gb.cycle_write(r16, val);
                 gb.cpu.pc.inc();
             }
         }
@@ -904,7 +905,7 @@ macro_rules! ld {
 
     ($targ: ident) => {
         |gb: &mut GameBoy| {
-            gb.cpu.$targ = gb.dpc(0);
+            gb.cpu.$targ = gb.cycle_dpc(0);
             gb.cpu.pc.inc();
         }
     };
@@ -913,7 +914,7 @@ macro_rules! ld {
         |gb: &mut GameBoy| {
             paste::paste! {
                 let r16 = gb.cpu.[<rd_ $orig>]();
-                gb.cpu.$targ = gb.read(r16);
+                gb.cpu.$targ = gb.cycle_read(r16);
             }
         }
     };
@@ -922,13 +923,16 @@ macro_rules! ld {
         |gb: &mut GameBoy| {
             paste::paste! {
                 let r16 = gb.cpu.[<rd_ $targ>]();
-                gb.write(r16, gb.cpu.$orig);
+                gb.cycle_write(r16, gb.cpu.$orig);
             }
         }
     };
 
     ($targ: ident, $orig: ident) => {
-        |gb: &mut GameBoy| gb.cpu.$targ = gb.cpu.$orig
+        |gb: &mut GameBoy| {
+            gb.cpu.$targ = gb.cpu.$orig;
+            gb.advance_cycles(4);
+        }
     };
 }
 
@@ -936,9 +940,9 @@ macro_rules! ld16 {
     (sp) => {
         |gb: &mut GameBoy| {
             gb.cpu.sp = {
-                let lsb = gb.dpc(0) as u16;
+                let lsb = gb.cycle_dpc(0) as u16;
                 gb.cpu.pc.inc();
-                let msb = gb.dpc(0) as u16;
+                let msb = gb.cycle_dpc(0) as u16;
                 gb.cpu.pc.inc();
                 (msb << 8) + lsb
             }
@@ -949,9 +953,9 @@ macro_rules! ld16 {
         |gb: &mut GameBoy| {
             paste::paste! {
                 let val = {
-                    let lsb = gb.dpc(0) as u16;
+                    let lsb = gb.cycle_dpc(0) as u16;
                     gb.cpu.pc.inc();
-                    let msb = gb.dpc(0) as u16;
+                    let msb = gb.cycle_dpc(0) as u16;
                     gb.cpu.pc.inc();
                     (msb << 8) + lsb
                 };
@@ -963,69 +967,69 @@ macro_rules! ld16 {
 
 fn ld_n16_a(gb: &mut GameBoy) {
     let addr = {
-        let lsb = gb.dpc(0) as u16;
+        let lsb = gb.cycle_dpc(0) as u16;
         gb.cpu.pc.inc();
-        let msb = gb.dpc(0) as u16;
+        let msb = gb.cycle_dpc(0) as u16;
         gb.cpu.pc.inc();
         (msb << 8) + lsb
     };
-    gb.write(addr, gb.cpu.a);
+    gb.cycle_write(addr, gb.cpu.a);
 }
 
 fn ldh_n8_a(gb: &mut GameBoy) {
-    let addr = 0xFF00 + gb.dpc(0) as u16;
+    let addr = 0xFF00 + gb.cycle_dpc(0) as u16;
     gb.cpu.pc.inc();
-    gb.write(addr, gb.cpu.a);
+    gb.cycle_write(addr, gb.cpu.a);
 }
 
 fn ldh_c_a(gb: &mut GameBoy) {
     let addr = 0xFF00 + gb.cpu.c as u16;
-    gb.write(addr, gb.cpu.a);
+    gb.cycle_write(addr, gb.cpu.a);
 }
 
 fn ld_a_n16(gb: &mut GameBoy) {
     let addr = {
-        let lsb = gb.dpc(0) as u16;
+        let lsb = gb.cycle_dpc(0) as u16;
         gb.cpu.pc.inc();
-        let msb = gb.dpc(0) as u16;
+        let msb = gb.cycle_dpc(0) as u16;
         gb.cpu.pc.inc();
         (msb << 8) + lsb
     };
-    gb.cpu.a = gb.read(addr);
+    gb.cpu.a = gb.cycle_read(addr);
 }
 
 fn ldh_a_n8(gb: &mut GameBoy) {
-    let addr = 0xFF00 + gb.dpc(0) as u16;
+    let addr = 0xFF00 + gb.cycle_dpc(0) as u16;
     gb.cpu.pc.inc();
-    gb.cpu.a = gb.read(addr);
+    gb.cpu.a = gb.cycle_read(addr);
 }
 
 fn ldh_a_c(gb: &mut GameBoy) {
     let addr = 0xFF00 + gb.cpu.c as u16;
-    gb.cpu.a = gb.read(addr);
+    gb.cpu.a = gb.cycle_read(addr);
 }
 
 fn ld_hli_a(gb: &mut GameBoy) {
     let hl = gb.cpu.rd_hl();
-    gb.write(hl, gb.cpu.a);
+    gb.cycle_write(hl, gb.cpu.a);
     gb.cpu.wr_hl(u16::wrapping_add(hl, 1));
 }
 
 fn ld_hld_a(gb: &mut GameBoy) {
     let hl = gb.cpu.rd_hl();
-    gb.write(hl, gb.cpu.a);
+    gb.cycle_write(hl, gb.cpu.a);
     gb.cpu.wr_hl(u16::wrapping_sub(hl, 1));
 }
 
 fn ld_a_hli(gb: &mut GameBoy) {
     let hl = gb.cpu.rd_hl();
-    gb.cpu.a = gb.read(hl);
+    gb.cpu.a = gb.cycle_read(hl);
     gb.cpu.wr_hl(u16::wrapping_add(hl, 1));
 }
 
 fn ld_a_hld(gb: &mut GameBoy) {
     let hl = gb.cpu.rd_hl();
-    gb.cpu.a = gb.read(hl);
+    gb.cpu.a = gb.cycle_read(hl);
     gb.cpu.wr_hl(u16::wrapping_sub(hl, 1));
 }
 
