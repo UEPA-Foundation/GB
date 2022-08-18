@@ -1180,8 +1180,10 @@ macro_rules! rst {
 // Stack Operations
 
 fn add_sp_e8(gb: &mut GameBoy) {
-    let offset = (gb.dpc(0) as i8) as u16;
+    let offset = (gb.cycle_dpc(0) as i8) as u16;
     gb.cpu.pc.inc();
+
+    gb.advance_cycles(8);
 
     let old_sp = gb.cpu.sp;
     gb.cpu.sp = u16::wrapping_add(old_sp, offset);
@@ -1197,28 +1199,32 @@ fn add_sp_e8(gb: &mut GameBoy) {
 
 fn dec_sp(gb: &mut GameBoy) {
     gb.cpu.sp.dec();
+    gb.advance_cycles(4);
 }
 
 fn inc_sp(gb: &mut GameBoy) {
     gb.cpu.sp.inc();
+    gb.advance_cycles(4);
 }
 
 fn ld_n16_sp(gb: &mut GameBoy) {
     let addr = {
-        let lsb = gb.dpc(0) as u16;
+        let lsb = gb.cycle_dpc(0) as u16;
         gb.cpu.pc.inc();
-        let msb = gb.dpc(0) as u16;
+        let msb = gb.cycle_dpc(0) as u16;
         gb.cpu.pc.inc();
         (msb << 8) + lsb
     };
     let bytes = u16::to_le_bytes(gb.cpu.sp);
-    gb.write(addr, bytes[0]);
-    gb.write(u16::wrapping_add(addr, 1), bytes[1]);
+    gb.cycle_write(addr, bytes[0]);
+    gb.cycle_write(u16::wrapping_add(addr, 1), bytes[1]);
 }
 
 fn ld_hl_sp_e8(gb: &mut GameBoy) {
-    let offset = (gb.dpc(0) as i8) as u16;
+    let offset = (gb.cycle_dpc(0) as i8) as u16;
     gb.cpu.pc.inc();
+
+    gb.advance_cycles(4);
 
     let val = u16::wrapping_add(gb.cpu.sp, offset);
     gb.cpu.wr_hl(val);
@@ -1234,12 +1240,13 @@ fn ld_hl_sp_e8(gb: &mut GameBoy) {
 
 fn ld_sp_hl(gb: &mut GameBoy) {
     gb.cpu.sp = gb.cpu.rd_hl();
+    gb.advance_cycles(4);
 }
 
 fn pop_af(gb: &mut GameBoy) {
-    gb.cpu.f = gb.read(gb.cpu.sp) & 0xF0;
+    gb.cpu.f = gb.cycle_read(gb.cpu.sp) & 0xF0;
     gb.cpu.sp.inc();
-    gb.cpu.a = gb.read(gb.cpu.sp);
+    gb.cpu.a = gb.cycle_read(gb.cpu.sp);
     gb.cpu.sp.inc();
 }
 
@@ -1248,9 +1255,9 @@ macro_rules! pop {
         |gb: &mut GameBoy| {
             paste::paste! {
                 let val = {
-                    let lsb = gb.read(gb.cpu.sp) as u16;
+                    let lsb = gb.cycle_read(gb.cpu.sp) as u16;
                     gb.cpu.sp.inc();
-                    let msb = gb.read(gb.cpu.sp) as u16;
+                    let msb = gb.cycle_read(gb.cpu.sp) as u16;
                     gb.cpu.sp.inc();
                     (msb << 8) + lsb
                 };
@@ -1261,19 +1268,21 @@ macro_rules! pop {
 }
 
 fn push_af(gb: &mut GameBoy) {
+    gb.advance_cycles(4);
     gb.cpu.sp.dec();
-    gb.write(gb.cpu.sp, gb.cpu.a);
+    gb.cycle_write(gb.cpu.sp, gb.cpu.a);
     gb.cpu.sp.dec();
-    gb.write(gb.cpu.sp, gb.cpu.f);
+    gb.cycle_write(gb.cpu.sp, gb.cpu.f);
 }
 
 macro_rules! push {
     ($hi: ident, $lo: ident) => {
         |gb: &mut GameBoy| {
+            gb.advance_cycles(4);
             gb.cpu.sp.dec();
-            gb.write(gb.cpu.sp, gb.cpu.$hi);
+            gb.cycle_write(gb.cpu.sp, gb.cpu.$hi);
             gb.cpu.sp.dec();
-            gb.write(gb.cpu.sp, gb.cpu.$lo);
+            gb.cycle_write(gb.cpu.sp, gb.cpu.$lo);
         }
     };
 }
