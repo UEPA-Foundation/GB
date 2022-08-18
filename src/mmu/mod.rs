@@ -83,9 +83,10 @@ impl GameBoy {
     }
 
     #[inline(always)]
-    pub fn cycle_read(&mut self, addr: u16) {
-        self.read(addr);
+    pub fn cycle_read(&mut self, addr: u16) -> u8 {
+        let val = self.read(addr);
         self.advance_cycles(4);
+        val
     }
 
     #[inline(always)]
