@@ -90,6 +90,11 @@ impl GameBoy {
     }
 
     #[inline(always)]
+    pub fn cycle_dpc(&mut self, offset: i8) -> u8 {
+        self.cycle_read(u16::wrapping_add(self.cpu.pc, offset as u16))
+    }
+
+    #[inline(always)]
     pub fn cycle_write(&mut self, addr: u16, val: u8) {
         self.write(addr, val);
         self.advance_cycles(4);
