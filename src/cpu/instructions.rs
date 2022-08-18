@@ -4,7 +4,7 @@ use crate::gameboy::GameBoy;
 // CB prefix
 
 fn cb_prefix(gb: &mut GameBoy) {
-    let opcode_cb = gb.dpc(0);
+    let opcode_cb = gb.cycle_dpc(0);
     gb.cpu.pc.inc();
 
     let handler = OPCODES_CB[opcode_cb as usize];
@@ -583,6 +583,7 @@ macro_rules! inc16 {
 }
 
 // Bit Operations Instructions
+
 macro_rules! bit {
     ($i: expr, $r8: ident) => {
         |gb: &mut GameBoy| {
@@ -598,7 +599,7 @@ macro_rules! bit {
         |gb: &mut GameBoy| {
             gb.cpu.f &= !(N_FLAG | Z_FLAG);
             gb.cpu.f |= H_FLAG;
-            if gb.read(gb.cpu.rd_hl()) & (1 << $i) == 0 {
+            if gb.cycle_read(gb.cpu.rd_hl()) & (1 << $i) == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
         }
@@ -615,7 +616,8 @@ macro_rules! res {
     ($i: expr, d hl) => {
         |gb: &mut GameBoy| {
             let hl = gb.cpu.rd_hl();
-            gb.write(hl, gb.read(hl) & !(1 << $i));
+            let val = gb.cycle_read(hl);
+            gb.cycle_write(hl, val & !(1 << $i));
         }
     };
 }
@@ -630,7 +632,8 @@ macro_rules! set {
     ($i: expr, d hl) => {
         |gb: &mut GameBoy| {
             let hl = gb.cpu.rd_hl();
-            gb.write(hl, gb.read(hl) | (1 << $i));
+            let val = gb.cycle_read(hl);
+            gb.cycle_write(hl, val | (1 << $i));
         }
     };
 }
@@ -650,9 +653,9 @@ macro_rules! swap {
         |gb: &mut GameBoy| {
             let addr = gb.cpu.rd_hl();
             let dhl = gb.read(addr);
-            gb.write(addr, (dhl >> 4) | (dhl << 4));
+            gb.cycle_write(addr, (dhl >> 4) | (dhl << 4));
             gb.cpu.f = 0;
-            if gb.read(addr) == 0 {
+            if gb.cycle_read(addr) == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
         }
