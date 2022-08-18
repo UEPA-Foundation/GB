@@ -67,23 +67,20 @@ impl GameBoy {
                 }
             }
             0xFF07 => {
-                let mask = match self.mmu.io.timer.tac & 0b11 {
-                    0 => 1 << 9,
-                    1 => 1 << 3,
-                    2 => 1 << 5,
-                    3 => 1 << 7,
-                    why => panic!("How the hell a two bit value equals {}?", why),
-                };
-                let bit = self.mmu.io.timer.div & mask != 0;
+                let timer = &mut self.mmu.io.timer;
+                let mask = timer.div_tima_mask();
 
-                if bit && self.mmu.io.timer.tac & 0b100 == 1 && val & 0b100 == 0 {
-                    self.mmu.io.timer.tima = u8::wrapping_add(self.mmu.io.timer.tima, 1);
-                    if self.mmu.io.timer.tima == 0 {
-                        self.mmu.io.timer.tima_state = TimaState::OVERFLOW;
-                    }
+                let bit = timer.div & mask != 0;
+                let enabled = timer.tac & 0b100 == 1;
+                let disabling = val & 0b100 == 0;
+
+                // disabling the timer while the selected div bit is active increments TIMA
+                // because of the falling edge circuitry
+                if bit && enabled && disabling {
+                    timer.increment_tima();
                 }
 
-                self.mmu.io.timer.tac = val;
+                timer.tac = val;
             }
             0xFF0F => self.mmu.io.iflags = val,
             _ => (),
@@ -105,13 +102,7 @@ impl GameBoy {
             }
 
             let timer = &mut self.mmu.io.timer;
-            let mask = match timer.tac & 0b11 {
-                0 => 1 << 9,
-                1 => 1 << 3,
-                2 => 1 << 5,
-                3 => 1 << 7,
-                why => panic!("How the hell a two bit value equals {}?", why),
-            };
+            let mask = timer.div_tima_mask();
 
             let timer_enabled = timer.tac & 0b100 == 1;
 
@@ -122,6 +113,27 @@ impl GameBoy {
             if timer_enabled && orig_bit && timer.div & mask == 0 {
                 timer.increment_tima();
             }
+        }
+    }
+}
+
+impl Timer {
+    #[inline(always)]
+    fn div_tima_mask(&self) -> u16 {
+        match self.tac & 0b11 {
+            0 => 1 << 9,
+            1 => 1 << 3,
+            2 => 1 << 5,
+            3 => 1 << 7,
+            why => panic!("How the hell a two bit value equals {}?", why),
+        }
+    }
+
+    #[inline(always)]
+    fn increment_tima(&mut self) {
+        self.tima = u8::wrapping_add(self.tima, 1);
+        if self.tima == 0 {
+            self.tima_state = TimaState::OVERFLOW;
         }
     }
 }
