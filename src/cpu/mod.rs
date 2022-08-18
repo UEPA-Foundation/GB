@@ -102,17 +102,18 @@ impl GameBoy {
         if current_ime {
             match self.fetch_interrupt() {
                 Some(intr) => {
-                    // WARN: timing here has a lot of intricacies, which are ignored for now
+                    self.advance_cycles(8);
 
                     // store current pc addr in stack
                     let addr = u16::to_le_bytes(self.cpu.pc);
                     self.cpu.sp.dec();
-                    self.write(self.cpu.sp, addr[1]);
+                    self.cycle_write(self.cpu.sp, addr[1]);
                     self.cpu.sp.dec();
-                    self.write(self.cpu.sp, addr[0]);
+                    self.cycle_write(self.cpu.sp, addr[0]);
 
                     // jump to intr handler addr
                     self.cpu.pc = (intr * 8) as u16 + 0x40;
+                    self.advance_cycles(4);
 
                     self.reset_if(intr);
                     self.ime = false;
@@ -121,7 +122,7 @@ impl GameBoy {
             }
         }
 
-        let opcode = self.dpc(0);
+        let opcode = self.cycle_dpc(0);
         self.cpu.pc.inc();
 
         let handler = OPCODES[opcode as usize];
