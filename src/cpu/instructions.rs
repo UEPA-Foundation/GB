@@ -519,6 +519,8 @@ macro_rules! xor {
 macro_rules! add16 {
     (sp) => {
         |gb: &mut GameBoy| {
+            gb.advance_cycles(4);
+
             let old_hl = gb.cpu.rd_hl();
             let val = gb.cpu.sp;
             let res = u16::wrapping_add(old_hl, val);
@@ -537,6 +539,8 @@ macro_rules! add16 {
     ($r16: ident) => {
         |gb: &mut GameBoy| {
             paste::paste! {
+                gb.advance_cycles(4);
+
                 let old_hl = gb.cpu.rd_hl();
                 let val = gb.cpu.[<rd_ $r16>]();
                 let res = u16::wrapping_add(old_hl, val);
@@ -558,6 +562,7 @@ macro_rules! dec16 {
     ($r16: ident) => {
         |gb: &mut GameBoy| {
             paste::paste! {
+                gb.advance_cycles(4);
                 let val = u16::wrapping_sub(gb.cpu.[<rd_ $r16>](), 1);
                 gb.cpu.[<wr_ $r16>](val);
             }
@@ -569,6 +574,7 @@ macro_rules! inc16 {
     ($r16: ident) => {
         |gb: &mut GameBoy| {
             paste::paste! {
+                gb.advance_cycles(4);
                 let val = u16::wrapping_add(gb.cpu.[<rd_ $r16>](), 1);
                 gb.cpu.[<wr_ $r16>](val);
             }
