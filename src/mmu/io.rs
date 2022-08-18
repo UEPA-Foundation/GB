@@ -90,41 +90,43 @@ impl GameBoy {
         }
     }
 
-    pub fn cycle_timer(&mut self) {
-        match self.mmu.io.timer.tima_state {
-            TimaState::RUNNING => {}
-            TimaState::OVERFLOW => {
-                self.set_if(0x02); // timer
-                self.mmu.io.timer.tima_state = TimaState::LOADING;
-            }
-            TimaState::LOADING => {
-                self.mmu.io.timer.tima = self.mmu.io.timer.tma;
-                self.mmu.io.timer.tima_state = TimaState::RUNNING;
-            }
-        }
-
-        let timer = &mut self.mmu.io.timer;
-        let mask = match timer.tac & 0b11 {
-            0 => 1 << 9,
-            1 => 1 << 3,
-            2 => 1 << 5,
-            3 => 1 << 7,
-            why => panic!("How the hell a two bit value equals {}?", why),
-        };
-
-        if timer.tac & 0b100 == 0 {
-            for _ in 0..4 {
-                let orig_bit = timer.div & mask != 0;
-                timer.div = u16::wrapping_add(timer.div, 1);
-                if orig_bit && timer.div & mask == 0 {
-                    timer.tima = u8::wrapping_add(timer.tima, 1);
-                    if timer.tima == 0 {
-                        timer.tima_state = TimaState::OVERFLOW;
-                    }
+    pub fn cycle_timer(&mut self, cycles: u8) {
+        for _ in 0..cycles {
+            match self.mmu.io.timer.tima_state {
+                TimaState::RUNNING => {}
+                TimaState::OVERFLOW => {
+                    self.set_if(0x02); // timer
+                    self.mmu.io.timer.tima_state = TimaState::LOADING;
+                }
+                TimaState::LOADING => {
+                    self.mmu.io.timer.tima = self.mmu.io.timer.tma;
+                    self.mmu.io.timer.tima_state = TimaState::RUNNING;
                 }
             }
-        } else {
-            timer.div = u16::wrapping_add(timer.div, 4);
+
+            let timer = &mut self.mmu.io.timer;
+            let mask = match timer.tac & 0b11 {
+                0 => 1 << 9,
+                1 => 1 << 3,
+                2 => 1 << 5,
+                3 => 1 << 7,
+                why => panic!("How the hell a two bit value equals {}?", why),
+            };
+
+            if timer.tac & 0b100 == 0 {
+                for _ in 0..4 {
+                    let orig_bit = timer.div & mask != 0;
+                    timer.div = u16::wrapping_add(timer.div, 1);
+                    if orig_bit && timer.div & mask == 0 {
+                        timer.tima = u8::wrapping_add(timer.tima, 1);
+                        if timer.tima == 0 {
+                            timer.tima_state = TimaState::OVERFLOW;
+                        }
+                    }
+                }
+            } else {
+                timer.div = u16::wrapping_add(timer.div, 4);
+            }
         }
     }
 }
