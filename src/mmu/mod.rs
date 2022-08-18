@@ -82,6 +82,18 @@ impl GameBoy {
     }
 
     #[inline(always)]
+    pub fn cycle_read(&mut self, addr: u16) {
+        self.read(addr);
+        self.advance_cycles(4);
+    }
+
+    #[inline(always)]
+    pub fn cycle_write(&mut self, addr: u16, val: u8) {
+        self.write(addr, val);
+        self.advance_cycles(4);
+    }
+
+    #[inline(always)]
     pub fn fetch_interrupt(&self) -> Option<u8> {
         match self.io_read(0xFF0F) & self.mmu.ie & 0x1F {
             0 => None,
