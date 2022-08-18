@@ -1035,51 +1035,66 @@ fn ld_a_hld(gb: &mut GameBoy) {
 
 // Jumps and Subroutines
 
-#[inline(always)]
-fn _call(gb: &mut GameBoy) {
-    let addr = u16::to_le_bytes(u16::wrapping_add(gb.cpu.pc, 2));
-    gb.cpu.sp.dec();
-    gb.write(gb.cpu.sp, addr[1]);
-    gb.cpu.sp.dec();
-    gb.write(gb.cpu.sp, addr[0]);
-    _jp(gb);
-}
-
 macro_rules! call {
     () => {
         |gb: &mut GameBoy| {
-            _call(gb);
+            let jp_addr = {
+                let lsb = gb.cycle_dpc(0) as u16;
+                gb.cpu.pc.inc();
+                let msb = gb.cycle_dpc(0) as u16;
+                gb.cpu.pc.inc();
+                (msb << 8) + lsb
+            };
+
+            let ret = u16::to_le_bytes(gb.cpu.pc);
+            gb.cpu.sp.dec();
+            gb.cycle_write(gb.cpu.sp, ret[1]);
+            gb.cpu.sp.dec();
+            gb.cycle_write(gb.cpu.sp, ret[0]);
+
+            gb.cpu.pc = jp_addr;
         }
     };
 
     ($cc: ident) => {
         |gb: &mut GameBoy| {
             paste::paste! {
+                let jp_addr = {
+                    let lsb = gb.cycle_dpc(0) as u16;
+                    gb.cpu.pc.inc();
+                    let msb = gb.cycle_dpc(0) as u16;
+                    gb.cpu.pc.inc();
+                    (msb << 8) + lsb
+                };
+
                 if gb.cpu.[<$cc _flag>]() {
-                    _call(gb);
-                    return;
+                    gb.advance_cycles(4);
+
+                    let ret = u16::to_le_bytes(gb.cpu.pc);
+                    gb.cpu.sp.dec();
+                    gb.cycle_write(gb.cpu.sp, ret[1]);
+                    gb.cpu.sp.dec();
+                    gb.cycle_write(gb.cpu.sp, ret[0]);
+
+                    gb.cpu.pc = jp_addr;
                 }
-                gb.cpu.pc = u16::wrapping_add(gb.cpu.pc, 2);
             }
         }
-    };
-}
-
-#[inline(always)]
-fn _jp(gb: &mut GameBoy) {
-    gb.cpu.pc = {
-        let lsb = gb.dpc(0) as u16;
-        gb.cpu.pc.inc();
-        let msb = gb.dpc(0) as u16;
-        gb.cpu.pc.inc();
-        (msb << 8) + lsb
     };
 }
 
 macro_rules! jp {
     () => {
         |gb: &mut GameBoy| {
-            _jp(gb);
+            let addr = {
+                let lsb = gb.cycle_dpc(0) as u16;
+                gb.cpu.pc.inc();
+                let msb = gb.cycle_dpc(0) as u16;
+                gb.cpu.pc.inc();
+                (msb << 8) + lsb
+            };
+            gb.advance_cycles(8);
+            gb.cpu.pc = addr;
         }
     };
 
@@ -1092,38 +1107,42 @@ macro_rules! jp {
     ($cc: ident) => {
         |gb: &mut GameBoy| {
             paste::paste! {
+                let addr = {
+                    let lsb = gb.cycle_dpc(0) as u16;
+                    gb.cpu.pc.inc();
+                    let msb = gb.cycle_dpc(0) as u16;
+                    gb.cpu.pc.inc();
+                    (msb << 8) + lsb
+                };
                 if gb.cpu.[<$cc _flag>]() {
-                    _jp(gb);
+                    gb.advance_cycles(4);
+                    gb.cpu.pc = addr;
                     return;
                 }
-                gb.cpu.pc = u16::wrapping_add(gb.cpu.pc, 2);
             }
         }
     };
 }
 
-#[inline(always)]
-fn _jr(gb: &mut GameBoy) {
-    let addr = (gb.dpc(0) as i8) as u16;
-    gb.cpu.pc = u16::wrapping_add(gb.cpu.pc, addr);
-    gb.cpu.pc.inc();
-}
-
 macro_rules! jr {
     () => {
         |gb: &mut GameBoy| {
-            _jr(gb);
+            let addr = (gb.cycle_dpc(0) as i8) as u16;
+            gb.cpu.pc.inc();
+            gb.cpu.pc = u16::wrapping_add(gb.cpu.pc, addr);
+            gb.advance_cycles(4);
         }
     };
 
     ($cc: ident) => {
         |gb: &mut GameBoy| {
             paste::paste! {
-                if gb.cpu.[<$cc _flag>]() {
-                    _jr(gb);
-                    return;
-                }
+                let addr = (gb.cycle_dpc(0) as i8) as u16;
                 gb.cpu.pc.inc();
+                if gb.cpu.[<$cc _flag>]() {
+                    gb.cpu.pc = u16::wrapping_add(gb.cpu.pc, addr);
+                    gb.advance_cycles(4);
+                }
             }
         }
     };
@@ -1132,27 +1151,28 @@ macro_rules! jr {
 #[inline(always)]
 fn _ret(gb: &mut GameBoy) {
     gb.cpu.pc = {
-        let lo = gb.read(gb.cpu.sp) as u16;
+        let lo = gb.cycle_read(gb.cpu.sp) as u16;
         gb.cpu.sp.inc();
-        let hi = gb.read(gb.cpu.sp) as u16;
+        let hi = gb.cycle_read(gb.cpu.sp) as u16;
         gb.cpu.sp.inc();
         (hi << 8) + lo
-    }
+    };
+    gb.advance_cycles(4);
 }
 
 macro_rules! ret {
     () => {
-        |gb: &mut GameBoy| {
-            _ret(gb);
-        }
+        |gb: &mut GameBoy| _ret(gb)
     };
 
     ($cc: ident) => {
         |gb: &mut GameBoy| {
             paste::paste! {
+                gb.advance_cycles(4);
                 if gb.cpu.[<$cc _flag>]() {
                     _ret(gb);
-                    return;
+                } else {
+                    gb.cpu.pc.inc();
                 }
             }
         }
@@ -1167,11 +1187,13 @@ fn reti(gb: &mut GameBoy) {
 macro_rules! rst {
     ($hx: expr) => {
         |gb: &mut GameBoy| {
+            gb.advance_cycles(4);
+
             let addr = u16::to_le_bytes(gb.cpu.pc);
             gb.cpu.sp.dec();
-            gb.write(gb.cpu.sp, addr[1]);
+            gb.cycle_write(gb.cpu.sp, addr[1]);
             gb.cpu.sp.dec();
-            gb.write(gb.cpu.sp, addr[0]);
+            gb.cycle_write(gb.cpu.sp, addr[0]);
             gb.cpu.pc = $hx;
         }
     };
