@@ -59,7 +59,8 @@ impl GameBoy {
         }
     }
 
-    pub fn read_instr(&self, offset: i8) -> u8 {
+    #[inline(always)]
+    pub fn dpc(&self, offset: i8) -> u8 {
         self.read(u16::wrapping_add(self.cpu.pc, offset as u16))
     }
 

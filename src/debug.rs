@@ -195,7 +195,7 @@ impl<'a> DebugGB<'a> {
         for _ in 0..steps {
             let mut count = 0;
             loop {
-                match self.gb.read_instr(0) {
+                match self.gb.dpc(0) {
                     0xC4 | 0xCC | 0xD4 | 0xDC | 0xCD => count += 1,
                     0xC0 | 0xC8 | 0xC9 | 0xD0 | 0xD8 | 0xD9 => count -= 1,
                     _ => {}

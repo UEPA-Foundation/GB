@@ -121,7 +121,7 @@ impl GameBoy {
             }
         }
 
-        let opcode = self.read_instr(0);
+        let opcode = self.dpc(0);
         self.cpu.pc.inc();
 
         let handler = OPCODES[opcode as usize];

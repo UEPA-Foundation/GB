@@ -14,7 +14,7 @@ macro_rules! test_blargg {
                     out.push(gb.read(0xFF01));
                 }
                 // if it has reached an infinite loop (jr -2), break
-                if gb.read_instr(0) == 0x18 && gb.read_instr(1) == 0xFE {
+                if gb.dpc(0) == 0x18 && gb.dpc(1) == 0xFE {
                     break;
                 }
                 gb.write(0xFF02, 0); // This should be removed when serial works

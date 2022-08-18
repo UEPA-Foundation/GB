@@ -4,7 +4,7 @@ use crate::gameboy::GameBoy;
 // CB prefix
 
 fn cb_prefix(gb: &mut GameBoy) {
-    let opcode_cb = gb.read_instr(0);
+    let opcode_cb = gb.dpc(0);
     gb.cpu.pc.inc();
 
     let handler = OPCODES_CB[opcode_cb as usize];
@@ -16,7 +16,7 @@ fn cb_prefix(gb: &mut GameBoy) {
 macro_rules! adc {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.read_instr(0);
+            let val = gb.dpc(0);
             gb.cpu.pc.inc();
 
             let old_a = gb.cpu.a;
@@ -84,7 +84,7 @@ macro_rules! adc {
 macro_rules! add {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.read_instr(0);
+            let val = gb.dpc(0);
             gb.cpu.pc.inc();
 
             let old_a = gb.cpu.a;
@@ -143,7 +143,7 @@ macro_rules! add {
 macro_rules! and {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.read_instr(0);
+            let val = gb.dpc(0);
             gb.cpu.pc.inc();
 
             gb.cpu.a &= val;
@@ -181,7 +181,7 @@ macro_rules! and {
 macro_rules! cp {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.read_instr(0);
+            let val = gb.dpc(0);
             gb.cpu.pc.inc();
 
             gb.cpu.f = N_FLAG;
@@ -310,7 +310,7 @@ macro_rules! inc {
 macro_rules! or {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.read_instr(0);
+            let val = gb.dpc(0);
             gb.cpu.pc.inc();
 
             gb.cpu.a |= val;
@@ -348,7 +348,7 @@ macro_rules! or {
 macro_rules! sbc {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.read_instr(0);
+            let val = gb.dpc(0);
             gb.cpu.pc.inc();
 
             let old_a = gb.cpu.a;
@@ -417,7 +417,7 @@ macro_rules! sbc {
 macro_rules! sub {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.read_instr(0);
+            let val = gb.dpc(0);
             gb.cpu.pc.inc();
 
             let old_a = gb.cpu.a;
@@ -477,7 +477,7 @@ macro_rules! sub {
 macro_rules! xor {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.read_instr(0);
+            let val = gb.dpc(0);
             gb.cpu.pc.inc();
 
             gb.cpu.a ^= val;
@@ -885,7 +885,7 @@ macro_rules! ld {
         |gb: &mut GameBoy| {
             paste::paste! {
                 let r16 = gb.cpu.[<rd_ $targ>]();
-                gb.write(r16, gb.read_instr(0));
+                gb.write(r16, gb.dpc(0));
                 gb.cpu.pc.inc();
             }
         }
@@ -893,7 +893,7 @@ macro_rules! ld {
 
     ($targ: ident) => {
         |gb: &mut GameBoy| {
-            gb.cpu.$targ = gb.read_instr(0);
+            gb.cpu.$targ = gb.dpc(0);
             gb.cpu.pc.inc();
         }
     };
@@ -925,9 +925,9 @@ macro_rules! ld16 {
     (sp) => {
         |gb: &mut GameBoy| {
             gb.cpu.sp = {
-                let lsb = gb.read_instr(0) as u16;
+                let lsb = gb.dpc(0) as u16;
                 gb.cpu.pc.inc();
-                let msb = gb.read_instr(0) as u16;
+                let msb = gb.dpc(0) as u16;
                 gb.cpu.pc.inc();
                 (msb << 8) + lsb
             }
@@ -938,9 +938,9 @@ macro_rules! ld16 {
         |gb: &mut GameBoy| {
             paste::paste! {
                 let val = {
-                    let lsb = gb.read_instr(0) as u16;
+                    let lsb = gb.dpc(0) as u16;
                     gb.cpu.pc.inc();
-                    let msb = gb.read_instr(0) as u16;
+                    let msb = gb.dpc(0) as u16;
                     gb.cpu.pc.inc();
                     (msb << 8) + lsb
                 };
@@ -952,9 +952,9 @@ macro_rules! ld16 {
 
 fn ld_n16_a(gb: &mut GameBoy) {
     let addr = {
-        let lsb = gb.read_instr(0) as u16;
+        let lsb = gb.dpc(0) as u16;
         gb.cpu.pc.inc();
-        let msb = gb.read_instr(0) as u16;
+        let msb = gb.dpc(0) as u16;
         gb.cpu.pc.inc();
         (msb << 8) + lsb
     };
@@ -962,7 +962,7 @@ fn ld_n16_a(gb: &mut GameBoy) {
 }
 
 fn ldh_n8_a(gb: &mut GameBoy) {
-    let addr = 0xFF00 + gb.read_instr(0) as u16;
+    let addr = 0xFF00 + gb.dpc(0) as u16;
     gb.cpu.pc.inc();
     gb.write(addr, gb.cpu.a);
 }
@@ -974,9 +974,9 @@ fn ldh_c_a(gb: &mut GameBoy) {
 
 fn ld_a_n16(gb: &mut GameBoy) {
     let addr = {
-        let lsb = gb.read_instr(0) as u16;
+        let lsb = gb.dpc(0) as u16;
         gb.cpu.pc.inc();
-        let msb = gb.read_instr(0) as u16;
+        let msb = gb.dpc(0) as u16;
         gb.cpu.pc.inc();
         (msb << 8) + lsb
     };
@@ -984,7 +984,7 @@ fn ld_a_n16(gb: &mut GameBoy) {
 }
 
 fn ldh_a_n8(gb: &mut GameBoy) {
-    let addr = 0xFF00 + gb.read_instr(0) as u16;
+    let addr = 0xFF00 + gb.dpc(0) as u16;
     gb.cpu.pc.inc();
     gb.cpu.a = gb.read(addr);
 }
@@ -1053,9 +1053,9 @@ macro_rules! call {
 #[inline(always)]
 fn _jp(gb: &mut GameBoy) {
     gb.cpu.pc = {
-        let lsb = gb.read_instr(0) as u16;
+        let lsb = gb.dpc(0) as u16;
         gb.cpu.pc.inc();
-        let msb = gb.read_instr(0) as u16;
+        let msb = gb.dpc(0) as u16;
         gb.cpu.pc.inc();
         (msb << 8) + lsb
     };
@@ -1089,7 +1089,7 @@ macro_rules! jp {
 
 #[inline(always)]
 fn _jr(gb: &mut GameBoy) {
-    let addr = (gb.read_instr(0) as i8) as u16;
+    let addr = (gb.dpc(0) as i8) as u16;
     gb.cpu.pc = u16::wrapping_add(gb.cpu.pc, addr);
     gb.cpu.pc.inc();
 }
@@ -1165,7 +1165,7 @@ macro_rules! rst {
 // Stack Operations
 
 fn add_sp_e8(gb: &mut GameBoy) {
-    let offset = (gb.read_instr(0) as i8) as u16;
+    let offset = (gb.dpc(0) as i8) as u16;
     gb.cpu.pc.inc();
 
     let old_sp = gb.cpu.sp;
@@ -1190,9 +1190,9 @@ fn inc_sp(gb: &mut GameBoy) {
 
 fn ld_n16_sp(gb: &mut GameBoy) {
     let addr = {
-        let lsb = gb.read_instr(0) as u16;
+        let lsb = gb.dpc(0) as u16;
         gb.cpu.pc.inc();
-        let msb = gb.read_instr(0) as u16;
+        let msb = gb.dpc(0) as u16;
         gb.cpu.pc.inc();
         (msb << 8) + lsb
     };
@@ -1202,7 +1202,7 @@ fn ld_n16_sp(gb: &mut GameBoy) {
 }
 
 fn ld_hl_sp_e8(gb: &mut GameBoy) {
-    let offset = (gb.read_instr(0) as i8) as u16;
+    let offset = (gb.dpc(0) as i8) as u16;
     gb.cpu.pc.inc();
 
     let val = u16::wrapping_add(gb.cpu.sp, offset);
