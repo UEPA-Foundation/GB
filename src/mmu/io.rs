@@ -17,8 +17,8 @@ struct Timer {
 
 enum TimaState {
     RUNNING,
-    OVERFLOW,
-    LOADING,
+    OVERFLOW(u8),
+    LOADING(u8),
 }
 
 impl IoRegisters {
@@ -53,19 +53,13 @@ impl GameBoy {
             0xFF04 => self.mmu.io.timer.div = 0,
             0xFF05 => match self.mmu.io.timer.tima_state {
                 TimaState::RUNNING => self.mmu.io.timer.tima = val,
-                TimaState::OVERFLOW => {
+                TimaState::OVERFLOW(_) => {
                     self.mmu.io.timer.tima = val;
                     self.mmu.io.timer.tima_state = TimaState::RUNNING;
                 }
-                TimaState::LOADING => return,
+                TimaState::LOADING(_) => {}
             },
-            0xFF06 => {
-                self.mmu.io.timer.tma = val;
-                match self.mmu.io.timer.tima_state {
-                    TimaState::LOADING => self.mmu.io.timer.tima = val,
-                    _ => {}
-                }
-            }
+            0xFF06 => self.mmu.io.timer.tma = val,
             0xFF07 => {
                 let timer = &mut self.mmu.io.timer;
                 let mask = timer.div_tima_mask();
@@ -91,13 +85,20 @@ impl GameBoy {
         for _ in 0..cycles {
             match self.mmu.io.timer.tima_state {
                 TimaState::RUNNING => {}
-                TimaState::OVERFLOW => {
-                    self.set_if(0x02); // timer
-                    self.mmu.io.timer.tima_state = TimaState::LOADING;
-                }
-                TimaState::LOADING => {
-                    self.mmu.io.timer.tima = self.mmu.io.timer.tma;
-                    self.mmu.io.timer.tima_state = TimaState::RUNNING;
+                TimaState::OVERFLOW(ref mut count) => match count {
+                    0 => self.mmu.io.timer.tima_state = TimaState::LOADING(3),
+                    _ => *count -= 1,
+                },
+                TimaState::LOADING(count) => {
+                    if count == 0 {
+                        self.mmu.io.timer.tima_state = TimaState::RUNNING;
+                        self.mmu.io.timer.tima = self.mmu.io.timer.tma;
+                        return;
+                    }
+                    if count == 3 {
+                        self.set_if(0x02);
+                    }
+                    self.mmu.io.timer.tima_state = TimaState::LOADING(count - 1);
                 }
             }
 
@@ -133,7 +134,7 @@ impl Timer {
     fn increment_tima(&mut self) {
         self.tima = u8::wrapping_add(self.tima, 1);
         if self.tima == 0 {
-            self.tima_state = TimaState::OVERFLOW;
+            self.tima_state = TimaState::OVERFLOW(3);
         }
     }
 }
