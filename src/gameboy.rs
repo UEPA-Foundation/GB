@@ -30,4 +30,8 @@ impl GameBoy {
             self.fetch_exec();
         }
     }
+
+    pub fn advance_cycles(&mut self, cycles: u8) {
+        self.cycle_timer(cycles);
+    }
 }
