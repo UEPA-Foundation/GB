@@ -113,19 +113,14 @@ impl GameBoy {
                 why => panic!("How the hell a two bit value equals {}?", why),
             };
 
-            if timer.tac & 0b100 == 0 {
-                for _ in 0..4 {
-                    let orig_bit = timer.div & mask != 0;
-                    timer.div = u16::wrapping_add(timer.div, 1);
-                    if orig_bit && timer.div & mask == 0 {
-                        timer.tima = u8::wrapping_add(timer.tima, 1);
-                        if timer.tima == 0 {
-                            timer.tima_state = TimaState::OVERFLOW;
-                        }
-                    }
-                }
-            } else {
-                timer.div = u16::wrapping_add(timer.div, 4);
+            let timer_enabled = timer.tac & 0b100 == 1;
+
+            let orig_bit = timer.div & mask != 0;
+            timer.div = u16::wrapping_add(timer.div, 1);
+
+            // falling edge detection
+            if timer_enabled && orig_bit && timer.div & mask == 0 {
+                timer.increment_tima();
             }
         }
     }
