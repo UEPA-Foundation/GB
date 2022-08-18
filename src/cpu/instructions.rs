@@ -16,7 +16,7 @@ fn cb_prefix(gb: &mut GameBoy) {
 macro_rules! adc {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.dpc(0);
+            let val = gb.cycle_dpc(0);
             gb.cpu.pc.inc();
 
             let old_a = gb.cpu.a;
@@ -63,15 +63,16 @@ macro_rules! adc {
         |gb: &mut GameBoy| {
             let old_a = gb.cpu.a;
             let carry = gb.cpu.c_flag();
+            let val = gb.cycle_read(gb.cpu.rd_hl());
 
-            gb.cpu.a = u8::wrapping_add(gb.cpu.a, gb.read(gb.cpu.rd_hl()));
+            gb.cpu.a = u8::wrapping_add(gb.cpu.a, val);
             gb.cpu.a = u8::wrapping_add(gb.cpu.a, carry as u8);
 
             gb.cpu.f = 0;
             if gb.cpu.a == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            if (old_a & 0x0F) + (gb.read(gb.cpu.rd_hl()) & 0x0F) + carry as u8 > 0x0F {
+            if (old_a & 0x0F) + (val & 0x0F) + carry as u8 > 0x0F {
                 gb.cpu.f |= H_FLAG;
             }
             if gb.cpu.a < old_a || (gb.cpu.a == old_a && carry) {
@@ -84,7 +85,7 @@ macro_rules! adc {
 macro_rules! add {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.dpc(0);
+            let val = gb.cycle_dpc(0);
             gb.cpu.pc.inc();
 
             let old_a = gb.cpu.a;
@@ -124,13 +125,14 @@ macro_rules! add {
     (d hl) => {
         |gb: &mut GameBoy| {
             let old_a = gb.cpu.a;
-            gb.cpu.a = u8::wrapping_add(gb.cpu.a, gb.read(gb.cpu.rd_hl()));
+            let val = gb.cycle_read(gb.cpu.rd_hl());
+            gb.cpu.a = u8::wrapping_add(gb.cpu.a, val);
 
             gb.cpu.f = 0;
             if gb.cpu.a == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            if (old_a & 0x0F) + (gb.read(gb.cpu.rd_hl()) & 0x0F) > 0x0F {
+            if (old_a & 0x0F) + (val & 0x0F) > 0x0F {
                 gb.cpu.f |= H_FLAG;
             }
             if gb.cpu.a < old_a {
@@ -143,7 +145,7 @@ macro_rules! add {
 macro_rules! and {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.dpc(0);
+            let val = gb.cycle_dpc(0);
             gb.cpu.pc.inc();
 
             gb.cpu.a &= val;
@@ -168,7 +170,7 @@ macro_rules! and {
 
     (d hl) => {
         |gb: &mut GameBoy| {
-            gb.cpu.a &= gb.read(gb.cpu.rd_hl());
+            gb.cpu.a &= gb.cycle_read(gb.cpu.rd_hl());
 
             gb.cpu.f = H_FLAG;
             if gb.cpu.a == 0 {
@@ -181,7 +183,7 @@ macro_rules! and {
 macro_rules! cp {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.dpc(0);
+            let val = gb.cycle_dpc(0);
             gb.cpu.pc.inc();
 
             gb.cpu.f = N_FLAG;
@@ -214,15 +216,15 @@ macro_rules! cp {
 
     (d hl) => {
         |gb: &mut GameBoy| {
-            let addr = gb.cpu.rd_hl();
+            let val = gb.read(gb.cpu.rd_hl());
             gb.cpu.f = N_FLAG;
-            if gb.cpu.a == gb.read(addr) {
+            if gb.cpu.a == val {
                 gb.cpu.f |= Z_FLAG;
             }
-            if gb.cpu.a & 0x0F < gb.read(addr) & 0x0F {
+            if gb.cpu.a & 0x0F < val & 0x0F {
                 gb.cpu.f |= H_FLAG;
             }
-            if gb.cpu.a < gb.read(addr) {
+            if gb.cpu.a < val {
                 gb.cpu.f |= C_FLAG;
             }
         }
@@ -248,13 +250,13 @@ macro_rules! dec {
         }
     };
 
-    (d $r16: ident) => {
+    (d hl) => {
         |gb: &mut GameBoy| {
             paste::paste! {
                 let addr = gb.cpu.rd_hl();
-                let val = gb.read(addr);
+                let val = gb.cycle_read(addr);
                 let res = u8::wrapping_sub(val, 1);
-                gb.write(addr, res);
+                gb.cycle_write(addr, res);
 
                 gb.cpu.f &= !(Z_FLAG | H_FLAG);
                 gb.cpu.f |= N_FLAG;
@@ -287,13 +289,13 @@ macro_rules! inc {
         }
     };
 
-    (d $r16: ident) => {
+    (d hl) => {
         |gb: &mut GameBoy| {
             paste::paste! {
                 let addr = gb.cpu.rd_hl();
-                let val = gb.read(addr);
+                let val = gb.cycle_read(addr);
                 let res = u8::wrapping_add(val, 1);
-                gb.write(addr, res);
+                gb.cycle_write(addr, res);
 
                 gb.cpu.f &= !(Z_FLAG | N_FLAG | H_FLAG);
                 if (res == 0) {
@@ -310,7 +312,7 @@ macro_rules! inc {
 macro_rules! or {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.dpc(0);
+            let val = gb.cycle_dpc(0);
             gb.cpu.pc.inc();
 
             gb.cpu.a |= val;
@@ -335,7 +337,7 @@ macro_rules! or {
 
     (d hl) => {
         |gb: &mut GameBoy| {
-            gb.cpu.a |= gb.read(gb.cpu.rd_hl());
+            gb.cpu.a |= gb.cycle_read(gb.cpu.rd_hl());
 
             gb.cpu.f = 0;
             if gb.cpu.a == 0 {
@@ -348,7 +350,7 @@ macro_rules! or {
 macro_rules! sbc {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.dpc(0);
+            let val = gb.cycle_dpc(0);
             gb.cpu.pc.inc();
 
             let old_a = gb.cpu.a;
@@ -395,19 +397,19 @@ macro_rules! sbc {
         |gb: &mut GameBoy| {
             let old_a = gb.cpu.a;
             let carry = gb.cpu.c_flag();
-            let addr = gb.cpu.rd_hl();
+            let val = gb.cycle_read(gb.cpu.rd_hl());
 
-            gb.cpu.a = u8::wrapping_sub(gb.cpu.a, gb.read(addr));
+            gb.cpu.a = u8::wrapping_sub(gb.cpu.a, val);
             gb.cpu.a = u8::wrapping_sub(gb.cpu.a, carry as u8);
 
             gb.cpu.f = N_FLAG;
             if gb.cpu.a == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            if (old_a & 0x0F) < (gb.read(addr) & 0x0F) + carry as u8 {
+            if (old_a & 0x0F) < (val & 0x0F) + carry as u8 {
                 gb.cpu.f |= H_FLAG;
             }
-            if old_a < u8::wrapping_add(gb.read(addr), carry as u8) || (gb.read(addr) == 0xFF && carry) {
+            if old_a < u8::wrapping_add(val, carry as u8) || (val == 0xFF && carry) {
                 gb.cpu.f |= C_FLAG;
             }
         }
@@ -417,7 +419,7 @@ macro_rules! sbc {
 macro_rules! sub {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.dpc(0);
+            let val = gb.cycle_dpc(0);
             gb.cpu.pc.inc();
 
             let old_a = gb.cpu.a;
@@ -457,17 +459,17 @@ macro_rules! sub {
     (d hl) => {
         |gb: &mut GameBoy| {
             let old_a = gb.cpu.a;
-            let addr = gb.cpu.rd_hl();
-            gb.cpu.a = u8::wrapping_sub(gb.cpu.a, gb.read(addr));
+            let val = gb.cycle_read(gb.cpu.rd_hl());
+            gb.cpu.a = u8::wrapping_sub(gb.cpu.a, val);
 
             gb.cpu.f = N_FLAG;
             if gb.cpu.a == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
-            if (old_a & 0x0F) < (gb.read(addr) & 0x0F) {
+            if (old_a & 0x0F) < (val & 0x0F) {
                 gb.cpu.f |= H_FLAG;
             }
-            if old_a < gb.read(addr) {
+            if old_a < val {
                 gb.cpu.f |= C_FLAG;
             }
         }
@@ -477,7 +479,7 @@ macro_rules! sub {
 macro_rules! xor {
     () => {
         |gb: &mut GameBoy| {
-            let val = gb.dpc(0);
+            let val = gb.cycle_dpc(0);
             gb.cpu.pc.inc();
 
             gb.cpu.a ^= val;
@@ -502,7 +504,7 @@ macro_rules! xor {
 
     (d hl) => {
         |gb: &mut GameBoy| {
-            gb.cpu.a ^= gb.read(gb.cpu.rd_hl());
+            gb.cpu.a ^= gb.cycle_read(gb.cpu.rd_hl());
 
             gb.cpu.f = 0;
             if gb.cpu.a == 0 {
