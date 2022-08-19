@@ -37,7 +37,6 @@ macro_rules! test_blargg {
     };
 }
 
-test_blargg!(cpu_instrs, "cpu_instrs/cpu_instrs.gb");
 test_blargg!(cpu_instrs_01_special, "cpu_instrs/individual/01-special.gb");
 test_blargg!(cpu_instrs_02_int, "cpu_instrs/individual/02-interrupts.gb");
 test_blargg!(cpu_instrs_03_op_sp_hl, "cpu_instrs/individual/03-op sp,hl.gb");
