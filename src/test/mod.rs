@@ -8,15 +8,25 @@ macro_rules! test_blargg {
             std::panic::set_hook(Box::new(|_| {}));
             let mut gb = GameBoy::init(concat!("./src/test/gb-test-roms/", $path));
             let mut out = vec![];
-            for _ in 0..100000000 {
+            for _ in 0..30000000 {
                 gb.fetch_exec();
+
                 if gb.read(0xFF02) == 0x81 {
                     out.push(gb.read(0xFF01));
                 }
-                // if it has reached an infinite loop (jr -2), break
-                if gb.dpc(0) == 0x18 && gb.dpc(1) == 0xFE {
+
+                // if it has reached an infinite loop (jr -2 or jp pc), break
+                let opcode = gb.dpc(0);
+                let param1 = gb.dpc(1);
+                let param2 = gb.dpc(2);
+                let pc_hi = (gb.cpu.pc >> 8) as u8;
+                let pc_lo = gb.cpu.pc as u8;
+                if (opcode == 0x18 && param1 == 0xFE)  ||
+                   (opcode == 0xC3 && param1 == pc_hi && param2 == pc_lo)
+                {
                     break;
                 }
+
                 gb.write(0xFF02, 0); // This should be removed when serial works
             }
 
