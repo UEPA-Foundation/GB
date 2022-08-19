@@ -117,6 +117,6 @@ impl GameBoy {
     #[inline(always)]
     pub fn reset_if(&mut self, intr: u8) {
         let iflags = self.io_read(0xFF0F);
-        self.io_write(0xFF0F, iflags & intr);
+        self.io_write(0xFF0F, iflags & !intr);
     }
 }
