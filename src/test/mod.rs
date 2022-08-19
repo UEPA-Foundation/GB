@@ -58,3 +58,5 @@ test_blargg!(cpu_instrs_08_misc, "cpu_instrs/individual/08-misc instrs.gb");
 test_blargg!(cpu_instrs_09_op_r_r, "cpu_instrs/individual/09-op r,r.gb");
 test_blargg!(cpu_instrs_10_bit, "cpu_instrs/individual/10-bit ops.gb");
 test_blargg!(cpu_instrs_11_op_a_dhl, "cpu_instrs/individual/11-op a,(hl).gb");
+
+test_blargg!(halt_bug, "halt_bug.gb");
