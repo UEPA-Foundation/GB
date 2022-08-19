@@ -105,7 +105,7 @@ impl GameBoy {
             let timer = &mut self.mmu.io.timer;
             let mask = timer.div_tima_mask();
 
-            let timer_enabled = timer.tac & 0b100 == 1;
+            let timer_enabled = timer.tac & 0b100 != 0;
 
             let orig_bit = timer.div & mask != 0;
             timer.div = u16::wrapping_add(timer.div, 1);
