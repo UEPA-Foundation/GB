@@ -65,7 +65,7 @@ impl GameBoy {
                 let mask = timer.div_tima_mask();
 
                 let bit = timer.div & mask != 0;
-                let enabled = timer.tac & 0b100 != 0;
+                let enabled = timer.is_enabled();
                 let disabling = val & 0b100 == 0;
 
                 // disabling the timer while the selected div bit is active increments TIMA
@@ -104,14 +104,13 @@ impl GameBoy {
 
             let timer = &mut self.mmu.io.timer;
             let mask = timer.div_tima_mask();
-
-            let timer_enabled = timer.tac & 0b100 != 0;
-
+            let enabled = timer.is_enabled();
             let orig_bit = timer.div & mask != 0;
+
             timer.div = u16::wrapping_add(timer.div, 1);
 
             // falling edge detection
-            if timer_enabled && orig_bit && timer.div & mask == 0 {
+            if enabled && orig_bit && timer.div & mask == 0 {
                 timer.increment_tima();
             }
         }
@@ -136,5 +135,10 @@ impl Timer {
         if self.tima == 0 {
             self.tima_state = TimaState::OVERFLOW(3);
         }
+    }
+
+    #[inline(always)]
+    fn is_enabled(&mut self) -> bool {
+        self.tac & 0b100 != 0
     }
 }
