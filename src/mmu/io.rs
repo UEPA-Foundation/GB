@@ -96,7 +96,7 @@ impl GameBoy {
                         return;
                     }
                     if count == 3 {
-                        self.set_if(0x02);
+                        self.set_if(0x04);
                     }
                     self.mmu.io.timer.tima_state = TimaState::LOADING(count - 1);
                 }
