@@ -1171,8 +1171,6 @@ macro_rules! ret {
                 gb.advance_cycles(4);
                 if gb.cpu.[<$cc _flag>]() {
                     _ret(gb);
-                } else {
-                    gb.cpu.pc.inc();
                 }
             }
         }
