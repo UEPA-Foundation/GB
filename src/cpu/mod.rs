@@ -115,7 +115,7 @@ impl GameBoy {
                     self.cpu.pc = (intr * 8) as u16 + 0x40;
                     self.advance_cycles(4);
 
-                    self.reset_if(intr);
+                    self.reset_if(1 << intr);
                     self.ime = false;
                 }
                 None => {}
