@@ -6,6 +6,7 @@ pub struct GameBoy {
     pub mmu: mmu::Mmu,
     pub ime: bool,
     pub enabling_int: bool,
+    pub halt: bool,
 }
 
 impl GameBoy {
@@ -15,6 +16,7 @@ impl GameBoy {
             mmu: mmu::Mmu::init(path),
             ime: false,
             enabling_int: false,
+            halt: false,
         }
     }
 

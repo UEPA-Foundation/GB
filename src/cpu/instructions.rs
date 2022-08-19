@@ -1359,7 +1359,9 @@ fn ei(gb: &mut GameBoy) {
     }
 }
 
-fn halt(_gb: &mut GameBoy) {}
+fn halt(gb: &mut GameBoy) {
+    gb.halt = true;
+}
 
 fn nop(_gb: &mut GameBoy) {}
 

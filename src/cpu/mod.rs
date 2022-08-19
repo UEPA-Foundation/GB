@@ -99,9 +99,11 @@ impl GameBoy {
             self.enabling_int = false;
         }
 
-        if current_ime {
-            match self.fetch_interrupt() {
-                Some(intr) => {
+        match self.fetch_interrupt() {
+            Some(intr) => {
+                self.halt = false;
+
+                if current_ime {
                     self.advance_cycles(8);
 
                     // store current pc addr in stack
@@ -118,15 +120,19 @@ impl GameBoy {
                     self.reset_if(1 << intr);
                     self.ime = false;
                 }
-                None => {}
             }
+            None => {}
         }
 
-        let opcode = self.cycle_dpc(0);
-        self.cpu.pc.inc();
+        if !self.halt {
+            let opcode = self.cycle_dpc(0);
+            self.cpu.pc.inc();
 
-        let handler = OPCODES[opcode as usize];
-        handler(self);
+            let handler = OPCODES[opcode as usize];
+            handler(self);
+        } else {
+            self.advance_cycles(1);
+        }
     }
 }
 
