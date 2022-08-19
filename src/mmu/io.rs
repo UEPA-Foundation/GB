@@ -65,7 +65,7 @@ impl GameBoy {
                 let mask = timer.div_tima_mask();
 
                 let bit = timer.div & mask != 0;
-                let enabled = timer.tac & 0b100 == 1;
+                let enabled = timer.tac & 0b100 != 0;
                 let disabling = val & 0b100 == 0;
 
                 // disabling the timer while the selected div bit is active increments TIMA
