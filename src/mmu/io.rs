@@ -86,22 +86,10 @@ impl GameBoy {
             if self.mmu.io.timer.int_occurred() {
                 self.set_if(0x04);
             }
-            match self.mmu.io.timer.tima_state {
-                TimaState::RUNNING => {}
-                TimaState::OVERFLOW(ref mut count) => match count {
-                    0 => self.mmu.io.timer.tima_state = TimaState::LOADING(3),
-                    _ => *count -= 1,
-                },
-                TimaState::LOADING(ref mut count) => match count {
-                    0 => {
-                        self.mmu.io.timer.tima_state = TimaState::RUNNING;
-                        self.mmu.io.timer.tima = self.mmu.io.timer.tma;
-                    },
-                    _ => *count -= 1,
-                }
-            }
 
             let timer = &mut self.mmu.io.timer;
+            timer.update_tima_state();
+
             let mask = timer.div_tima_mask();
             let enabled = timer.is_enabled();
             let orig_bit = timer.div & mask != 0;
@@ -146,6 +134,24 @@ impl Timer {
         match self.tima_state {
             TimaState::LOADING(3) => true,
             _ => false,
+        }
+    }
+
+    #[inline(always)]
+    fn update_tima_state(&mut self) {
+        match self.tima_state {
+            TimaState::RUNNING => {}
+            TimaState::OVERFLOW(ref mut count) => match count {
+                0 => self.tima_state = TimaState::LOADING(3),
+                _ => *count -= 1,
+            },
+            TimaState::LOADING(ref mut count) => match count {
+                0 => {
+                    self.tima_state = TimaState::RUNNING;
+                    self.tima = self.tma;
+                },
+                _ => *count -= 1,
+            }
         }
     }
 }
