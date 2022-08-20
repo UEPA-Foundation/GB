@@ -83,22 +83,21 @@ impl GameBoy {
 
     pub fn cycle_timer(&mut self, cycles: u8) {
         for _ in 0..cycles {
+            if self.mmu.io.timer.int_occurred() {
+                self.set_if(0x04);
+            }
             match self.mmu.io.timer.tima_state {
                 TimaState::RUNNING => {}
                 TimaState::OVERFLOW(ref mut count) => match count {
                     0 => self.mmu.io.timer.tima_state = TimaState::LOADING(3),
                     _ => *count -= 1,
                 },
-                TimaState::LOADING(count) => {
-                    if count == 0 {
+                TimaState::LOADING(ref mut count) => match count {
+                    0 => {
                         self.mmu.io.timer.tima_state = TimaState::RUNNING;
                         self.mmu.io.timer.tima = self.mmu.io.timer.tma;
-                        return;
-                    }
-                    if count == 3 {
-                        self.set_if(0x04);
-                    }
-                    self.mmu.io.timer.tima_state = TimaState::LOADING(count - 1);
+                    },
+                    _ => *count -= 1,
                 }
             }
 
@@ -140,5 +139,13 @@ impl Timer {
     #[inline(always)]
     fn is_enabled(&mut self) -> bool {
         self.tac & 0b100 != 0
+    }
+
+    #[inline(always)]
+    fn int_occurred(&mut self) -> bool {
+        match self.tima_state {
+            TimaState::LOADING(3) => true,
+            _ => false,
+        }
     }
 }
