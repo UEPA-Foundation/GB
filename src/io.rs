@@ -35,33 +35,33 @@ impl IoRegisters {
 impl GameBoy {
     pub fn io_read(&self, index: u16) -> u8 {
         match index {
-            0xFF01 => self.mmu.io.serial_data,
-            0xFF02 => self.mmu.io.serial_ctrl,
-            0xFF04 => (self.mmu.io.timer.div >> 8) as u8,
-            0xFF05 => self.mmu.io.timer.tima,
-            0xFF06 => self.mmu.io.timer.tma,
-            0xFF07 => self.mmu.io.timer.tac | 0xF8,
-            0xFF0F => self.mmu.io.iflags | 0xE0, // 3 upper bits always return 1
+            0xFF01 => self.io.serial_data,
+            0xFF02 => self.io.serial_ctrl,
+            0xFF04 => (self.io.timer.div >> 8) as u8,
+            0xFF05 => self.io.timer.tima,
+            0xFF06 => self.io.timer.tma,
+            0xFF07 => self.io.timer.tac | 0xF8,
+            0xFF0F => self.io.iflags | 0xE0, // 3 upper bits always return 1
             _ => 0,
         }
     }
 
     pub fn io_write(&mut self, index: u16, val: u8) {
         match index {
-            0xFF01 => self.mmu.io.serial_data = val,
-            0xFF02 => self.mmu.io.serial_ctrl = val,
-            0xFF04 => self.mmu.io.timer.div = 0,
-            0xFF05 => match self.mmu.io.timer.tima_state {
-                TimaState::RUNNING => self.mmu.io.timer.tima = val,
+            0xFF01 => self.io.serial_data = val,
+            0xFF02 => self.io.serial_ctrl = val,
+            0xFF04 => self.io.timer.div = 0,
+            0xFF05 => match self.io.timer.tima_state {
+                TimaState::RUNNING => self.io.timer.tima = val,
                 TimaState::OVERFLOW(_) => {
-                    self.mmu.io.timer.tima = val;
-                    self.mmu.io.timer.tima_state = TimaState::RUNNING;
+                    self.io.timer.tima = val;
+                    self.io.timer.tima_state = TimaState::RUNNING;
                 }
                 TimaState::LOADING(_) => {}
             },
-            0xFF06 => self.mmu.io.timer.tma = val,
+            0xFF06 => self.io.timer.tma = val,
             0xFF07 => {
-                let timer = &mut self.mmu.io.timer;
+                let timer = &mut self.io.timer;
                 let mask = timer.div_tima_mask();
 
                 let bit = timer.div & mask != 0;
@@ -76,18 +76,18 @@ impl GameBoy {
 
                 timer.tac = val;
             }
-            0xFF0F => self.mmu.io.iflags = val,
+            0xFF0F => self.io.iflags = val,
             _ => (),
         }
     }
 
     pub fn cycle_timer(&mut self, cycles: u8) {
         for _ in 0..cycles {
-            if self.mmu.io.timer.int_occurred() {
+            if self.io.timer.int_occurred() {
                 self.set_if(0x04);
             }
 
-            let timer = &mut self.mmu.io.timer;
+            let timer = &mut self.io.timer;
             timer.update_tima_state();
 
             let mask = timer.div_tima_mask();

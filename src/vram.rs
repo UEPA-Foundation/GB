@@ -18,10 +18,10 @@ impl VRam {
 
 impl GameBoy {
     pub fn vram_read(&self, index: u16) -> u8 {
-        self.mmu.vram.bytes[(index & 0x1FFF) as usize]
+        self.vram.bytes[(index & 0x1FFF) as usize]
     }
 
     pub fn vram_write(&mut self, index: u16, val: u8) {
-        self.mmu.vram.bytes[(index & 0x1FFF) as usize] = val;
+        self.vram.bytes[(index & 0x1FFF) as usize] = val;
     }
 }

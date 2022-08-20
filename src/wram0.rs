@@ -16,10 +16,10 @@ impl WRam0 {
 
 impl GameBoy {
     pub fn wram0_read(&self, index: u16) -> u8 {
-        self.mmu.wram0.bytes[(index & 0x0FFF) as usize]
+        self.wram0.bytes[(index & 0x0FFF) as usize]
     }
 
     pub fn wram0_write(&mut self, index: u16, val: u8) {
-        self.mmu.wram0.bytes[(index & 0x0FFF) as usize] = val;
+        self.wram0.bytes[(index & 0x0FFF) as usize] = val;
     }
 }

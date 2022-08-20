@@ -16,10 +16,10 @@ impl Oam {
 
 impl GameBoy {
     pub fn oam_read(&self, index: u16) -> u8 {
-        self.mmu.oam.bytes[(index & 0x00FF) as usize]
+        self.oam.bytes[(index & 0x00FF) as usize]
     }
 
     pub fn oam_write(&mut self, index: u16, val: u8) {
-        self.mmu.oam.bytes[(index & 0x00FF) as usize] = val;
+        self.oam.bytes[(index & 0x00FF) as usize] = val;
     }
 }

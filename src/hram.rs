@@ -16,10 +16,10 @@ impl HRam {
 
 impl GameBoy {
     pub fn hram_read(&self, index: u16) -> u8 {
-        self.mmu.hram.bytes[(index - 0xFF80) as usize]
+        self.hram.bytes[(index - 0xFF80) as usize]
     }
 
     pub fn hram_write(&mut self, index: u16, val: u8) {
-        self.mmu.hram.bytes[(index - 0xFF80) as usize] = val;
+        self.hram.bytes[(index - 0xFF80) as usize] = val;
     }
 }

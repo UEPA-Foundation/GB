@@ -18,10 +18,10 @@ impl WRamX {
 
 impl GameBoy {
     pub fn wramx_read(&self, index: u16) -> u8 {
-        self.mmu.wramx.bytes[(index & 0x0FFF) as usize]
+        self.wramx.bytes[(index & 0x0FFF) as usize]
     }
 
     pub fn wramx_write(&mut self, index: u16, val: u8) {
-        self.mmu.wramx.bytes[(index & 0x0FFF) as usize] = val;
+        self.wramx.bytes[(index & 0x0FFF) as usize] = val;
     }
 }

@@ -1,8 +1,15 @@
+mod cart;
 mod cpu;
 mod debug;
 mod gameboy;
-mod mmu;
+mod hram;
+mod io;
+mod oam;
 mod test;
+mod unused;
+mod vram;
+mod wram0;
+mod wramx;
 
 extern crate num;
 extern crate num_derive;
