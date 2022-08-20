@@ -5,6 +5,7 @@ mod gameboy;
 mod io;
 mod mem;
 mod test;
+mod timer;
 
 extern crate num;
 extern crate num_derive;

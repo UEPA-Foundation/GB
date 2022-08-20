@@ -21,5 +21,3 @@ impl MemoryUnit for HRam {
         self.bytes[(addr - 0xFF80) as usize] = val;
     }
 }
-
-    

@@ -23,4 +23,3 @@ impl MemoryUnit for WRamX {
         self.bytes[(addr & 0x0FFF) as usize] = val;
     }
 }
-

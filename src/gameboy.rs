@@ -1,5 +1,5 @@
-use crate::mem::{MemoryUnit, hram::HRam, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX};
-use crate::{cart, cart::Cartridge, cpu::Cpu, debug, io::IoRegisters};
+use crate::mem::{hram::HRam, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX, MemoryUnit};
+use crate::{cart, cart::Cartridge, cpu::Cpu, debug, io::IoRegisters, timer::Timer};
 
 pub struct GameBoy {
     pub cpu: Cpu,
@@ -13,6 +13,7 @@ pub struct GameBoy {
     pub oam: Oam,
     pub _unused: Unused, // Currently unused, but will be needed for CGB implementation
     pub io: IoRegisters,
+    pub timer: Timer,
     pub hram: HRam,
     pub ie: u8,
 }
@@ -32,6 +33,7 @@ impl GameBoy {
             _unused: MemoryUnit::init(),
             io: IoRegisters::init(),
             hram: MemoryUnit::init(),
+            timer: Timer::init(),
             ie: 0,
         }
     }
@@ -53,20 +55,21 @@ impl GameBoy {
         self.cycle_timer(cycles);
     }
 
-    pub fn read(&self, index: u16) -> u8 {
-        match index {
-            0x0000..=0x3FFF => self.cart.rom0_read(index),
-            0x4000..=0x7FFF => self.cart.romx_read(index),
-            0x8000..=0x9FFF => self.vram.read(index),
-            0xA000..=0xBFFF => self.cart.sram_read(index),
-            0xC000..=0xCFFF => self.wram0.read(index),
-            0xD000..=0xDFFF => self.wramx.read(index),
-            0xE000..=0xEFFF => self.wram0.read(index), // echo 0
-            0xF000..=0xFDFF => self.wramx.read(index), // echo X
-            0xFE00..=0xFE9F => self.oam.read(index),
-            0xFEA0..=0xFEFF => self._unused.read(index),
-            0xFF00..=0xFF7F => self.io_read(index),
-            0xFF80..=0xFFFE => self.hram.read(index),
+    pub fn read(&self, addr: u16) -> u8 {
+        match addr {
+            0x0000..=0x3FFF => self.cart.rom0_read(addr),
+            0x4000..=0x7FFF => self.cart.romx_read(addr),
+            0x8000..=0x9FFF => self.vram.read(addr),
+            0xA000..=0xBFFF => self.cart.sram_read(addr),
+            0xC000..=0xCFFF => self.wram0.read(addr),
+            0xD000..=0xDFFF => self.wramx.read(addr),
+            0xE000..=0xEFFF => self.wram0.read(addr), // echo 0
+            0xF000..=0xFDFF => self.wramx.read(addr), // echo X
+            0xFE00..=0xFE9F => self.oam.read(addr),
+            0xFEA0..=0xFEFF => self._unused.read(addr),
+            0xFF00..=0xFF03 | 0xFF08..=0xFF7F => self.io_read(addr),
+            0xFF04..=0xFF07 => self.timer.read(addr),
+            0xFF80..=0xFFFE => self.hram.read(addr),
             0xFFFF => self.ie,
         }
     }
@@ -76,20 +79,21 @@ impl GameBoy {
         self.read(u16::wrapping_add(self.cpu.pc, offset as u16))
     }
 
-    pub fn write(&mut self, index: u16, val: u8) {
-        match index {
-            0x0000..=0x3FFF => self.cart.rom0_write(index, val),
-            0x4000..=0x7FFF => self.cart.romx_write(index, val),
-            0x8000..=0x9FFF => self.vram.write(index, val),
-            0xA000..=0xBFFF => self.cart.sram_write(index, val),
-            0xC000..=0xCFFF => self.wram0.write(index, val),
-            0xD000..=0xDFFF => self.wramx.write(index, val),
-            0xE000..=0xEFFF => self.wram0.write(index, val), // echo 0
-            0xF000..=0xFDFF => self.wramx.write(index, val), // echo X
-            0xFE00..=0xFE9F => self.oam.write(index, val),
-            0xFEA0..=0xFEFF => self._unused.write(index, val),
-            0xFF00..=0xFF7F => self.io_write(index, val),
-            0xFF80..=0xFFFE => self.hram.write(index, val),
+    pub fn write(&mut self, addr: u16, val: u8) {
+        match addr {
+            0x0000..=0x3FFF => self.cart.rom0_write(addr, val),
+            0x4000..=0x7FFF => self.cart.romx_write(addr, val),
+            0x8000..=0x9FFF => self.vram.write(addr, val),
+            0xA000..=0xBFFF => self.cart.sram_write(addr, val),
+            0xC000..=0xCFFF => self.wram0.write(addr, val),
+            0xD000..=0xDFFF => self.wramx.write(addr, val),
+            0xE000..=0xEFFF => self.wram0.write(addr, val), // echo 0
+            0xF000..=0xFDFF => self.wramx.write(addr, val), // echo X
+            0xFE00..=0xFE9F => self.oam.write(addr, val),
+            0xFEA0..=0xFEFF => self._unused.write(addr, val),
+            0xFF00..=0xFF03 | 0xFF08..=0xFF7F => self.io_write(addr, val),
+            0xFF04..=0xFF07 => self.timer.write(addr, val),
+            0xFF80..=0xFFFE => self.hram.write(addr, val),
             0xFFFF => self.ie = val,
         }
     }

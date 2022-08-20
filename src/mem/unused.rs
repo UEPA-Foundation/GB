@@ -21,4 +21,3 @@ impl MemoryUnit for Unused {
         // In DMG, writes are ignored.
     }
 }
-
