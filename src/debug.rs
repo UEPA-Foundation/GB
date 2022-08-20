@@ -39,7 +39,7 @@ impl<'a> DebugGB<'a> {
             watchpoints: vec![],
             stdin: std::io::stdin(),
             stdout: std::io::stdout(),
-            config: DbgConfig { disasm: false, regs: false },
+            config: DbgConfig { disasm: true, regs: true },
         }
     }
 
