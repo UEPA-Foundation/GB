@@ -1,4 +1,4 @@
-use crate::mem::{hram::HRam, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX};
+use crate::mem::{MemoryUnit, hram::HRam, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX};
 use crate::{cart, cart::Cartridge, cpu::Cpu, debug, io::IoRegisters};
 
 pub struct GameBoy {
@@ -25,13 +25,13 @@ impl GameBoy {
             enabling_int: false,
             halt: false,
             cart: cart::load_rom_file(path),
-            wram0: WRam0::init(),
-            wramx: WRamX::init(),
-            vram: VRam::init(),
-            oam: Oam::init(),
-            _unused: Unused::init(),
+            wram0: MemoryUnit::init(),
+            wramx: MemoryUnit::init(),
+            vram: MemoryUnit::init(),
+            oam: MemoryUnit::init(),
+            _unused: MemoryUnit::init(),
             io: IoRegisters::init(),
-            hram: HRam::init(),
+            hram: MemoryUnit::init(),
             ie: 0,
         }
     }
@@ -57,16 +57,16 @@ impl GameBoy {
         match index {
             0x0000..=0x3FFF => self.cart.rom0_read(index),
             0x4000..=0x7FFF => self.cart.romx_read(index),
-            0x8000..=0x9FFF => self.vram_read(index),
+            0x8000..=0x9FFF => self.vram.read(index),
             0xA000..=0xBFFF => self.cart.sram_read(index),
-            0xC000..=0xCFFF => self.wram0_read(index),
-            0xD000..=0xDFFF => self.wramx_read(index),
-            0xE000..=0xEFFF => self.wram0_read(index), // echo 0
-            0xF000..=0xFDFF => self.wramx_read(index), // echo X
-            0xFE00..=0xFE9F => self.oam_read(index),
-            0xFEA0..=0xFEFF => self.unused_read(index),
+            0xC000..=0xCFFF => self.wram0.read(index),
+            0xD000..=0xDFFF => self.wramx.read(index),
+            0xE000..=0xEFFF => self.wram0.read(index), // echo 0
+            0xF000..=0xFDFF => self.wramx.read(index), // echo X
+            0xFE00..=0xFE9F => self.oam.read(index),
+            0xFEA0..=0xFEFF => self._unused.read(index),
             0xFF00..=0xFF7F => self.io_read(index),
-            0xFF80..=0xFFFE => self.hram_read(index),
+            0xFF80..=0xFFFE => self.hram.read(index),
             0xFFFF => self.ie,
         }
     }
@@ -80,16 +80,16 @@ impl GameBoy {
         match index {
             0x0000..=0x3FFF => self.cart.rom0_write(index, val),
             0x4000..=0x7FFF => self.cart.romx_write(index, val),
-            0x8000..=0x9FFF => self.vram_write(index, val),
+            0x8000..=0x9FFF => self.vram.write(index, val),
             0xA000..=0xBFFF => self.cart.sram_write(index, val),
-            0xC000..=0xCFFF => self.wram0_write(index, val),
-            0xD000..=0xDFFF => self.wramx_write(index, val),
-            0xE000..=0xEFFF => self.wram0_write(index, val), // echo 0
-            0xF000..=0xFDFF => self.wramx_write(index, val), // echo X
-            0xFE00..=0xFE9F => self.oam_write(index, val),
-            0xFEA0..=0xFEFF => self.unused_write(index, val),
+            0xC000..=0xCFFF => self.wram0.write(index, val),
+            0xD000..=0xDFFF => self.wramx.write(index, val),
+            0xE000..=0xEFFF => self.wram0.write(index, val), // echo 0
+            0xF000..=0xFDFF => self.wramx.write(index, val), // echo X
+            0xFE00..=0xFE9F => self.oam.write(index, val),
+            0xFEA0..=0xFEFF => self._unused.write(index, val),
             0xFF00..=0xFF7F => self.io_write(index, val),
-            0xFF80..=0xFFFE => self.hram_write(index, val),
+            0xFF80..=0xFFFE => self.hram.write(index, val),
             0xFFFF => self.ie = val,
         }
     }
