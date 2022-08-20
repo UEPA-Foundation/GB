@@ -149,9 +149,9 @@ impl Timer {
                 0 => {
                     self.tima_state = TimaState::RUNNING;
                     self.tima = self.tma;
-                },
+                }
                 _ => *count -= 1,
-            }
+            },
         }
     }
 }

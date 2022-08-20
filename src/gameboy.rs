@@ -1,10 +1,8 @@
-use crate::{
-    cart, cart::Cartridge, cpu, debug, hram::HRam, io::IoRegisters, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0,
-    wramx::WRamX,
-};
+use crate::mem::{hram::HRam, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX};
+use crate::{cart, cart::Cartridge, cpu::Cpu, debug, io::IoRegisters};
 
 pub struct GameBoy {
-    pub cpu: cpu::Cpu,
+    pub cpu: Cpu,
     pub ime: bool,
     pub enabling_int: bool,
     pub halt: bool,
@@ -17,12 +15,12 @@ pub struct GameBoy {
     pub io: IoRegisters,
     pub hram: HRam,
     pub ie: u8,
-}   
+}
 
 impl GameBoy {
     pub fn init(path: &str) -> Self {
         Self {
-            cpu: cpu::Cpu { a: 0, f: 0, b: 0, c: 0, d: 0, e: 0, h: 0, l: 0, sp: 0, pc: 0x100 },
+            cpu: Cpu { a: 0, f: 0, b: 0, c: 0, d: 0, e: 0, h: 0, l: 0, sp: 0, pc: 0x100 },
             ime: false,
             enabling_int: false,
             halt: false,

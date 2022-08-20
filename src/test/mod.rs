@@ -21,9 +21,7 @@ macro_rules! test_blargg {
                 let param2 = gb.dpc(2);
                 let pc_hi = (gb.cpu.pc >> 8) as u8;
                 let pc_lo = gb.cpu.pc as u8;
-                if (opcode == 0x18 && param1 == 0xFE)  ||
-                   (opcode == 0xC3 && param1 == pc_hi && param2 == pc_lo)
-                {
+                if (opcode == 0x18 && param1 == 0xFE) || (opcode == 0xC3 && param1 == pc_hi && param2 == pc_lo) {
                     break;
                 }
 
