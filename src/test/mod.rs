@@ -59,4 +59,8 @@ test_blargg!(cpu_instrs_11_op_a_dhl, "cpu_instrs/individual/11-op a,(hl).gb");
 
 test_blargg!(instr_timing, "instr_timing/instr_timing.gb");
 
+test_blargg!(mem_timing_01_read, "mem_timing/individual/01-read_timing.gb");
+test_blargg!(mem_timing_02_write, "mem_timing/individual/02-write_timing.gb");
+test_blargg!(mem_timing_03_modify, "mem_timing/individual/03-modify_timing.gb");
+
 test_blargg!(halt_bug, "halt_bug.gb");
