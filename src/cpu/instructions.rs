@@ -216,7 +216,7 @@ macro_rules! cp {
 
     (d hl) => {
         |gb: &mut GameBoy| {
-            let val = gb.read(gb.cpu.rd_hl());
+            let val = gb.cycle_read(gb.cpu.rd_hl());
             gb.cpu.f = N_FLAG;
             if gb.cpu.a == val {
                 gb.cpu.f |= Z_FLAG;
@@ -931,7 +931,6 @@ macro_rules! ld {
     ($targ: ident, $orig: ident) => {
         |gb: &mut GameBoy| {
             gb.cpu.$targ = gb.cpu.$orig;
-            gb.advance_cycles(4);
         }
     };
 }
@@ -1046,6 +1045,8 @@ macro_rules! call {
                 (msb << 8) + lsb
             };
 
+            gb.advance_cycles(4);
+
             let ret = u16::to_le_bytes(gb.cpu.pc);
             gb.cpu.sp.dec();
             gb.cycle_write(gb.cpu.sp, ret[1]);
@@ -1093,7 +1094,7 @@ macro_rules! jp {
                 gb.cpu.pc.inc();
                 (msb << 8) + lsb
             };
-            gb.advance_cycles(8);
+            gb.advance_cycles(4);
             gb.cpu.pc = addr;
         }
     };
