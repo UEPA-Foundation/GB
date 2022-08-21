@@ -652,10 +652,10 @@ macro_rules! swap {
     (d hl) => {
         |gb: &mut GameBoy| {
             let addr = gb.cpu.rd_hl();
-            let dhl = gb.read(addr);
+            let dhl = gb.cycle_read(addr);
             gb.cycle_write(addr, (dhl >> 4) | (dhl << 4));
             gb.cpu.f = 0;
-            if gb.cycle_read(addr) == 0 {
+            if dhl == 0 {
                 gb.cpu.f |= Z_FLAG;
             }
         }
