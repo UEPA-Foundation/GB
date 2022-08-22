@@ -1,4 +1,4 @@
-use crate::io::{serial::SerialLink, timer::Timer};
+use crate::io::{serial::SerialLink, timer::Timer, joypad::Joypad};
 use crate::mem::{hram::HRam, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX, MemoryUnit};
 use crate::{cart, cart::Cartridge, cpu::Cpu, debug};
 
@@ -16,6 +16,7 @@ pub struct GameBoy {
     pub _unused: Unused, // Currently unused, but will be needed for CGB implementation
     pub hram: HRam,
 
+    pub joypad: Joypad,
     pub serial: SerialLink,
     pub timer: Timer,
     pub iflags: u8,
@@ -36,6 +37,7 @@ impl GameBoy {
             oam: MemoryUnit::init(),
             _unused: MemoryUnit::init(),
             hram: MemoryUnit::init(),
+            joypad: Joypad::init(),
             timer: Timer::init(),
             serial: SerialLink::init(),
             iflags: 0,
@@ -58,6 +60,7 @@ impl GameBoy {
 
     pub fn advance_cycles(&mut self, cycles: u8) {
         self.cycle_timer(cycles);
+        self.cycle_joypad(cycles);
     }
 
     pub fn read(&self, addr: u16) -> u8 {
@@ -72,7 +75,7 @@ impl GameBoy {
             0xF000..=0xFDFF => self.wramx.read(addr), // echo X
             0xFE00..=0xFE9F => self.oam.read(addr),
             0xFEA0..=0xFEFF => self._unused.read(addr),
-            0xFF00 => 0, // TODO
+            0xFF00 => self.joypad.read(),
             0xFF01 | 0xFF02 => self.serial.read(addr),
             0xFF03 => 0, // TODO
             0xFF04..=0xFF07 => self.timer.read(addr),
@@ -101,7 +104,7 @@ impl GameBoy {
             0xF000..=0xFDFF => self.wramx.write(addr, val), // echo X
             0xFE00..=0xFE9F => self.oam.write(addr, val),
             0xFEA0..=0xFEFF => self._unused.write(addr, val),
-            0xFF00 => (), // TODO
+            0xFF00 => self.joypad.write(val),
             0xFF01 | 0xFF02 => self.serial.write(addr, val),
             0xFF03 => (), // TODO
             0xFF04..=0xFF07 => self.timer.write(addr, val),
