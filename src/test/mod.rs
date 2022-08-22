@@ -51,6 +51,27 @@ macro_rules! test_blargg {
     };
 }
 
+macro_rules! test_mooneye {
+    ($rom: ident, $path: expr) => {
+        #[test]
+        fn $rom() {
+            let mut gb = GameBoy::init(concat!("./src/test/mooneye/", $path));
+            for _ in 0..100000000 {
+                gb.fetch_exec();
+
+                if gb.dpc(0) == 0x40 {
+                    match (gb.cpu.b, gb.cpu.c, gb.cpu.d, gb.cpu.e, gb.cpu.h, gb.cpu.l) {
+                        (3, 5, 8, 13, 21, 34) => return,
+                        _ => panic!("Test failed."),
+                    }
+                }
+            }
+
+            panic!("Test timed out at ${:04X}.", gb.cpu.pc);
+        }
+    }
+}
+
 test_blargg!(cpu_instrs_01_special, "cpu_instrs/individual/01-special.gb");
 test_blargg!(cpu_instrs_02_int, "cpu_instrs/individual/02-interrupts.gb");
 test_blargg!(cpu_instrs_03_op_sp_hl, "cpu_instrs/individual/03-op sp,hl.gb");
@@ -70,3 +91,5 @@ test_blargg!(mem_timing_02_write, "mem_timing/individual/02-write_timing.gb");
 test_blargg!(mem_timing_03_modify, "mem_timing/individual/03-modify_timing.gb");
 
 test_blargg!(halt_bug, "halt_bug.gb");
+
+test_mooneye!(daa, "acceptance/instr/daa.gb");
