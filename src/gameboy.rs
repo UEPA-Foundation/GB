@@ -1,5 +1,6 @@
+use crate::io::{serial::SerialLink, timer::Timer};
 use crate::mem::{hram::HRam, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX, MemoryUnit};
-use crate::{cart, cart::Cartridge, cpu::Cpu, debug, timer::Timer, serial::SerialLink};
+use crate::{cart, cart::Cartridge, cpu::Cpu, debug};
 
 pub struct GameBoy {
     pub cpu: Cpu,
@@ -73,11 +74,11 @@ impl GameBoy {
             0xFEA0..=0xFEFF => self._unused.read(addr),
             0xFF00 => 0, // TODO
             0xFF01 | 0xFF02 => self.serial.read(addr),
-            0xFF03 => 0, // TODO 
+            0xFF03 => 0, // TODO
             0xFF04..=0xFF07 => self.timer.read(addr),
-            0xFF08..=0xFF0E  => 0, // TODO
+            0xFF08..=0xFF0E => 0,         // TODO
             0xFF0F => self.iflags | 0xE0, // 3 upper bits always return 1,
-            0xFF10..=0xFF7F => 0, // TODO
+            0xFF10..=0xFF7F => 0,         // TODO
             0xFF80..=0xFFFE => self.hram.read(addr),
             0xFFFF => self.ie,
         }
@@ -102,9 +103,9 @@ impl GameBoy {
             0xFEA0..=0xFEFF => self._unused.write(addr, val),
             0xFF00 => (), // TODO
             0xFF01 | 0xFF02 => self.serial.write(addr, val),
-            0xFF03 => (), // TODO 
+            0xFF03 => (), // TODO
             0xFF04..=0xFF07 => self.timer.write(addr, val),
-            0xFF08..=0xFF0E  => (), // TODO
+            0xFF08..=0xFF0E => (), // TODO
             0xFF0F => self.iflags = val,
             0xFF10..=0xFF7F => (), // TODO
             0xFF80..=0xFFFE => self.hram.write(addr, val),

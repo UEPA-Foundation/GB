@@ -31,13 +31,13 @@ impl Timer {
 
     pub fn write(&mut self, addr: u16, val: u8) {
         match addr {
-            0xFF04 => { 
+            0xFF04 => {
                 let freq_bit = self.div & self.div_tima_mask() != 0;
                 if self.is_enabled() && freq_bit {
                     self.increment_tima();
                 }
                 self.div = 0;
-            },
+            }
             0xFF05 => match self.tima_state {
                 TimaState::RUNNING => self.tima = val,
                 TimaState::OVERFLOW(_) => {

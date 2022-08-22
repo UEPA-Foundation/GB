@@ -2,10 +2,9 @@ mod cart;
 mod cpu;
 mod debug;
 mod gameboy;
+mod io;
 mod mem;
 mod test;
-mod timer;
-mod serial;
 
 extern crate num;
 extern crate num_derive;
