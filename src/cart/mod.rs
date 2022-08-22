@@ -110,6 +110,8 @@ pub fn load_rom_file(path: &str) -> Box<dyn Cartridge> {
 
     let _global_checksum = ((raw_rom[0x014E] as u16) << 8) + raw_rom[0x014F] as u16;
 
+    println!("");
+
     rom
 }
 

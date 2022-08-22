@@ -5,9 +5,9 @@ macro_rules! test_blargg {
     ($rom: ident, $path: expr) => {
         #[test]
         fn $rom() {
-            std::panic::set_hook(Box::new(|_| {}));
             let mut gb = GameBoy::init(concat!("./src/test/gb-test-roms/", $path));
             let mut out = vec![];
+            let mut timeout = true;
             for _ in 0..30000000 {
                 gb.fetch_exec();
 
@@ -22,10 +22,16 @@ macro_rules! test_blargg {
                 let pc_hi = (gb.cpu.pc >> 8) as u8;
                 let pc_lo = gb.cpu.pc as u8;
                 if (opcode == 0x18 && param1 == 0xFE) || (opcode == 0xC3 && param1 == pc_hi && param2 == pc_lo) {
+                    timeout = false;
                     break;
                 }
 
                 gb.write(0xFF02, 0); // This should be removed when serial works
+            }
+
+            if timeout {
+                println!("Test timed out at ${:04X}.", gb.cpu.pc);
+                println!("");
             }
 
             let out_str = std::str::from_utf8(&out);
@@ -33,12 +39,12 @@ macro_rules! test_blargg {
                 Ok(s) => {
                     if !s.contains("Passed") {
                         println!("{}", s);
-                        panic!();
+                        println!("");
+                        panic!("Test failed.");
                     }
                 }
                 Err(_) => {
-                    println!("Test failed to produce valid output.");
-                    panic!();
+                    panic!("Test failed to produce valid output.");
                 }
             }
         }
