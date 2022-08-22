@@ -1,20 +1,23 @@
 use crate::mem::{hram::HRam, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX, MemoryUnit};
-use crate::{cart, cart::Cartridge, cpu::Cpu, debug, io::IoRegisters, timer::Timer};
+use crate::{cart, cart::Cartridge, cpu::Cpu, debug, timer::Timer, serial::SerialLink};
 
 pub struct GameBoy {
     pub cpu: Cpu,
     pub ime: bool,
     pub enabling_int: bool,
     pub halt: bool,
+
     pub cart: Box<dyn Cartridge>,
     pub vram: VRam,
     pub wram0: WRam0,
     pub wramx: WRamX,
     pub oam: Oam,
     pub _unused: Unused, // Currently unused, but will be needed for CGB implementation
-    pub io: IoRegisters,
-    pub timer: Timer,
     pub hram: HRam,
+
+    pub serial: SerialLink,
+    pub timer: Timer,
+    pub iflags: u8,
     pub ie: u8,
 }
 
@@ -31,9 +34,10 @@ impl GameBoy {
             vram: MemoryUnit::init(),
             oam: MemoryUnit::init(),
             _unused: MemoryUnit::init(),
-            io: IoRegisters::init(),
             hram: MemoryUnit::init(),
             timer: Timer::init(),
+            serial: SerialLink::init(),
+            iflags: 0,
             ie: 0,
         }
     }
@@ -67,8 +71,13 @@ impl GameBoy {
             0xF000..=0xFDFF => self.wramx.read(addr), // echo X
             0xFE00..=0xFE9F => self.oam.read(addr),
             0xFEA0..=0xFEFF => self._unused.read(addr),
-            0xFF00..=0xFF03 | 0xFF08..=0xFF7F => self.io_read(addr),
+            0xFF00 => 0, // TODO
+            0xFF01 | 0xFF02 => self.serial.read(addr),
+            0xFF03 => 0, // TODO 
             0xFF04..=0xFF07 => self.timer.read(addr),
+            0xFF08..=0xFF0E  => 0, // TODO
+            0xFF0F => self.iflags | 0xE0, // 3 upper bits always return 1,
+            0xFF10..=0xFF7F => 0, // TODO
             0xFF80..=0xFFFE => self.hram.read(addr),
             0xFFFF => self.ie,
         }
@@ -91,8 +100,13 @@ impl GameBoy {
             0xF000..=0xFDFF => self.wramx.write(addr, val), // echo X
             0xFE00..=0xFE9F => self.oam.write(addr, val),
             0xFEA0..=0xFEFF => self._unused.write(addr, val),
-            0xFF00..=0xFF03 | 0xFF08..=0xFF7F => self.io_write(addr, val),
+            0xFF00 => (), // TODO
+            0xFF01 | 0xFF02 => self.serial.write(addr, val),
+            0xFF03 => (), // TODO 
             0xFF04..=0xFF07 => self.timer.write(addr, val),
+            0xFF08..=0xFF0E  => (), // TODO
+            0xFF0F => self.iflags = val,
+            0xFF10..=0xFF7F => (), // TODO
             0xFF80..=0xFFFE => self.hram.write(addr, val),
             0xFFFF => self.ie = val,
         }
@@ -118,7 +132,7 @@ impl GameBoy {
 
     #[inline(always)]
     pub fn fetch_interrupt(&self) -> Option<u8> {
-        match self.io_read(0xFF0F) & self.ie & 0x1F {
+        match self.iflags & self.ie & 0x1F {
             0 => None,
             intrs => Some(intrs.trailing_zeros() as u8),
         }
@@ -126,13 +140,11 @@ impl GameBoy {
 
     #[inline(always)]
     pub fn set_if(&mut self, intr: u8) {
-        let iflags = self.io_read(0xFF0F);
-        self.io_write(0xFF0F, iflags | intr);
+        self.iflags = self.iflags | intr;
     }
 
     #[inline(always)]
     pub fn reset_if(&mut self, intr: u8) {
-        let iflags = self.io_read(0xFF0F);
-        self.io_write(0xFF0F, iflags & !intr);
+        self.iflags = self.iflags & !intr;
     }
 }
