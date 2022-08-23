@@ -1,6 +1,6 @@
-use crate::io::{serial::SerialLink, timer::Timer, joypad::Joypad};
+use crate::io::{joypad::Joypad, serial::SerialLink, timer::Timer};
 use crate::mem::{hram::HRam, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX, MemoryUnit};
-use crate::{cart, cart::Cartridge, cpu::Cpu, debug};
+use crate::{cart, cart::Cartridge, cpu::Cpu};
 
 pub struct GameBoy {
     pub cpu: Cpu,
@@ -42,19 +42,6 @@ impl GameBoy {
             serial: SerialLink::init(),
             iflags: 0,
             ie: 0,
-        }
-    }
-
-    pub fn run(&mut self, debug: bool) {
-        if debug {
-            let mut dgb = debug::DebugGB::init(self);
-            loop {
-                dgb.prompt();
-            }
-        }
-
-        loop {
-            self.fetch_exec();
         }
     }
 

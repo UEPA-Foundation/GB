@@ -24,12 +24,12 @@ impl Joypad {
     pub fn write(&mut self, val: u8) {
         self.joyp = val & 0x30;
     }
-    
+
     #[inline(always)]
     fn update_joyp(&mut self) {
         self.joyp &= 0x30;
         match self.joyp >> 4 {
-            0b00 => {},
+            0b00 => {}
             0b01 => self.joyp |= self.start << 3 | self.select << 2 | self.b << 1 | self.a,
             0b10 => self.joyp |= self.down << 3 | self.up << 2 | self.left << 1 | self.right,
             0b11 => self.joyp |= 0x0F,
@@ -40,14 +40,14 @@ impl Joypad {
 
 macro_rules! set_key {
     ($key: ident) => {
-        paste::paste!{
+        paste::paste! {
             #[allow(dead_code)]
             #[inline(always)]
             pub fn [<set_ $key>](&mut self, state: bool) {
                 self.joypad.$key = state as u8;
             }
         }
-    }
+    };
 }
 
 impl GameBoy {
