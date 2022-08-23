@@ -148,7 +148,7 @@ impl Debugger {
         }
 
         loop {
-            gb.step();
+            gb.cpu_step();
 
             let mut changes = vec![];
             for i in 0..self.watchpoints.len() {
@@ -179,7 +179,7 @@ impl Debugger {
             Some(n) => n,
         };
         for _ in 0..steps {
-            gb.step();
+            gb.cpu_step();
         }
     }
 
@@ -196,7 +196,7 @@ impl Debugger {
                     0xC0 | 0xC8 | 0xC9 | 0xD0 | 0xD8 | 0xD9 => count -= 1,
                     _ => {}
                 }
-                gb.step();
+                gb.cpu_step();
                 if count == 0 {
                     break;
                 }

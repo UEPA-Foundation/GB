@@ -8,7 +8,7 @@ macro_rules! test_blargg {
             let mut out = vec![];
             let mut timeout = true;
             for _ in 0..30000000 {
-                gb.fetch_exec();
+                gb.cpu_step();
 
                 if gb.read(0xFF02) == 0x81 {
                     out.push(gb.read(0xFF01));

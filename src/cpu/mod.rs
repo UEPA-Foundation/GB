@@ -92,7 +92,7 @@ impl Cpu {
 }
 
 impl GameBoy {
-    pub fn fetch_exec(&mut self) {
+    pub fn cpu_step(&mut self) {
         let current_ime = self.ime;
         if self.enabling_int {
             self.ime = true;

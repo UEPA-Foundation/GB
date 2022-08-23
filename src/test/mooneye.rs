@@ -6,7 +6,7 @@ macro_rules! test_mooneye {
         fn $rom() {
             let mut gb = GameBoy::init(concat!("./src/test/mooneye/", $path));
             for _ in 0..100000000 {
-                gb.fetch_exec();
+                gb.cpu_step();
 
                 if gb.dpc(0) == 0x40 {
                     match (gb.cpu.b, gb.cpu.c, gb.cpu.d, gb.cpu.e, gb.cpu.h, gb.cpu.l) {
