@@ -15,8 +15,7 @@ struct WatchPoint {
     last_val: u8,
 }
 
-pub struct DebugGB<'a> {
-    pub gb: &'a mut GameBoy,
+pub struct Debugger {
     breakpoints: Vec<u16>,
     watchpoints: Vec<WatchPoint>,
     last_cmd: String,
@@ -30,10 +29,9 @@ struct DbgConfig {
     regs: bool,
 }
 
-impl<'a> DebugGB<'a> {
-    pub fn init(gb: &'a mut GameBoy) -> Self {
+impl Debugger {
+    pub fn init() -> Self {
         Self {
-            gb,
             last_cmd: "help".to_string(),
             breakpoints: vec![],
             watchpoints: vec![],
@@ -43,120 +41,118 @@ impl<'a> DebugGB<'a> {
         }
     }
 
-    pub fn prompt(&mut self) {
-        loop {
-            print!("> ");
-            if !self.stdout.flush().is_ok() {
-                println!();
-                continue;
-            }
+    pub fn prompt(&mut self, gb: &mut GameBoy) {
+        print!("> ");
+        if !self.stdout.flush().is_ok() {
+            println!();
+            return;
+        }
 
-            let mut user_input = String::new();
-            if !self.stdin.read_line(&mut user_input).is_ok() {
-                println!();
-                continue;
-            }
+        let mut user_input = String::new();
+        if !self.stdin.read_line(&mut user_input).is_ok() {
+            println!();
+            return;
+        }
 
-            let mut stripped_input = match user_input.strip_suffix("\n") {
-                None => user_input.as_str(),
-                Some(stripped) => stripped,
-            };
+        let mut stripped_input = match user_input.strip_suffix("\n") {
+            None => user_input.as_str(),
+            Some(stripped) => stripped,
+        };
 
-            if stripped_input.is_empty() {
-                stripped_input = self.last_cmd.as_str();
-            } else {
-                self.last_cmd = stripped_input.to_string();
-            }
+        if stripped_input.is_empty() {
+            stripped_input = self.last_cmd.as_str();
+        } else {
+            self.last_cmd = stripped_input.to_string();
+        }
 
-            let splitted_input: Vec<&str> = stripped_input.split_whitespace().collect();
+        let splitted_input: Vec<&str> = stripped_input.split_whitespace().collect();
 
-            if splitted_input.len() > 3 {
-                println!("Invalid number of arguments. They range 0-2.");
-                continue;
-            }
+        if splitted_input.len() > 3 {
+            println!("Invalid number of arguments. They range 0-2.");
+            return;
+        }
 
-            let cmd_end = stripped_input.find(' ').unwrap_or(stripped_input.len());
-            let slash_pos = std::cmp::min(cmd_end, stripped_input.find('/').unwrap_or(stripped_input.len()));
+        let cmd_end = stripped_input.find(' ').unwrap_or(stripped_input.len());
+        let slash_pos = std::cmp::min(cmd_end, stripped_input.find('/').unwrap_or(stripped_input.len()));
 
-            let cmd_name = &stripped_input[0..slash_pos];
-            let mod_str = match stripped_input[slash_pos..cmd_end].to_string().strip_prefix("/") {
-                None => stripped_input[slash_pos..cmd_end].to_string(),
-                Some(stripped) => stripped.to_string(),
-            };
+        let cmd_name = &stripped_input[0..slash_pos];
+        let mod_str = match stripped_input[slash_pos..cmd_end].to_string().strip_prefix("/") {
+            None => stripped_input[slash_pos..cmd_end].to_string(),
+            Some(stripped) => stripped.to_string(),
+        };
 
-            let mut modif = None;
-            if cmd_end != slash_pos {
-                match eval_modif(mod_str) {
-                    Ok(m) => modif = m,
-                    Err(e) => {
-                        println!("{}", e);
-                        continue;
-                    }
+        let mut modif = None;
+        if cmd_end != slash_pos {
+            match eval_modif(mod_str) {
+                Ok(m) => modif = m,
+                Err(e) => {
+                    println!("{}", e);
+                    return;
                 }
             }
+        }
 
-            let mut arg1 = Arg::None;
-            let mut arg2 = Arg::None;
-            if splitted_input.len() > 1 {
-                arg1 = match self.eval_arg(splitted_input[1]) {
-                    Ok(arg) => arg,
-                    Err(e) => {
-                        println!("{}", e);
-                        continue;
-                    }
+        let mut arg1 = Arg::None;
+        let mut arg2 = Arg::None;
+        if splitted_input.len() > 1 {
+            arg1 = match self.eval_arg(gb, splitted_input[1]) {
+                Ok(arg) => arg,
+                Err(e) => {
+                    println!("{}", e);
+                    return;
                 }
             }
-            if splitted_input.len() > 2 {
-                arg2 = match self.eval_arg(splitted_input[2]) {
-                    Ok(arg) => arg,
-                    Err(e) => {
-                        println!("{}", e);
-                        continue;
-                    }
+        }
+        if splitted_input.len() > 2 {
+            arg2 = match self.eval_arg(gb, splitted_input[2]) {
+                Ok(arg) => arg,
+                Err(e) => {
+                    println!("{}", e);
+                    return;
                 }
             }
+        }
 
-            match (cmd_name, modif, arg1, arg2) {
-                ("c" | "continue", None, Arg::None, Arg::None) => self.continue_cmd(),
-                ("s" | "step", _, Arg::None, Arg::None) => self.step_cmd(modif),
-                ("n" | "next", _, Arg::None, Arg::None) => self.next_cmd(modif),
-                ("h" | "help", None, Arg::None, Arg::None) => self.help_cmd("".to_string()),
-                ("h" | "help", None, Arg::Str(cmd_name), Arg::None) => self.help_cmd(cmd_name),
-                ("b" | "break", None, Arg::Numeric(addr), Arg::None) => self.breakpoint_cmd(addr),
-                ("de" | "delete", None, Arg::Numeric(addr), Arg::None) => self.delete_cmd(addr),
-                ("w" | "watch", None, Arg::Numeric(addr), Arg::None) => self.watchpoint_cmd(addr),
-                ("dw" | "delwatch", None, Arg::Numeric(addr), Arg::None) => self.delwatch_cmd(addr),
-                ("l" | "list", None, Arg::None, Arg::None) => self.list_cmd(),
-                ("d" | "disassemble", _, Arg::None, Arg::None) => self.disasm_cmd(modif, self.gb.cpu.pc),
-                ("d" | "disassemble", _, Arg::Numeric(addr), Arg::None) => self.disasm_cmd(modif, addr),
-                ("x" | "examine", _, Arg::Numeric(addr), Arg::None) => self.examine_cmd(modif, addr),
-                ("r" | "regs" | "registers", None, Arg::None, Arg::None) => self.regs_cmd(),
-                ("set", _, Arg::Str(config), Arg::Bool(state)) => self.set_cmd(config, state),
-                ("cl" | "clear", None, Arg::None, Arg::None) => self.clear_cmd(),
-                _ => self.help_cmd(cmd_name.to_string()),
-            };
+        match (cmd_name, modif, arg1, arg2) {
+            ("c" | "continue", None, Arg::None, Arg::None) => self.continue_cmd(gb),
+            ("s" | "step", _, Arg::None, Arg::None) => self.step_cmd(gb, modif),
+            ("n" | "next", _, Arg::None, Arg::None) => self.next_cmd(gb, modif),
+            ("h" | "help", None, Arg::None, Arg::None) => self.help_cmd("".to_string()),
+            ("h" | "help", None, Arg::Str(cmd_name), Arg::None) => self.help_cmd(cmd_name),
+            ("b" | "break", None, Arg::Numeric(addr), Arg::None) => self.breakpoint_cmd(addr),
+            ("de" | "delete", None, Arg::Numeric(addr), Arg::None) => self.delete_cmd(addr),
+            ("w" | "watch", None, Arg::Numeric(addr), Arg::None) => self.watchpoint_cmd(gb, addr),
+            ("dw" | "delwatch", None, Arg::Numeric(addr), Arg::None) => self.delwatch_cmd(addr),
+            ("l" | "list", None, Arg::None, Arg::None) => self.list_cmd(),
+            ("d" | "disassemble", _, Arg::None, Arg::None) => self.disasm_cmd(gb, modif, gb.cpu.pc),
+            ("d" | "disassemble", _, Arg::Numeric(addr), Arg::None) => self.disasm_cmd(gb, modif, addr),
+            ("x" | "examine", _, Arg::Numeric(addr), Arg::None) => self.examine_cmd(gb, modif, addr),
+            ("r" | "regs" | "registers", None, Arg::None, Arg::None) => self.regs_cmd(gb),
+            ("set", _, Arg::Str(config), Arg::Bool(state)) => self.set_cmd(config, state),
+            ("cl" | "clear", None, Arg::None, Arg::None) => self.clear_cmd(),
+            _ => self.help_cmd(cmd_name.to_string()),
+        };
 
-            if self.config.regs {
-                self.regs_cmd();
-            }
+        if self.config.regs {
+            self.regs_cmd(gb);
+        }
 
-            if self.config.disasm {
-                self.disasm_cmd(None, self.gb.cpu.pc);
-            }
+        if self.config.disasm {
+            self.disasm_cmd(gb, None, gb.cpu.pc);
         }
     }
 
-    fn continue_cmd(&mut self) {
+    fn continue_cmd(&mut self, gb: &mut GameBoy) {
         for i in 0..self.watchpoints.len() {
-            self.watchpoints[i].last_val = self.gb.read(self.watchpoints[i].addr);
+            self.watchpoints[i].last_val = gb.read(self.watchpoints[i].addr);
         }
 
         loop {
-            self.gb.fetch_exec();
+            gb.step();
 
             let mut changes = vec![];
             for i in 0..self.watchpoints.len() {
-                let val = self.gb.read(self.watchpoints[i].addr);
+                let val = gb.read(self.watchpoints[i].addr);
                 if val != self.watchpoints[i].last_val {
                     changes.push((i + 1, val, self.watchpoints[i].addr))
                 }
@@ -171,23 +167,23 @@ impl<'a> DebugGB<'a> {
                 break;
             }
 
-            if self.breakpoints.binary_search(&self.gb.cpu.pc).is_ok() {
+            if self.breakpoints.binary_search(&gb.cpu.pc).is_ok() {
                 break;
             }
         }
     }
 
-    fn step_cmd(&mut self, modif: Option<u16>) {
+    fn step_cmd(&mut self, gb: &mut GameBoy, modif: Option<u16>) {
         let steps = match modif {
             None => 1,
             Some(n) => n,
         };
         for _ in 0..steps {
-            self.gb.fetch_exec();
+            gb.step();
         }
     }
 
-    fn next_cmd(&mut self, modif: Option<u16>) {
+    fn next_cmd(&mut self, gb: &mut GameBoy, modif: Option<u16>) {
         let steps = match modif {
             None => 1,
             Some(n) => n,
@@ -195,12 +191,12 @@ impl<'a> DebugGB<'a> {
         for _ in 0..steps {
             let mut count = 0;
             loop {
-                match self.gb.dpc(0) {
+                match gb.dpc(0) {
                     0xC4 | 0xCC | 0xD4 | 0xDC | 0xCD => count += 1,
                     0xC0 | 0xC8 | 0xC9 | 0xD0 | 0xD8 | 0xD9 => count -= 1,
                     _ => {}
                 }
-                self.gb.fetch_exec();
+                gb.step();
                 if count == 0 {
                     break;
                 }
@@ -208,7 +204,7 @@ impl<'a> DebugGB<'a> {
         }
     }
 
-    fn examine_cmd(&mut self, modif: Option<u16>, addr: u16) {
+    fn examine_cmd(&mut self, gb: &mut GameBoy, modif: Option<u16>, addr: u16) {
         let count = match modif {
             None => 32,
             Some(n) => n,
@@ -218,7 +214,7 @@ impl<'a> DebugGB<'a> {
             if i % 16 == 0 {
                 s += &format!("${:04X}: ", u16::wrapping_add(addr, i));
             }
-            s += &format!("{:02X} ", self.gb.read(u16::wrapping_add(addr, i)));
+            s += &format!("{:02X} ", gb.read(u16::wrapping_add(addr, i)));
             if i % 16 == 15 {
                 s += "\n";
             }
@@ -226,8 +222,8 @@ impl<'a> DebugGB<'a> {
         println!("{}", s);
     }
 
-    fn regs_cmd(&mut self) {
-        println!("{}", self.gb.cpu);
+    fn regs_cmd(&mut self, gb: &mut GameBoy) {
+        println!("{}", gb.cpu);
         println!();
     }
 
@@ -255,13 +251,13 @@ impl<'a> DebugGB<'a> {
         }
     }
 
-    fn watchpoint_cmd(&mut self, addr: u16) {
+    fn watchpoint_cmd(&mut self, gb: &mut GameBoy, addr: u16) {
         match self.watchpoints.binary_search_by(|wp| wp.addr.cmp(&addr)) {
             Ok(_) => {
                 println!("Watchpoint already at ${:04X}", addr);
             }
             Err(pos) => {
-                self.watchpoints.insert(pos, WatchPoint { addr, last_val: self.gb.read(addr) });
+                self.watchpoints.insert(pos, WatchPoint { addr, last_val: gb.read(addr) });
                 println!("Watchpoint set at ${:04X}", addr);
             }
         }
@@ -301,16 +297,16 @@ impl<'a> DebugGB<'a> {
         }
     }
 
-    fn disasm_cmd(&mut self, modif: Option<u16>, mut addr: u16) {
+    fn disasm_cmd(&mut self, gb: &mut GameBoy, modif: Option<u16>, mut addr: u16) {
         let count = match modif {
             None => 5,
             Some(n) => n,
         };
 
         for _ in 1..=count {
-            let (dis, len) = self.disassemble(addr);
+            let (dis, len) = self.disassemble(gb, addr);
             let mut padding = "    ";
-            if addr == self.gb.cpu.pc {
+            if addr == gb.cpu.pc {
                 padding = " -> ";
             }
             println!("{}{:04X}: {}", padding, addr, dis);
@@ -424,7 +420,7 @@ impl<'a> DebugGB<'a> {
         print!("\x1b[2J\x1b[1;1H");
     }
 
-    fn eval_arg(&self, arg_str: &str) -> Result<Arg, String> {
+    fn eval_arg(&self, gb: &mut GameBoy, arg_str: &str) -> Result<Arg, String> {
         match arg_str {
             "on" => {
                 return Ok(Arg::Bool(true));
@@ -439,12 +435,12 @@ impl<'a> DebugGB<'a> {
             "disasm" | "regs" => {
                 return Ok(Arg::Str(arg_str.to_string()));
             }
-            "af" => return Ok(Arg::Numeric(self.gb.cpu.rd_af())),
-            "bc" => return Ok(Arg::Numeric(self.gb.cpu.rd_bc())),
-            "de" => return Ok(Arg::Numeric(self.gb.cpu.rd_de())),
-            "hl" => return Ok(Arg::Numeric(self.gb.cpu.rd_hl())),
-            "pc" => return Ok(Arg::Numeric(self.gb.cpu.pc)),
-            "sp" => return Ok(Arg::Numeric(self.gb.cpu.sp)),
+            "af" => return Ok(Arg::Numeric(gb.cpu.rd_af())),
+            "bc" => return Ok(Arg::Numeric(gb.cpu.rd_bc())),
+            "de" => return Ok(Arg::Numeric(gb.cpu.rd_de())),
+            "hl" => return Ok(Arg::Numeric(gb.cpu.rd_hl())),
+            "pc" => return Ok(Arg::Numeric(gb.cpu.pc)),
+            "sp" => return Ok(Arg::Numeric(gb.cpu.sp)),
             _ => {}
         };
 
@@ -464,30 +460,30 @@ impl<'a> DebugGB<'a> {
         arg
     }
 
-    pub fn disassemble(&self, addr: u16) -> (String, u8) {
-        let opcode = self.gb.read(addr);
+    pub fn disassemble(&self, gb: &mut GameBoy, addr: u16) -> (String, u8) {
+        let opcode = gb.read(addr);
         let mut mnemonic = OPCODES_STR[opcode as usize].to_string();
 
         if mnemonic == "CB" {
-            let param = self.gb.read(u16::wrapping_add(addr, 1));
+            let param = gb.read(u16::wrapping_add(addr, 1));
             return (OPCODES_CB_STR[param as usize].to_string(), 2);
         }
 
         if mnemonic.contains("U8") {
-            let param = self.gb.read(u16::wrapping_add(addr, 1));
+            let param = gb.read(u16::wrapping_add(addr, 1));
             mnemonic = mnemonic.replace("U8", &format!("${:02X}", param));
             return (mnemonic, 2);
         }
 
         if mnemonic.contains("U16") {
-            let param1 = self.gb.read(u16::wrapping_add(addr, 1));
-            let param2 = self.gb.read(u16::wrapping_add(addr, 2));
+            let param1 = gb.read(u16::wrapping_add(addr, 1));
+            let param2 = gb.read(u16::wrapping_add(addr, 2));
             mnemonic = mnemonic.replace("U16", &format!("${:04X}", (((param2 as u16) << 8) + param1 as u16)));
             return (mnemonic, 3);
         }
 
         if mnemonic.contains("I8") {
-            let param = self.gb.read(u16::wrapping_add(addr, 1));
+            let param = gb.read(u16::wrapping_add(addr, 1));
             mnemonic = mnemonic.replace("I8", &format!("${:02X}", param));
             mnemonic += " (";
             if param as i8 > 0 {
