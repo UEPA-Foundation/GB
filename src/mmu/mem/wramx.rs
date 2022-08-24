@@ -1,10 +1,12 @@
-use crate::mem::MemoryUnit;
+use crate::mmu::mem::MemoryUnit;
 
-pub struct WRam0 {
+pub struct WRamX {
+    // As only DMG is currently supported, there is only one RAM bank
+    // TODO: Bank switching must be implemented for CGB support!
     bytes: [u8; 0x1000],
 }
 
-impl MemoryUnit for WRam0 {
+impl MemoryUnit for WRamX {
     fn init() -> Self {
         Self {
             // WARN: memory is actually initialized with random garbage there

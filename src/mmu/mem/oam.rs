@@ -1,4 +1,4 @@
-use crate::mem::MemoryUnit;
+use crate::mmu::mem::MemoryUnit;
 
 pub struct Oam {
     bytes: [u8; 0xA0],

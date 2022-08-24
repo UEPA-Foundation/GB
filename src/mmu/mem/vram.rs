@@ -1,4 +1,4 @@
-use crate::mem::MemoryUnit;
+use crate::mmu::mem::MemoryUnit;
 
 pub struct VRam {
     // As only DMG is currently supported, there is only one VRAM bank

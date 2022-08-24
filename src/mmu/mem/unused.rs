@@ -1,4 +1,4 @@
-use crate::mem::MemoryUnit;
+use crate::mmu::mem::MemoryUnit;
 
 pub struct Unused {
     _bytes: [u8; 0x60], // Currently unused, but will be needed for CGB implementation
