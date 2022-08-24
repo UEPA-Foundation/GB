@@ -1,4 +1,4 @@
-use crate::cart::{Cartridge, CartridgeError, RomBank, BLANK_ROM};
+use crate::mmu::cart::{Cartridge, CartridgeError, RomBank, BLANK_ROM};
 
 pub struct Mbc2 {
     rom: Vec<RomBank>,

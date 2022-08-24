@@ -1,4 +1,4 @@
-use crate::cart::{Cartridge, CartridgeError, RamBank, RomBank, BLANK_RAM, BLANK_ROM};
+use crate::mmu::cart::{Cartridge, CartridgeError, RamBank, RomBank, BLANK_RAM, BLANK_ROM};
 
 pub struct NoMbc {
     rom0: RomBank,

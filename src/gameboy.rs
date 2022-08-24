@@ -1,6 +1,12 @@
 use crate::io::{joypad::Joypad, serial::SerialLink, timer::Timer};
 use crate::mem::{hram::HRam, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX, MemoryUnit};
-use crate::{cart, cart::Cartridge, cpu::Cpu};
+use crate::{
+    cpu::Cpu,
+    mmu::{
+        cart,
+        cart::Cartridge,
+    },
+};
 
 pub struct GameBoy {
     pub cpu: Cpu,

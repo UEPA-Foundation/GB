@@ -1,7 +1,6 @@
 use crate::{debug::Debugger, gameboy::GameBoy};
 use sdl2::{event::Event, keyboard::Scancode, pixels::Color, render::Canvas, video::Window, Sdl, VideoSubsystem};
 
-mod cart;
 mod cpu;
 mod debug;
 mod gameboy;
