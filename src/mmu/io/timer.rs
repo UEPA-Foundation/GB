@@ -137,7 +137,7 @@ impl GameBoy {
     pub fn cycle_timer(&mut self, cycles: u8) {
         for _ in 0..cycles {
             if self.timer.int_occurred() {
-                self.set_if(0x04);
+                self.intr.request(0x04);
             }
 
             self.timer.update_tima_state();

@@ -1,5 +1,6 @@
 use crate::{
     cpu::Cpu,
+    intr::InterruptHandler,
     mmu::{
         cart,
         cart::Cartridge,
@@ -10,9 +11,9 @@ use crate::{
 
 pub struct GameBoy {
     pub cpu: Cpu,
-    pub ime: bool,
-    pub enabling_int: bool,
     pub halt: bool,
+
+    pub intr: InterruptHandler,
 
     pub cart: Box<dyn Cartridge>,
     pub vram: VRam,
@@ -26,17 +27,14 @@ pub struct GameBoy {
     pub serial: SerialLink,
     pub timer: Timer,
     pub lcd: LCD,
-    pub iflags: u8,
-    pub ie: u8,
 }
 
 impl GameBoy {
     pub fn init(path: &str) -> Self {
         Self {
             cpu: Cpu { a: 0, f: 0, b: 0, c: 0, d: 0, e: 0, h: 0, l: 0, sp: 0, pc: 0x100 },
-            ime: false,
-            enabling_int: false,
             halt: false,
+            intr: InterruptHandler::init(),
             cart: cart::load_rom_file(path),
             wram0: MemoryUnit::init(),
             wramx: MemoryUnit::init(),
@@ -48,8 +46,6 @@ impl GameBoy {
             timer: Timer::init(),
             serial: SerialLink::init(),
             lcd: LCD::init(),
-            iflags: 0,
-            ie: 0,
         }
     }
 
@@ -79,23 +75,5 @@ impl GameBoy {
     pub fn cycle_write(&mut self, addr: u16, val: u8) {
         self.write(addr, val);
         self.advance_cycles(4);
-    }
-
-    #[inline(always)]
-    pub fn fetch_interrupt(&self) -> Option<u8> {
-        match self.iflags & self.ie & 0x1F {
-            0 => None,
-            intrs => Some(intrs.trailing_zeros() as u8),
-        }
-    }
-
-    #[inline(always)]
-    pub fn set_if(&mut self, intr: u8) {
-        self.iflags = self.iflags | intr;
-    }
-
-    #[inline(always)]
-    pub fn reset_if(&mut self, intr: u8) {
-        self.iflags = self.iflags & !intr;
     }
 }

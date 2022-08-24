@@ -35,7 +35,7 @@ impl GameBoy {
             0xFF06 => self.timer.read_tma(),
             0xFF07 => self.timer.read_tac(),
             0xFF08..=0xFF0E => 0xFF,
-            0xFF0F => self.iflags | 0xE0,
+            0xFF0F => self.intr.read_if(),
             0xFF10..=0xFF26 => 0xFF, // sound
             0xFF27..=0xFF2F => 0xFF,
             0xFF30..=0xFF3F => 0xFF, // wave pattern
@@ -61,7 +61,7 @@ impl GameBoy {
             0xFF70 => 0xFF, // wram bank select (CGB)
             0xFF71..=0xFF7F => 0xFF,
             0xFF80..=0xFFFE => self.hram.read(addr),
-            0xFFFF => self.ie,
+            0xFFFF => self.intr.read_ie(),
         }
     }
 
@@ -94,7 +94,7 @@ impl GameBoy {
             0xFF06 => self.timer.write_tma(val),
             0xFF07 => self.timer.write_tac(val),
             0xFF08..=0xFF0E => {}
-            0xFF0F => self.iflags = val,
+            0xFF0F => self.intr.write_if(val),
             0xFF10..=0xFF26 => {} // sound
             0xFF27..=0xFF2F => {}
             0xFF30..=0xFF3F => {} // wave pattern
@@ -120,7 +120,7 @@ impl GameBoy {
             0xFF70 => {} // wram bank select (CGB)
             0xFF71..=0xFF7F => {}
             0xFF80..=0xFFFE => self.hram.write(addr, val),
-            0xFFFF => self.ie = val,
+            0xFFFF => self.intr.write_ie(val),
         }
     }
 }

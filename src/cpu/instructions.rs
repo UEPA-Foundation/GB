@@ -1180,7 +1180,7 @@ macro_rules! ret {
 
 fn reti(gb: &mut GameBoy) {
     _ret(gb);
-    gb.ime = true;
+    gb.intr.enable_imediate();
 }
 
 macro_rules! rst {
@@ -1351,13 +1351,11 @@ fn daa(gb: &mut GameBoy) {
 }
 
 fn di(gb: &mut GameBoy) {
-    gb.ime = false;
+    gb.intr.disable();
 }
 
 fn ei(gb: &mut GameBoy) {
-    if !gb.enabling_int {
-        gb.enabling_int = true;
-    }
+    gb.intr.enable();
 }
 
 fn halt(gb: &mut GameBoy) {

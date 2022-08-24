@@ -93,17 +93,13 @@ impl Cpu {
 
 impl GameBoy {
     pub fn cpu_step(&mut self) {
-        let current_ime = self.ime;
-        if self.enabling_int {
-            self.ime = true;
-            self.enabling_int = false;
-        }
+        let ime = self.intr.current_ime();
 
-        match self.fetch_interrupt() {
+        match self.intr.fetch() {
             Some(intr) => {
                 self.halt = false;
 
-                if current_ime {
+                if ime {
                     self.advance_cycles(8);
 
                     // store current pc addr in stack
@@ -114,11 +110,11 @@ impl GameBoy {
                     self.cycle_write(self.cpu.sp, addr[0]);
 
                     // jump to intr handler addr
-                    self.cpu.pc = (intr * 8) as u16 + 0x40;
+                    self.cpu.pc = (intr as u16) * 8 + 0x40;
                     self.advance_cycles(4);
 
-                    self.reset_if(1 << intr);
-                    self.ime = false;
+                    self.intr.reset(1 << intr);
+                    self.intr.disable();
                 }
             }
             None => {}

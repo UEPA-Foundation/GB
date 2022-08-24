@@ -50,7 +50,7 @@ impl GameBoy {
         self.joypad.update_joyp();
         let new_keys = self.joypad.joyp & 0x0F;
         if (old_keys == 0x0F) && (new_keys != 0x0F) {
-            self.set_if(0x10);
+            self.intr.request(0x10);
         }
     }
 
