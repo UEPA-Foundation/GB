@@ -1,4 +1,4 @@
-use crate::{debug::Debugger, gameboy::GameBoy};
+use crate::{debug::Debugger, gameboy::GameBoy, mmu::io::joypad::Button};
 use sdl2::{event::Event, keyboard::Scancode, pixels::Color, render::Canvas, video::Window, Sdl, VideoSubsystem};
 
 mod cpu;
@@ -17,9 +17,10 @@ const PATH: &str = "src/test/gb-test-roms/cpu_instrs/cpu_instrs.gb";
 
 fn main() {
     let mut emu = Emulator::init();
-    emu.run(true);
+    emu.run(false);
 }
 
+#[allow(unused)]
 struct Emulator {
     gb: GameBoy,
     sdl: Sdl,
@@ -80,13 +81,13 @@ impl Emulator {
     fn collect_input(&mut self) {
         let e = self.sdl.event_pump().unwrap();
 
-        self.gb.set_a(e.keyboard_state().is_scancode_pressed(Scancode::Z));
-        self.gb.set_b(e.keyboard_state().is_scancode_pressed(Scancode::X));
-        self.gb.set_start(e.keyboard_state().is_scancode_pressed(Scancode::Return));
-        self.gb.set_select(e.keyboard_state().is_scancode_pressed(Scancode::Backspace));
-        self.gb.set_up(e.keyboard_state().is_scancode_pressed(Scancode::Up));
-        self.gb.set_down(e.keyboard_state().is_scancode_pressed(Scancode::Down));
-        self.gb.set_left(e.keyboard_state().is_scancode_pressed(Scancode::Left));
-        self.gb.set_right(e.keyboard_state().is_scancode_pressed(Scancode::Right));
+        self.gb.set_button(Button::A, e.keyboard_state().is_scancode_pressed(Scancode::Z));
+        self.gb.set_button(Button::B, e.keyboard_state().is_scancode_pressed(Scancode::X));
+        self.gb.set_button(Button::START, e.keyboard_state().is_scancode_pressed(Scancode::Return));
+        self.gb.set_button(Button::SELECT, e.keyboard_state().is_scancode_pressed(Scancode::Backspace));
+        self.gb.set_button(Button::UP, e.keyboard_state().is_scancode_pressed(Scancode::Up));
+        self.gb.set_button(Button::DOWN, e.keyboard_state().is_scancode_pressed(Scancode::Down));
+        self.gb.set_button(Button::LEFT, e.keyboard_state().is_scancode_pressed(Scancode::Left));
+        self.gb.set_button(Button::RIGHT, e.keyboard_state().is_scancode_pressed(Scancode::Right));
     }
 }

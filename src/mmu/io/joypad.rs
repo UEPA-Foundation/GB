@@ -2,19 +2,23 @@ use crate::gameboy::GameBoy;
 
 pub struct Joypad {
     joyp: u8,
-    a: u8,
-    b: u8,
-    start: u8,
-    select: u8,
-    up: u8,
-    down: u8,
-    left: u8,
-    right: u8,
+    buttons: u8, // upper nybble is DPAD, lower nybble is action
+}
+
+pub enum Button {
+    A = 0x01,
+    B = 0x02,
+    SELECT = 0x04,
+    START = 0x08,
+    RIGHT = 0x10,
+    LEFT = 0x20,
+    UP = 0x40,
+    DOWN = 0x80,
 }
 
 impl Joypad {
     pub fn init() -> Self {
-        Self { joyp: 0, a: 0, b: 0, start: 0, select: 0, up: 0, down: 0, left: 0, right: 0 }
+        Self { joyp: 0x20, buttons: 0 }
     }
 
     pub fn read(&self) -> u8 {
@@ -30,24 +34,12 @@ impl Joypad {
         self.joyp &= 0x30;
         match self.joyp >> 4 {
             0b00 => {}
-            0b01 => self.joyp |= self.start << 3 | self.select << 2 | self.b << 1 | self.a,
-            0b10 => self.joyp |= self.down << 3 | self.up << 2 | self.left << 1 | self.right,
+            0b01 => self.joyp |= self.buttons & 0x0F, // selecting action buttons
+            0b10 => self.joyp |= self.buttons >> 4,   // selecting directional buttons
             0b11 => self.joyp |= 0x0F,
             how => println!("Somehow, amazingly, a two bit number equals {}.", how),
         }
     }
-}
-
-macro_rules! set_key {
-    ($key: ident) => {
-        paste::paste! {
-            #[allow(dead_code)]
-            #[inline(always)]
-            pub fn [<set_ $key>](&mut self, state: bool) {
-                self.joypad.$key = state as u8;
-            }
-        }
-    };
 }
 
 impl GameBoy {
@@ -62,12 +54,10 @@ impl GameBoy {
         }
     }
 
-    set_key!(a);
-    set_key!(b);
-    set_key!(start);
-    set_key!(select);
-    set_key!(up);
-    set_key!(down);
-    set_key!(left);
-    set_key!(right);
+    pub fn set_button(&mut self, button: Button, state: bool) {
+        match state {
+            true => self.joypad.buttons |= button as u8,
+            false => self.joypad.buttons &= !(button as u8),
+        }
+    }
 }
