@@ -70,7 +70,10 @@ impl Cartridge for Mbc1 {
                         feat: "more than 4 banks of RAM".to_string(),
                     });
                 }
-                *ram = vec![BLANK_RAM; nbanks as usize];
+                *ram = match nbanks {
+                    0 => vec![BLANK_RAM; 1], // allocate the minimum ammount to be safe
+                    _ => vec![BLANK_RAM; nbanks as usize],
+                }
             }
         }
 
