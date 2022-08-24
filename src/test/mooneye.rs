@@ -1,3 +1,4 @@
+#[cfg(test)]
 use crate::gameboy::GameBoy;
 
 macro_rules! test_mooneye {
