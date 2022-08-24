@@ -1,10 +1,10 @@
-use crate::io::{joypad::Joypad, serial::SerialLink, timer::Timer};
 use crate::mem::{hram::HRam, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX, MemoryUnit};
 use crate::{
     cpu::Cpu,
     mmu::{
         cart,
         cart::Cartridge,
+        io::{joypad::Joypad, serial::SerialLink, timer::Timer},
     },
 };
 

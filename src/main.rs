@@ -4,7 +4,6 @@ use sdl2::{event::Event, keyboard::Scancode, pixels::Color, render::Canvas, vide
 mod cpu;
 mod debug;
 mod gameboy;
-mod io;
 mod mem;
 mod mmu;
 mod test;

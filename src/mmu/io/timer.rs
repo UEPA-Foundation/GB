@@ -19,51 +19,67 @@ impl Timer {
         Self { div: 0, tima: 0, tma: 0, tac: 0, tima_state: TimaState::RUNNING }
     }
 
-    pub fn read(&self, addr: u16) -> u8 {
-        match addr {
-            0xFF04 => (self.div >> 8) as u8,
-            0xFF05 => self.tima,
-            0xFF06 => self.tma,
-            0xFF07 => self.tac | 0xF8,
-            _ => panic!(),
+    #[inline(always)]
+    pub fn read_div(&self) -> u8 {
+        (self.div >> 8) as u8
+    }
+
+    #[inline(always)]
+    pub fn read_tima(&self) -> u8 {
+        self.tima
+    }
+
+    #[inline(always)]
+    pub fn read_tma(&self) -> u8 {
+        self.tma
+    }
+
+    #[inline(always)]
+    pub fn read_tac(&self) -> u8 {
+        self.tac
+    }
+
+    #[inline(always)]
+    pub fn write_div(&mut self) {
+        let freq_bit = self.div & self.div_tima_mask() != 0;
+        if self.is_enabled() && freq_bit {
+            self.increment_tima();
+        }
+        self.div = 0;
+    }
+
+    #[inline(always)]
+    pub fn write_tima(&mut self, val: u8) {
+        match self.tima_state {
+            TimaState::RUNNING => self.tima = val,
+            TimaState::OVERFLOW(_) => {
+                self.tima = val;
+                self.tima_state = TimaState::RUNNING;
+            }
+            TimaState::LOADING(_) => {}
         }
     }
 
-    pub fn write(&mut self, addr: u16, val: u8) {
-        match addr {
-            0xFF04 => {
-                let freq_bit = self.div & self.div_tima_mask() != 0;
-                if self.is_enabled() && freq_bit {
-                    self.increment_tima();
-                }
-                self.div = 0;
-            }
-            0xFF05 => match self.tima_state {
-                TimaState::RUNNING => self.tima = val,
-                TimaState::OVERFLOW(_) => {
-                    self.tima = val;
-                    self.tima_state = TimaState::RUNNING;
-                }
-                TimaState::LOADING(_) => {}
-            },
-            0xFF06 => self.tma = val,
-            0xFF07 => {
-                let mask = self.div_tima_mask();
+    #[inline(always)]
+    pub fn write_tma(&mut self, val: u8) {
+        self.tma = val;
+    }
 
-                let bit = self.div & mask != 0;
-                let enabled = self.is_enabled();
-                let disabling = val & 0b100 == 0;
+    #[inline(always)]
+    pub fn write_tac(&mut self, val: u8) {
+        let mask = self.div_tima_mask();
 
-                // disabling the timer while the selected div bit is active increments TIMA
-                // because of the falling edge circuitry
-                if bit && enabled && disabling {
-                    self.increment_tima();
-                }
+        let bit = self.div & mask != 0;
+        let enabled = self.is_enabled();
+        let disabling = val & 0b100 == 0;
 
-                self.tac = val;
-            }
-            _ => panic!(),
+        // disabling the timer while the selected div bit is active increments TIMA
+        // because of the falling edge circuitry
+        if bit && enabled && disabling {
+            self.increment_tima();
         }
+
+        self.tac = val;
     }
 
     #[inline(always)]
