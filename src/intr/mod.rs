@@ -4,6 +4,15 @@ pub struct InterruptHandler {
     ienable: u8,
 }
 
+#[derive(Clone, Copy, num_derive::FromPrimitive)]
+pub enum Interrupt {
+    VBLANK = 0,
+    LCD = 1,
+    TIMER = 2,
+    SERIAL = 3,
+    JOYPAD = 4,
+}
+
 enum ImeState {
     DISABLED,
     ENABLING,
@@ -48,21 +57,18 @@ impl InterruptHandler {
 
 impl InterruptHandler {
     #[inline(always)]
-    pub fn fetch(&self) -> Option<u8> {
-        match self.iflags & self.ienable & 0x1F {
-            0 => None,
-            intrs => Some(intrs.trailing_zeros() as u8),
-        }
+    pub fn fetch(&self) -> Option<Interrupt> {
+        num::FromPrimitive::from_u32((self.iflags & self.ienable & 0x1F).trailing_zeros())
     }
 
     #[inline(always)]
-    pub fn request(&mut self, intr: u8) {
-        self.iflags |= intr;
+    pub fn request(&mut self, intr: Interrupt) {
+        self.iflags |= 1 << (intr as u8);
     }
 
     #[inline(always)]
-    pub fn reset(&mut self, intr: u8) {
-        self.iflags &= !intr;
+    pub fn reset(&mut self, intr: Interrupt) {
+        self.iflags &= !(1 << (intr as u8));
     }
 }
 

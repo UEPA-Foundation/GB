@@ -113,7 +113,7 @@ impl GameBoy {
                     self.cpu.pc = (intr as u16) * 8 + 0x40;
                     self.advance_cycles(4);
 
-                    self.intr.reset(1 << intr);
+                    self.intr.reset(intr);
                     self.intr.disable();
                 }
             }

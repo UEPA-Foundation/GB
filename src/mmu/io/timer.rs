@@ -1,4 +1,5 @@
 use crate::gameboy::GameBoy;
+use crate::intr::Interrupt;
 
 pub struct Timer {
     div: u16,
@@ -137,7 +138,7 @@ impl GameBoy {
     pub fn cycle_timer(&mut self, cycles: u8) {
         for _ in 0..cycles {
             if self.timer.int_occurred() {
-                self.intr.request(0x04);
+                self.intr.request(Interrupt::TIMER);
             }
 
             self.timer.update_tima_state();
