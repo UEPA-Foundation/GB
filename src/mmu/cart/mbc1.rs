@@ -24,19 +24,6 @@ impl Mbc1 {
             Self { rom: vec![], ram: Ram::NONE, mode: 0, ram_enable: false, mask: 0, bank_lo: 1, bank_hi: 0 }
         }
     }
-
-    fn rom_write(&mut self, addr: u16, val: u8) {
-        match addr {
-            0x0000..=0x1FFF => self.ram_enable = (val & 0x0F) == 0xA,
-            0x2000..=0x3FFF => self.bank_lo = val & 0b00011111,
-            0x4000..=0x5FFF => self.bank_hi = val & 0b00000011,
-            0x6000..=0x7FFF => self.mode = val & 1,
-            _ => panic!(),
-        }
-        if self.bank_lo == 0 {
-            self.bank_lo = 1;
-        }
-    }
 }
 
 impl Cartridge for Mbc1 {
@@ -121,11 +108,23 @@ impl Cartridge for Mbc1 {
     }
 
     fn rom0_write(&mut self, addr: u16, val: u8) {
-        self.rom_write(addr, val);
+        match addr {
+            0x0000..=0x1FFF => self.ram_enable = (val & 0x0F) == 0xA,
+            0x2000..=0x3FFF => self.bank_lo = val & 0b00011111,
+            _ => panic!(),
+        }
+
+        if self.bank_lo == 0 {
+            self.bank_lo = 1;
+        }
     }
 
     fn romx_write(&mut self, addr: u16, val: u8) {
-        self.rom_write(addr, val);
+        match addr {
+            0x4000..=0x5FFF => self.bank_hi = val & 0b00000011,
+            0x6000..=0x7FFF => self.mode = val & 1,
+            _ => panic!(),
+        }
     }
 
     fn sram_write(&mut self, addr: u16, val: u8) {
