@@ -50,57 +50,9 @@ impl GameBoy {
         self.cycle_joypad(cycles);
     }
 
-    pub fn read(&self, addr: u16) -> u8 {
-        match addr {
-            0x0000..=0x3FFF => self.cart.rom0_read(addr),
-            0x4000..=0x7FFF => self.cart.romx_read(addr),
-            0x8000..=0x9FFF => self.vram.read(addr),
-            0xA000..=0xBFFF => self.cart.sram_read(addr),
-            0xC000..=0xCFFF => self.wram0.read(addr),
-            0xD000..=0xDFFF => self.wramx.read(addr),
-            0xE000..=0xEFFF => self.wram0.read(addr), // echo 0
-            0xF000..=0xFDFF => self.wramx.read(addr), // echo X
-            0xFE00..=0xFE9F => self.oam.read(addr),
-            0xFEA0..=0xFEFF => self._unused.read(addr),
-            0xFF00 => self.joypad.read(),
-            0xFF01 | 0xFF02 => self.serial.read(addr),
-            0xFF03 => 0, // TODO
-            0xFF04..=0xFF07 => self.timer.read(addr),
-            0xFF08..=0xFF0E => 0,         // TODO
-            0xFF0F => self.iflags | 0xE0, // 3 upper bits always return 1,
-            0xFF10..=0xFF7F => 0,         // TODO
-            0xFF80..=0xFFFE => self.hram.read(addr),
-            0xFFFF => self.ie,
-        }
-    }
-
     #[inline(always)]
     pub fn dpc(&self, offset: i8) -> u8 {
         self.read(u16::wrapping_add(self.cpu.pc, offset as u16))
-    }
-
-    pub fn write(&mut self, addr: u16, val: u8) {
-        match addr {
-            0x0000..=0x3FFF => self.cart.rom0_write(addr, val),
-            0x4000..=0x7FFF => self.cart.romx_write(addr, val),
-            0x8000..=0x9FFF => self.vram.write(addr, val),
-            0xA000..=0xBFFF => self.cart.sram_write(addr, val),
-            0xC000..=0xCFFF => self.wram0.write(addr, val),
-            0xD000..=0xDFFF => self.wramx.write(addr, val),
-            0xE000..=0xEFFF => self.wram0.write(addr, val), // echo 0
-            0xF000..=0xFDFF => self.wramx.write(addr, val), // echo X
-            0xFE00..=0xFE9F => self.oam.write(addr, val),
-            0xFEA0..=0xFEFF => self._unused.write(addr, val),
-            0xFF00 => self.joypad.write(val),
-            0xFF01 | 0xFF02 => self.serial.write(addr, val),
-            0xFF03 => (), // TODO
-            0xFF04..=0xFF07 => self.timer.write(addr, val),
-            0xFF08..=0xFF0E => (), // TODO
-            0xFF0F => self.iflags = val,
-            0xFF10..=0xFF7F => (), // TODO
-            0xFF80..=0xFFFE => self.hram.write(addr, val),
-            0xFFFF => self.ie = val,
-        }
     }
 
     #[inline(always)]
