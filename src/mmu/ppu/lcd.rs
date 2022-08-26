@@ -1,17 +1,6 @@
-pub struct LCD {
-    lcdc: u8,
-    stat: u8,
-    scy: u8,
-    scx: u8,
-    ly: u8,
-    lyc: u8,
-    dma: u8,
-    bgp: u8,
-    obp0: u8,
-    obp1: u8,
-    wy: u8,
-    wx: u8,
-}
+#![allow(unused)] // TODO: REMOVE THIS
+
+use crate::mmu::ppu::PPU;
 
 // generates read methods for regs with trivial reads
 macro_rules! read_simple {
@@ -41,17 +30,12 @@ macro_rules! write_simple {
     };
 }
 
-impl LCD {
-    pub fn init() -> Self {
-        Self { lcdc: 0, stat: 0, scy: 0, scx: 0, ly: 0, lyc: 0, dma: 0, bgp: 0, obp0: 0, obp1: 0, wy: 0, wx: 0 }
-    }
-
+impl PPU {
     read_simple!(lcdc, scy, scx, ly, lyc, dma, bgp, obp0, obp1, wy, wx);
 
     #[inline(always)]
     pub fn read_stat(&self) -> u8 {
-        // TODO: stat logic
-        self.stat
+        self.stat | 0x80
     }
 
     write_simple!(scy, scx, bgp, obp0, obp1, wx);
@@ -84,5 +68,10 @@ impl LCD {
     #[inline(always)]
     pub fn write_wy(&mut self, val: u8) {
         self.wy = val; // TODO: more behavior in wy
+    }
+
+    #[inline(always)]
+    fn is_enabled(&self) -> bool {
+        self.lcdc & 0x80 != 0
     }
 }
