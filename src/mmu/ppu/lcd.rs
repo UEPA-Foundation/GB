@@ -1,6 +1,6 @@
 #![allow(unused)] // TODO: REMOVE THIS
 
-use crate::mmu::ppu::PPU;
+use crate::mmu::ppu::Ppu;
 
 // generates read methods for regs with trivial reads
 macro_rules! read_simple {
@@ -30,7 +30,7 @@ macro_rules! write_simple {
     };
 }
 
-impl PPU {
+impl Ppu {
     read_simple!(lcdc, scy, scx, ly, lyc, dma, bgp, obp0, obp1, wy, wx);
 
     #[inline(always)]
