@@ -146,11 +146,42 @@ impl GameBoy {
         for _ in 0..cycles {
             self.ppu.cycles += 1;
             match self.ppu.mode {
-                PpuMode::HBLANK => self.hblank_cycle();
-                PpuMode::VBLANK => self.vblank_cycle();
-                PpuMode::OAMSCAN => self.oamscan_cycle();
+                PpuMode::HBLANK => self.hblank_cycle(),
+                PpuMode::VBLANK => self.vblank_cycle(),
+                PpuMode::OAMSCAN => self.oamscan_cycle(),
                 PpuMode::DRAW => self.draw_cycle(),
             };
+        }
+    }
+
+    fn hblank_cycle(&mut self) {
+        if self.ppu.cycles >= 456 {
+            self.ppu.cycles = 0;
+            self.ppu.lx = 0;
+            self.ppu.ly += 1;
+            if self.ppu.ly < 144 {
+                self.ppu.mode = PpuMode::OAMSCAN;
+            } else {
+                self.ppu.mode = PpuMode::VBLANK;
+            }
+        }
+    }
+
+    fn vblank_cycle(&mut self) {
+        if self.ppu.cycles >= 456 {
+            self.ppu.cycles = 0;
+            self.ppu.lx = 0;
+            self.ppu.ly += 1;
+            if self.ppu.ly >= 154 {
+                self.ppu.ly = 0;
+                self.ppu.mode = PpuMode::OAMSCAN;
+            }
+        }
+    }
+
+    fn oamscan_cycle(&mut self) {
+        if self.ppu.cycles >= 80 {
+            self.ppu.mode = PpuMode::DRAW;
         }
     }
 
