@@ -11,8 +11,8 @@ pub enum FifoState {
 pub struct PixelFifo {
     len: u8,
     flags: u8,
-    pixels_lo: u16,
-    pixels_lo: u16,
+    pixels_lo: u8,
+    pixels_hi: u8,
     pub state: FifoState,
 }
 
@@ -23,7 +23,7 @@ enum FifoError {
 }
 
 impl PixelFifo {
-    pub fn push(&mut self, data_lo: u8, data_hi, num_pixels) -> Result<(), FifoError> {
+    pub fn push(&mut self, data_lo: u8, data_hi: u8, num_pixels: u8) -> Result<(), FifoError> {
         if self.len >= 8 {
             Err(FifoError::Full)
         } else {
@@ -41,7 +41,7 @@ impl PixelFifo {
             Err(FifoError::Empty)
         } else {
             self.len -= 1;
-            let pixel = ((self.pixels_lo & 0x80) >> 7) | ((self.pixels_hi & 0x80) >> 6)
+            let pixel = ((self.pixels_lo & 0x80) >> 7) | ((self.pixels_hi & 0x80) >> 6);
             self.pixels_lo <<= 1;
             self.pixels_hi <<= 1;
             Ok(pixel)
@@ -52,7 +52,8 @@ impl PixelFifo {
         if self.len <= 0 {
             Err(FifoError::Empty)
         } else {
-            Ok(())
+            let pixel = ((self.pixels_lo & 0x80) >> 7) | ((self.pixels_hi & 0x80) >> 6);
+            Ok(pixel)
         }
     }
 

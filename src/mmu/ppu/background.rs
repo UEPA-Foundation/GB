@@ -75,4 +75,9 @@ impl Ppu {
         }
         // self.ppu.bg_fifo.push((data low e data high decoded em pixels));
     }
+
+    fn data_to_pixels(&mut self) -> u16 {
+        let pixels self.data_lo & self.data_hi;
+        pixels
+    }
 }
