@@ -73,11 +73,6 @@ impl Ppu {
         if !self.bg.fifo.empty() {
             return;
         }
-        // self.ppu.bg_fifo.push((data low e data high decoded em pixels));
-    }
-
-    fn data_to_pixels(&mut self) -> u16 {
-        let pixels self.data_lo & self.data_hi;
-        pixels
+        let pixel = self.bg.fifo.pop(); // enfia esse pixel num array 160x144 de pixels
     }
 }
