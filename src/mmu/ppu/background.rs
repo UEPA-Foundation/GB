@@ -9,6 +9,18 @@ pub struct Background {
     pub x: u8,
 }
 
+impl Background {
+    pub fn init() -> Self {
+        Self {
+            fifo: PixelFifo::init(),
+            index: 0,
+            data_lo: 0,
+            data_hi: 0,
+            x: 0,
+        }
+    }
+}
+
 impl GameBoy {
     pub(super) fn bg_fifo_cycle(&mut self) {
         // verificando se está dentro da window, pra flushar o bg fifo e recomeçar fetching
@@ -45,8 +57,8 @@ impl Ppu {
     #[inline(always)]
     fn get_tile_addr(&self) -> u16 {
         let tile = {
-            let mut tile_x = 0;
-            let mut tile_y = 0;
+            let tile_x;
+            let tile_y;
 
             if self.in_win {
                 tile_x = self.bg.x / 8;
@@ -73,6 +85,6 @@ impl Ppu {
         if !self.bg.fifo.empty() {
             return;
         }
-        let pixel = self.bg.fifo.pop(); // enfia esse pixel num array 160x144 de pixels
+        self.bg.fifo.push(self.bg.data_lo, self.bg.data_hi, 8).unwrap();
     }
 }

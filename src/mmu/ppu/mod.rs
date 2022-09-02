@@ -2,55 +2,13 @@
 
 use crate::gameboy::GameBoy;
 use background::*;
+use sprites::*;
 use fifo::{FifoState, PixelFifo};
 
 mod background;
+mod sprites;
 mod fifo;
 pub mod lcd;
-
-#[derive(Copy, Clone)]
-struct Pixel {
-    val: u8,
-}
-
-impl Pixel {
-    const COL: u8 = 0b00000011;
-    const PAL: u8 = 0b00011100;
-    const SPR: u8 = 0b00100000;
-    const BPR: u8 = 0b01000000;
-
-    fn get_color(&self) -> u8 {
-        self.val & Pixel::COL
-    }
-
-    fn set_color(&mut self, val: u8) {
-        self.val |= val & Pixel::COL;
-    }
-
-    fn get_pallete(&self) -> u8 {
-        (self.val & Pixel::PAL) >> 2
-    }
-
-    fn set_pallete(&mut self, val: u8) {
-        self.val |= (val << 2) & Pixel::PAL
-    }
-
-    fn get_sprite_priority(&self) -> bool {
-        self.val & Pixel::SPR != 0
-    }
-
-    fn set_sprite_priority(&mut self, val: bool) {
-        self.val |= (val as u8) << 5;
-    }
-
-    fn get_bg_priority(&self) -> bool {
-        self.val & Pixel::BPR != 0
-    }
-
-    fn set_bg_priority(&mut self, val: bool) {
-        self.val |= (val as u8) << 6;
-    }
-}
 
 pub struct Ppu {
     lcdc: u8,
@@ -68,10 +26,8 @@ pub struct Ppu {
     wx: u8,
 
     bg: Background,
+    sp: Sprites,
 
-    sprite_buf: [u8; 16], // TODO: isso aqui vai ser preenchido em oam scan
-
-    sp_fifo: PixelFifo,
     in_win: bool,
     win_y: u8,
     wy_eq_ly: bool,
@@ -89,6 +45,34 @@ enum PpuMode {
 }
 
 impl Ppu {
+    pub fn init() -> Self {
+        Self {
+            lcdc: 0,
+            stat: 0,
+            scy: 0,
+            scx: 0,
+            lx: 0,
+            ly: 0,
+            lyc: 0,
+            dma: 0,
+            bgp: 0,
+            obp0: 0,
+            obp1: 0,
+            wy: 0,
+            wx: 0,
+
+            bg: Background::init(),
+            sp: Sprites::init(),
+
+            in_win: false,
+            win_y: 0,
+            wy_eq_ly: false,
+
+            mode: PpuMode::VBLANK,
+            cycles: 0,
+        }
+    }
+
     fn lcdc_bit(&self, bit: u8) -> bool {
         self.lcdc & 1 << bit != 0
     }
@@ -97,6 +81,27 @@ impl Ppu {
         self.mode = mode;
         self.ly &= !(0x03);
         self.ly |= mode as u8;
+    }
+
+    fn mix_pixel(&mut self) -> u8 {
+        let bg_pixel = self.bg.fifo.pop().unwrap();
+        bg_pixel
+
+        /*
+        if self.sp_fifo.empty() {
+            return bg_pixel;
+        }
+
+        let sp_pixel = self.sp_fifo.pop().unwrap();
+
+        
+        if (sp_pixel == 0 || bg_over_sprite_priority_bit) && bg_pixel != 0
+        {
+            return bg_pixel;
+        }
+
+        sp_pixel
+        */
     }
 }
 
@@ -148,7 +153,7 @@ impl GameBoy {
         // inicialização de vars no começo da scanline, mover pra outro lugar mais inteligente
         if self.ppu.lx == 0 {
             self.ppu.bg.fifo.state = FifoState::INDEX;
-            self.ppu.sp_fifo.state = FifoState::SLEEP;
+            self.ppu.sp.fifo.state = FifoState::SLEEP;
             self.ppu.win_y = 0;
             self.ppu.in_win = false;
         }
@@ -174,33 +179,6 @@ impl GameBoy {
         }
     }
 
-    fn sp_fifo_cycle(&mut self) {
-        for sprite in self.ppu.sprite_buf {
-            if sprite <= self.ppu.lx + 8 {
-                self.ppu.sp_fifo.state = FifoState::INDEX;
-                self.ppu.bg.fifo.state = FifoState::SLEEP;
-            }
-        }
-
-        match self.ppu.sp_fifo.state {
-            FifoState::INDEX => self.sp_fetch_index(),
-            FifoState::DATALOW => self.sp_fetch_data_low(),
-            FifoState::DATAHIGH => self.sp_fetch_data_high(),
-            FifoState::PUSH => self.sp_push(),
-            FifoState::SLEEP => {}
-        }
-    }
-
-    fn sp_fetch_index(&mut self) {}
-
-    fn sp_fetch_data_low(&mut self) {}
-
-    fn sp_fetch_data_high(&mut self) {}
-
-    fn sp_push(&mut self) {
-        self.ppu.bg.fifo.state = FifoState::INDEX;
-    }
-
     fn push_lcd(&mut self) {
         // ainda tem que levar em conta que bg e win podem estar off, e printa só sprite
         if self.ppu.bg.fifo.empty() {
@@ -213,24 +191,5 @@ impl GameBoy {
         }
 
         self.ppu.lx += 1;
-    }
-}
-
-impl Ppu {
-    fn mix_pixel(&mut self) -> u8 {
-        let bg_pixel = self.ppu.bg_fifo.pop().unwrap();
-        if self.ppu.sp_fifo.empty() {
-            return bg_pixel;
-        }
-
-        let sp_pixel = self.ppu.sp_fifo.pop().unwrap();
-
-        if (sp_pixel == 0 || bg_over_sprite_priority_bit) && bg_pixel != 0
-        // eu não sei onde pega esse bit vtnc
-        {
-            return bg_pixel;
-        }
-
-        sp_pixel
     }
 }
