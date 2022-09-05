@@ -11,49 +11,41 @@ pub struct Background {
 
 impl Background {
     pub fn init() -> Self {
-        Self {
-            fifo: PixelFifo::init(),
-            index: 0,
-            data_lo: 0,
-            data_hi: 0,
-            x: 0,
-        }
-    }
-}
-
-impl GameBoy {
-    pub(super) fn bg_fifo_cycle(&mut self) {
-        // verificando se está dentro da window, pra flushar o bg fifo e recomeçar fetching
-        if !self.ppu.in_win && self.ppu.lcdc_bit(5) && self.ppu.wy_eq_ly && self.ppu.lx >= self.ppu.wx - 7 {
-            self.ppu.bg.fifo.state = FifoState::INDEX;
-            self.ppu.bg.fifo.clear();
-            self.ppu.in_win = true;
-        }
-
-        match self.ppu.bg.fifo.state {
-            FifoState::INDEX => {
-                let addr = self.ppu.get_tile_addr();
-                self.ppu.bg.index = self.read(addr);
-                self.ppu.bg.fifo.state = FifoState::DATALOW;
-            }
-            FifoState::DATALOW => {
-                let addr = self.ppu.get_data_addr();
-                self.ppu.bg.data_lo = self.read(addr);
-                self.ppu.bg.fifo.state = FifoState::DATALOW;
-            }
-            FifoState::DATAHIGH => {
-                let addr = self.ppu.get_data_addr() + 1;
-                self.ppu.bg.data_hi = self.read(addr);
-                self.ppu.bg.fifo.state = FifoState::PUSH;
-                self.ppu.bg.x += 8;
-            }
-            FifoState::PUSH => self.ppu.push(),
-            FifoState::SLEEP => {}
-        }
+        Self { fifo: PixelFifo::init(), index: 0, data_lo: 0, data_hi: 0, x: 0 }
     }
 }
 
 impl Ppu {
+    pub(super) fn bg_fifo_cycle(&mut self) {
+        // verificando se está dentro da window, pra flushar o bg fifo e recomeçar fetching
+        if !self.in_win && self.lcdc_bit(5) && self.wy_eq_ly && self.lx >= self.wx - 7 {
+            self.bg.fifo.state = FifoState::INDEX;
+            self.bg.fifo.clear();
+            self.in_win = true;
+        }
+
+        match self.bg.fifo.state {
+            FifoState::INDEX => {
+                let addr = self.get_tile_addr();
+                self.bg.index = self.read(addr);
+                self.bg.fifo.state = FifoState::DATALOW;
+            }
+            FifoState::DATALOW => {
+                let addr = self.get_data_addr();
+                self.bg.data_lo = self.read(addr);
+                self.bg.fifo.state = FifoState::DATALOW;
+            }
+            FifoState::DATAHIGH => {
+                let addr = self.get_data_addr() + 1;
+                self.bg.data_hi = self.read(addr);
+                self.bg.fifo.state = FifoState::PUSH;
+                self.bg.x += 8;
+            }
+            FifoState::PUSH => self.push(),
+            FifoState::SLEEP => {}
+        }
+    }
+
     #[inline(always)]
     fn get_tile_addr(&self) -> u16 {
         let tile = {

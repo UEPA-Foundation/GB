@@ -1,6 +1,6 @@
 #![allow(unused)] // TODO: REMOVE THIS
 
-use crate::mmu::ppu::Ppu;
+use super::Ppu;
 
 // generates read methods for regs with trivial reads
 macro_rules! read_simple {

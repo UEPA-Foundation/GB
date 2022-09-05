@@ -1,16 +1,18 @@
 #![allow(dead_code)]
 
 use crate::gameboy::GameBoy;
-use background::*;
-use sprites::*;
+use crate::mmu::mem::{oam::Oam, vram::VRam, MemoryUnit};
+use background::Background;
 use fifo::{FifoState, PixelFifo};
+use sprites::Sprites;
 
 mod background;
-mod sprites;
 mod fifo;
-pub mod lcd;
+mod lcd;
+mod sprites;
 
 pub struct Ppu {
+    // Registers
     lcdc: u8,
     stat: u8,
     scy: u8,
@@ -24,6 +26,10 @@ pub struct Ppu {
     obp1: u8,
     wy: u8,
     wx: u8,
+
+    // Mem controlled by PPU
+    pub vram: VRam,
+    pub oam: Oam,
 
     bg: Background,
     sp: Sprites,
@@ -61,6 +67,9 @@ impl Ppu {
             wy: 0,
             wx: 0,
 
+            vram: MemoryUnit::init(),
+            oam: MemoryUnit::init(),
+
             bg: Background::init(),
             sp: Sprites::init(),
 
@@ -83,6 +92,14 @@ impl Ppu {
         self.ly |= mode as u8;
     }
 
+    fn read(&self, addr: u16) -> u8 {
+        match addr {
+            0x8000..=0x9FFF => self.vram.read(addr),
+            0xFE00..=0xFE9F => self.oam.read(addr),
+            _ => panic!("Addr {} not owned by PPU", addr),
+        }
+    }
+
     fn mix_pixel(&mut self) -> u8 {
         let bg_pixel = self.bg.fifo.pop().unwrap();
         bg_pixel
@@ -94,7 +111,7 @@ impl Ppu {
 
         let sp_pixel = self.sp_fifo.pop().unwrap();
 
-        
+
         if (sp_pixel == 0 || bg_over_sprite_priority_bit) && bg_pixel != 0
         {
             return bg_pixel;
@@ -162,8 +179,8 @@ impl GameBoy {
 
         // fetchers atualizam a cada dois ciclos
         if self.ppu.cycles % 2 == 0 {
-            self.bg_fifo_cycle();
-            self.sp_fifo_cycle();
+            self.ppu.bg_fifo_cycle();
+            self.ppu.sp_fifo_cycle();
         }
         // todo ciclo, tenta pushar dos fifos pra tela
         self.push_lcd();

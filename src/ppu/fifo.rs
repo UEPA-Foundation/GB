@@ -36,7 +36,10 @@ impl PixelFifo {
             Err(FifoError::Full)
         } else {
             let num_pushed = std::cmp::min(num_pixels, 8 - self.len);
-            let mask = u8::checked_shl(1, num_pushed as u32).unwrap_or(0) - 1;
+            let mask = match u8::checked_shl(1, num_pushed as u32) {
+                Some(x) => x - 1,
+                None => 0xFF,
+            };
             self.pixels_lo |= data_lo & mask;
             self.pixels_hi |= data_hi & mask;
             self.len += num_pushed;
@@ -72,7 +75,7 @@ impl PixelFifo {
     pub fn clear(&mut self) {
         self.pixels_lo = 0;
         self.pixels_hi = 0;
-        self.len = 0;
         self.flags = 0;
+        self.len = 0;
     }
 }

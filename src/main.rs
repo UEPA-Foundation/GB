@@ -6,6 +6,7 @@ mod debug;
 mod gameboy;
 mod intr;
 mod mmu;
+mod ppu;
 mod test;
 
 extern crate num;

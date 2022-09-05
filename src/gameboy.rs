@@ -5,9 +5,9 @@ use crate::{
         cart,
         cart::Cartridge,
         io::{joypad::Joypad, serial::SerialLink, timer::Timer},
-        mem::{hram::HRam, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX, MemoryUnit},
-        ppu::Ppu,
+        mem::{hram::HRam, unused::Unused, wram0::WRam0, wramx::WRamX, MemoryUnit},
     },
+    ppu::Ppu,
 };
 
 pub struct GameBoy {
@@ -23,8 +23,6 @@ pub struct GameBoy {
     pub hram: HRam,
 
     pub ppu: Ppu,
-    pub vram: VRam,
-    pub oam: Oam,
 
     pub joypad: Joypad,
     pub serial: SerialLink,
@@ -45,8 +43,6 @@ impl GameBoy {
             hram: MemoryUnit::init(),
 
             ppu: Ppu::init(),
-            vram: MemoryUnit::init(),
-            oam: MemoryUnit::init(),
 
             joypad: Joypad::init(),
             timer: Timer::init(),
