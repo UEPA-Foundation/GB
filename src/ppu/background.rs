@@ -1,5 +1,4 @@
 use super::*;
-use crate::gameboy::GameBoy;
 
 pub struct Background {
     pub fifo: PixelFifo,
@@ -26,18 +25,15 @@ impl Ppu {
 
         match self.bg.fifo.state {
             FifoState::INDEX => {
-                let addr = self.get_tile_addr();
-                self.bg.index = self.read(addr);
+                self.bg.index = self.get_tile();
                 self.bg.fifo.state = FifoState::DATALOW;
             }
             FifoState::DATALOW => {
-                let addr = self.get_data_addr();
-                self.bg.data_lo = self.read(addr);
+                self.bg.data_lo = self.get_data_lo();
                 self.bg.fifo.state = FifoState::DATALOW;
             }
             FifoState::DATAHIGH => {
-                let addr = self.get_data_addr() + 1;
-                self.bg.data_hi = self.read(addr);
+                self.bg.data_hi = self.get_data_hi();
                 self.bg.fifo.state = FifoState::PUSH;
                 self.bg.x += 8;
             }
@@ -47,7 +43,7 @@ impl Ppu {
     }
 
     #[inline(always)]
-    fn get_tile_addr(&self) -> u16 {
+    fn get_tile(&self) -> u8 {
         let tile = {
             let tile_x;
             let tile_y;
@@ -63,16 +59,25 @@ impl Ppu {
             (32 * (tile_y as u16) + (tile_x as u16)) & 0x3FF
         };
 
-        let addr =
-            if (self.lcdc_bit(3) && !self.in_win) || (self.lcdc_bit(6) && self.in_win) { 0x9C00 } else { 0x9800 };
-        addr + (tile * 16)
+        let addr = tile * 16
+            + if (self.lcdc_bit(3) && !self.in_win) || (self.lcdc_bit(6) && self.in_win) { 0x9C00 } else { 0x9800 };
+
+        self.read(addr)
     }
 
-    fn get_data_addr(&mut self) -> u16 {
+    #[inline(always)]
+    fn get_data_lo(&mut self) -> u8 {
         let addr = if self.lcdc_bit(4) { 0x8000 } else { 0x8800 };
-        addr + (self.bg.index as u16) * 16
+        self.read(addr + (self.bg.index as u16) * 16)
     }
 
+    #[inline(always)]
+    fn get_data_hi(&mut self) -> u8 {
+        let addr = if self.lcdc_bit(4) { 0x8000 } else { 0x8800 };
+        self.read(addr + (self.bg.index as u16) * 16 + 1)
+    }
+
+    #[inline(always)]
     fn push(&mut self) {
         if !self.bg.fifo.empty() {
             return;

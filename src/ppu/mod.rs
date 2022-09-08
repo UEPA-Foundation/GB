@@ -11,6 +11,9 @@ mod fifo;
 mod lcd;
 mod sprites;
 
+const NCOL: usize = 160;
+const NLIN: usize = 144;
+
 pub struct Ppu {
     // Registers
     lcdc: u8,
@@ -40,6 +43,8 @@ pub struct Ppu {
 
     mode: PpuMode,
     cycles: u32,
+
+    pub framebuffer: [u8; NCOL * NLIN],
 }
 
 #[derive(Copy, Clone)]
@@ -79,6 +84,8 @@ impl Ppu {
 
             mode: PpuMode::VBLANK,
             cycles: 0,
+
+            framebuffer: [0; NLIN * NCOL],
         }
     }
 
@@ -96,7 +103,7 @@ impl Ppu {
         match addr {
             0x8000..=0x9FFF => self.vram.read(addr),
             0xFE00..=0xFE9F => self.oam.read(addr),
-            _ => panic!("Addr {} not owned by PPU", addr),
+            _ => panic!("Addr {:02X} not owned by PPU", addr),
         }
     }
 
@@ -127,86 +134,91 @@ impl GameBoy {
         for _ in 0..cycles {
             self.ppu.cycles += 1;
             match self.ppu.mode {
-                PpuMode::HBLANK => self.hblank_cycle(),
-                PpuMode::VBLANK => self.vblank_cycle(),
-                PpuMode::OAMSCAN => self.oamscan_cycle(),
-                PpuMode::DRAW => self.draw_cycle(),
+                PpuMode::HBLANK => self.ppu.hblank_cycle(),
+                PpuMode::VBLANK => self.ppu.vblank_cycle(),
+                PpuMode::OAMSCAN => self.ppu.oamscan_cycle(),
+                PpuMode::DRAW => self.ppu.draw_cycle(),
             };
         }
     }
 
+    pub fn borrow_framebuffer(&self) -> &[u8; NCOL * NLIN] {
+        &self.ppu.framebuffer
+    }
+}
+
+impl Ppu {
     fn hblank_cycle(&mut self) {
-        if self.ppu.cycles >= 456 {
-            self.ppu.cycles = 0;
-            self.ppu.lx = 0;
-            self.ppu.ly += 1;
-            if self.ppu.ly < 144 {
-                self.ppu.mode = PpuMode::OAMSCAN;
+        if self.cycles >= 456 {
+            self.cycles = 0;
+            self.lx = 0;
+            self.ly += 1;
+            if self.ly < 144 {
+                self.mode = PpuMode::OAMSCAN;
             } else {
-                self.ppu.mode = PpuMode::VBLANK;
+                self.mode = PpuMode::VBLANK;
             }
         }
     }
 
     fn vblank_cycle(&mut self) {
-        if self.ppu.cycles >= 456 {
-            self.ppu.cycles = 0;
-            self.ppu.lx = 0;
-            self.ppu.ly += 1;
-            if self.ppu.ly >= 154 {
-                self.ppu.ly = 0;
-                self.ppu.mode = PpuMode::OAMSCAN;
+        if self.cycles >= 456 {
+            self.cycles = 0;
+            self.lx = 0;
+            self.ly += 1;
+            if self.ly >= 154 {
+                self.ly = 0;
+                self.mode = PpuMode::OAMSCAN;
             }
         }
     }
 
     fn oamscan_cycle(&mut self) {
-        if self.ppu.cycles >= 80 {
-            self.ppu.mode = PpuMode::DRAW;
+        if self.cycles >= 80 {
+            self.mode = PpuMode::DRAW;
         }
     }
 
     fn draw_cycle(&mut self) {
         // inicialização de vars no começo da scanline, mover pra outro lugar mais inteligente
-        if self.ppu.lx == 0 {
-            self.ppu.bg.fifo.state = FifoState::INDEX;
-            self.ppu.sp.fifo.state = FifoState::SLEEP;
-            self.ppu.win_y = 0;
-            self.ppu.in_win = false;
+        if self.lx == 0 {
+            self.bg.fifo.state = FifoState::INDEX;
+            self.sp.fifo.state = FifoState::SLEEP;
+            self.win_y = 0;
+            self.in_win = false;
         }
         // inicialização de vars no começo do frame, mover pra outro lugar mais inteligente
-        if self.ppu.ly == 0 {}
+        if self.ly == 0 {}
 
         // fetchers atualizam a cada dois ciclos
-        if self.ppu.cycles % 2 == 0 {
-            self.ppu.bg_fifo_cycle();
-            self.ppu.sp_fifo_cycle();
+        if self.cycles % 2 == 0 {
+            self.bg_fifo_cycle();
+            self.sp_fifo_cycle();
         }
         // todo ciclo, tenta pushar dos fifos pra tela
         self.push_lcd();
 
         // setta flag que indica se wy já foi igual a ly ao menos uma vez neste frame
-        if self.ppu.ly == self.ppu.wy {
-            self.ppu.wy_eq_ly = true;
+        if self.ly == self.wy {
+            self.wy_eq_ly = true;
         }
 
         // passa pra proxima scanline ao chegar no final
-        if self.ppu.lx >= 160 {
-            self.ppu.set_mode(PpuMode::HBLANK);
+        if self.lx >= 160 {
+            self.set_mode(PpuMode::HBLANK);
         }
     }
-
     fn push_lcd(&mut self) {
         // ainda tem que levar em conta que bg e win podem estar off, e printa só sprite
-        if self.ppu.bg.fifo.empty() {
+        if self.bg.fifo.empty() {
             return;
         }
 
-        if self.ppu.lx >= (self.ppu.scx % 8) {
-            let pixel = self.ppu.mix_pixel();
-            // TODO: write pixel to framebuffer
+        if self.lx >= (self.scx % 8) {
+            let idx = self.ly * NCOL as u8 + self.lx;
+            self.framebuffer[idx as usize] = self.mix_pixel();
         }
 
-        self.ppu.lx += 1;
+        self.lx += 1;
     }
 }
