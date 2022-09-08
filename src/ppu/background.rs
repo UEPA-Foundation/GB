@@ -44,23 +44,26 @@ impl Ppu {
 
     #[inline(always)]
     fn get_tile(&self) -> u8 {
-        let tile = {
-            let tile_x;
-            let tile_y;
+        let addr_offset = {
+            let fetcher_x;
+            let fetcher_y;
 
             if self.in_win {
-                tile_x = self.bg.x / 8;
-                tile_y = self.win_y / 8;
+                fetcher_x = self.bg.x / 8;
+                fetcher_y = self.win_y / 8;
             } else {
-                tile_x = u8::wrapping_add(self.bg.x, self.scx) / 8;
-                tile_y = u8::wrapping_add(self.ly, self.scy) / 8;
+                fetcher_x = u8::wrapping_add(self.bg.x, self.scx / 8) & 0x1F;
+                fetcher_y = u8::wrapping_add(self.ly, self.scy);
             }
 
-            (32 * (tile_y as u16) + (tile_x as u16)) & 0x3FF
+            (32 * (fetcher_y as u16) + (fetcher_x as u16)) & 0x3FF
         };
 
-        let addr = tile * 16
-            + if (self.lcdc_bit(3) && !self.in_win) || (self.lcdc_bit(6) && self.in_win) { 0x9C00 } else { 0x9800 };
+        let addr = if (self.lcdc_bit(3) && !self.in_win) || (self.lcdc_bit(6) && self.in_win) {
+            0x9C00 + addr_offset
+        } else {
+            0x9800 + addr_offset
+        };
 
         self.read(addr)
     }
@@ -79,9 +82,8 @@ impl Ppu {
 
     #[inline(always)]
     fn push(&mut self) {
-        if !self.bg.fifo.empty() {
-            return;
+        if self.bg.fifo.empty() {
+            self.bg.fifo.push(self.bg.data_lo, self.bg.data_hi, 8).unwrap();
         }
-        self.bg.fifo.push(self.bg.data_lo, self.bg.data_hi, 8).unwrap();
     }
 }
