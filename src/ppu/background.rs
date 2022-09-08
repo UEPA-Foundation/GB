@@ -5,12 +5,12 @@ pub struct Background {
     pub index: u8,
     pub data_lo: u8,
     pub data_hi: u8,
-    pub x: u8,
+    pub scanline_x: u8,
 }
 
 impl Background {
     pub fn init() -> Self {
-        Self { fifo: PixelFifo::init(), index: 0, data_lo: 0, data_hi: 0, x: 0 }
+        Self { fifo: PixelFifo::init(), index: 0, data_lo: 0, data_hi: 0, scanline_x: 0 }
     }
 }
 
@@ -35,7 +35,7 @@ impl Ppu {
             FifoState::DATAHIGH => {
                 self.bg.data_hi = self.get_data_hi();
                 self.bg.fifo.state = FifoState::PUSH;
-                self.bg.x += 8;
+                self.bg.scanline_x += 8;
             }
             FifoState::PUSH => self.push(),
             FifoState::SLEEP => {}
@@ -49,10 +49,10 @@ impl Ppu {
             let fetcher_y;
 
             if self.in_win {
-                fetcher_x = self.bg.x / 8;
+                fetcher_x = self.bg.scanline_x / 8;
                 fetcher_y = self.win_y / 8;
             } else {
-                fetcher_x = u8::wrapping_add(self.bg.x, self.scx / 8) & 0x1F;
+                fetcher_x = u8::wrapping_add(self.bg.scanline_x, self.scx / 8) & 0x1F;
                 fetcher_y = u8::wrapping_add(self.ly, self.scy);
             }
 
