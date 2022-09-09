@@ -22,13 +22,7 @@ pub enum FifoError {
 
 impl PixelFifo {
     pub fn init() -> Self {
-        Self {
-            len: 0,
-            flags: 0,
-            pixels_lo: 0,
-            pixels_hi: 0,
-            state: FifoState::SLEEP,
-        }
+        Self { len: 0, flags: 0, pixels_lo: 0, pixels_hi: 0, state: FifoState::SLEEP }
     }
 
     pub fn push(&mut self, data_lo: u8, data_hi: u8, num_pixels: u8) -> Result<(), FifoError> {
