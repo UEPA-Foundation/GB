@@ -39,7 +39,7 @@ pub struct Ppu {
     framebuffer: [u8; NCOL * NLIN],
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 enum PpuMode {
     HBLANK = 0,
     VBLANK = 1,
@@ -106,7 +106,7 @@ impl Ppu {
             PpuMode::HBLANK => {
                 if self.cycles == 456 {
                     self.cycles = 0;
-                    self.ly += 1;
+                    self.inc_ly();
                     if self.ly == 144 {
                         self.mode = PpuMode::VBLANK;
                     } else {
@@ -117,9 +117,9 @@ impl Ppu {
             PpuMode::VBLANK => {
                 if self.cycles == 456 {
                     self.cycles = 0;
-                    self.ly += 1;
+                    self.inc_ly();
                     if self.ly == 154 {
-                        self.ly = 0;
+                        self.set_ly(0);
                         self.mode = PpuMode::OAMSCAN;
                     }
                 }

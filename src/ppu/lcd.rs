@@ -74,4 +74,19 @@ impl Ppu {
     fn is_enabled(&self) -> bool {
         self.lcdc & 0x80 != 0
     }
+
+    #[inline(always)]
+    pub fn set_ly(&mut self, val: u8) {
+        self.ly = val;
+        if self.ly == self.lyc {
+            self.stat |= 0x04
+        } else {
+            self.stat &= !0x04;
+        }
+    }
+
+    #[inline(always)]
+    pub fn inc_ly(&mut self) {
+        self.set_ly(self.ly + 1);
+    }
 }
