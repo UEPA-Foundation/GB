@@ -118,14 +118,14 @@ impl Ppu {
                 if self.cycles == 456 {
                     self.cycles = 0;
                     self.ly += 1;
-                    if self.ly == 153 {
+                    if self.ly == 154 {
                         self.ly = 0;
                         self.mode = PpuMode::OAMSCAN;
                     }
                 }
             }
             PpuMode::OAMSCAN => {
-                if self.cycles == 40 {
+                if self.cycles == 80 {
                     self.init_scanline_bg();
                     self.mode = PpuMode::DRAW;
                 }
