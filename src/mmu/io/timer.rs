@@ -27,7 +27,10 @@ impl Timer {
 
     #[inline(always)]
     pub fn read_tima(&self) -> u8 {
-        self.tima
+        match self.tima_state {
+            TimaState::LOADING(_) => self.tma,
+            _ => self.tima,
+        }
     }
 
     #[inline(always)]
