@@ -9,7 +9,6 @@ macro_rules! test_acid {
             for _ in 0..10000000 {
                 gb.cpu_step();
 
-                println!("{:#04X}, {:#04X}", gb.cpu.pc, gb.dpc(0));
                 // if it has reached an infinite loop (jr -3), break
                 if gb.dpc(0) == 0x18 && gb.dpc(1) == 0xFD {
                     return;

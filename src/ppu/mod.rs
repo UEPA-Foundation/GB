@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use crate::gameboy::GameBoy;
+use crate::intr::Interrupt;
 use crate::mmu::mem::{oam::Oam, vram::VRam, MemoryUnit};
 use background::Background;
 
@@ -27,6 +28,11 @@ pub struct Ppu {
     wy: u8,
     wx: u8,
 
+    // interrupts
+    stat_line: bool,
+    stat_intr: bool,
+    vblank_intr: bool,
+
     // Mem controlled by PPU
     pub vram: VRam,
     pub oam: Oam,
@@ -52,6 +58,16 @@ impl GameBoy {
         for _ in 0..cycles {
             self.ppu.cycle();
         }
+
+        if self.ppu.stat_intr {
+            self.intr.request(Interrupt::STAT);
+            self.ppu.stat_intr = false;
+        }
+        if self.ppu.vblank_intr {
+            self.intr.request(Interrupt::VBLANK);
+            self.ppu.vblank_intr = false;
+            println!("VBLANK");
+        }
     }
 
     pub fn borrow_framebuffer(&self) -> &[u8; NCOL * NLIN] {
@@ -76,6 +92,10 @@ impl Ppu {
             wy: 0,
             wx: 0,
 
+            stat_line: false,
+            stat_intr: false,
+            vblank_intr: false,
+
             vram: MemoryUnit::init(),
             oam: MemoryUnit::init(),
 
@@ -88,8 +108,36 @@ impl Ppu {
         }
     }
 
+    #[inline(always)]
     fn lcdc_bit(&self, bit: u8) -> bool {
         self.lcdc & 1 << bit != 0
+    }
+
+    #[inline(always)]
+    fn stat_bit(&self, bit: u8) -> bool {
+        self.stat & 1 << bit != 0
+    }
+
+    #[inline(always)]
+    fn set_mode(&mut self, mode: PpuMode) {
+        self.stat &= !0x03;
+        self.stat |= mode as u8;
+        self.mode = mode;
+    }
+
+    fn update_stat_line(&mut self) {
+        let old_stat_line = self.stat_line;
+        let lyc_line = self.stat_bit(6) && self.ly == self.lyc;
+        let mode_line = match self.mode {
+            PpuMode::DRAW => false,
+            _ => self.stat & (8 << (self.mode as u8)) != 0,
+        };
+        self.stat_line = lyc_line || mode_line;
+
+        // rising edge detection
+        if !old_stat_line && self.stat_line {
+            self.stat_intr = true;
+        }
     }
 
     fn read(&self, addr: u16) -> u8 {
@@ -106,28 +154,31 @@ impl Ppu {
             PpuMode::HBLANK => {
                 if self.cycles == 456 {
                     self.cycles = 0;
-                    self.inc_ly();
+                    self.ly += 1;
                     if self.ly == 144 {
-                        self.mode = PpuMode::VBLANK;
+                        self.set_mode(PpuMode::VBLANK);
+                        self.vblank_intr = true;
                     } else {
-                        self.mode = PpuMode::OAMSCAN;
+                        self.set_mode(PpuMode::OAMSCAN);
                     }
+                    self.update_stat_line();
                 }
             }
             PpuMode::VBLANK => {
                 if self.cycles == 456 {
                     self.cycles = 0;
-                    self.inc_ly();
+                    self.ly += 1;
                     if self.ly == 154 {
-                        self.set_ly(0);
-                        self.mode = PpuMode::OAMSCAN;
+                        self.ly = 0;
+                        self.set_mode(PpuMode::OAMSCAN);
                     }
+                    self.update_stat_line();
                 }
             }
             PpuMode::OAMSCAN => {
                 if self.cycles == 80 {
                     self.init_scanline_bg();
-                    self.mode = PpuMode::DRAW;
+                    self.set_mode(PpuMode::DRAW);
                 }
             }
             PpuMode::DRAW => {
@@ -143,9 +194,11 @@ impl Ppu {
                 });
 
                 if self.lx == 160 {
-                    self.mode = PpuMode::HBLANK;
+                    self.set_mode(PpuMode::HBLANK);
+                    self.update_stat_line();
                 }
             }
         };
     }
 }
+
