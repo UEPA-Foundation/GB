@@ -27,7 +27,10 @@ impl Timer {
 
     #[inline(always)]
     pub fn read_tima(&self) -> u8 {
-        self.tima
+        match self.tima_state {
+            TimaState::LOADING(_) => self.tma,
+            _ => self.tima,
+        }
     }
 
     #[inline(always)]
@@ -68,19 +71,15 @@ impl Timer {
 
     #[inline(always)]
     pub fn write_tac(&mut self, val: u8) {
-        let mask = self.div_tima_mask();
+        let old_freq_bit = self.is_enabled() && self.div & self.div_tima_mask() != 0;
+        self.tac = val;
+        let new_freq_bit = self.is_enabled() && self.div & self.div_tima_mask() != 0;
 
-        let bit = self.div & mask != 0;
-        let enabled = self.is_enabled();
-        let disabling = val & 0b100 == 0;
-
-        // disabling the timer while the selected div bit is active increments TIMA
-        // because of the falling edge circuitry
-        if bit && enabled && disabling {
+        // disabling or changing the timer rate while the selected div bit is active
+        // increments TIMA because of the falling edge circuitry
+        if old_freq_bit && !new_freq_bit {
             self.increment_tima();
         }
-
-        self.tac = val;
     }
 
     #[inline(always)]
