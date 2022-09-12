@@ -3,7 +3,7 @@ macro_rules! test_mooneye {
         #[test]
         fn $rom() {
             let mut gb = crate::gameboy::GameBoy::init(concat!("./src/test/mooneye/", $path));
-            for _ in 0..100000000 {
+            for _ in 0..10000000 {
                 gb.cpu_step();
 
                 if gb.dpc(0) == 0x40 {

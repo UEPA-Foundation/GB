@@ -13,6 +13,7 @@ use crate::{
 pub struct GameBoy {
     pub cpu: Cpu,
     pub halt: bool,
+    pub halt_bug: bool,
 
     pub intr: InterruptHandler,
 
@@ -34,6 +35,7 @@ impl GameBoy {
         Self {
             cpu: Cpu { a: 0, f: 0, b: 0, c: 0, d: 0, e: 0, h: 0, l: 0, sp: 0, pc: 0x100 },
             halt: false,
+            halt_bug: false,
             intr: InterruptHandler::init(),
 
             cart: cart::load_rom_file(path),

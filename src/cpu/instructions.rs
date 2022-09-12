@@ -1359,6 +1359,15 @@ fn ei(gb: &mut GameBoy) {
 }
 
 fn halt(gb: &mut GameBoy) {
+    if !gb.intr.current_ime() {
+        match gb.intr.fetch() {
+            Some(_) => {
+                gb.halt_bug = true;
+                return;
+            },
+            None => {},
+        }
+    }
     gb.halt = true;
 }
 
