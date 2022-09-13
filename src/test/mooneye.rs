@@ -29,10 +29,10 @@ mod intr {
 }
 
 mod halt {
-    test_mooneye!(ime0_ei, "acceptance/halt_ime0_ei.gb");
-    test_mooneye!(ime0_nointr_timing, "acceptance/halt_ime0_nointr_timing.gb");
-    test_mooneye!(ime1_timing, "acceptance/halt_ime1_timing.gb");
-    test_mooneye!(ime1_timing2_gs, "acceptance/halt_ime1_timing2-GS.gb");
+    test_mooneye!(halt_ime0_ei, "acceptance/halt_ime0_ei.gb");
+    test_mooneye!(halt_ime0_nointr_timing, "acceptance/halt_ime0_nointr_timing.gb");
+    test_mooneye!(halt_ime1_timing, "acceptance/halt_ime1_timing.gb");
+    test_mooneye!(halt_ime1_timing2_gs, "acceptance/halt_ime1_timing2-GS.gb");
 }
 
 mod timing {

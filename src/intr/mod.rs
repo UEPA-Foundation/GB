@@ -33,7 +33,7 @@ impl InterruptHandler {
     }
 
     #[inline(always)]
-    pub fn enable_imediate(&mut self) {
+    pub fn enable_immediate(&mut self) {
         self.ime = ImeState::ENABLED;
     }
 

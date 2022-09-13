@@ -33,7 +33,7 @@ pub struct GameBoy {
 impl GameBoy {
     pub fn init(path: &str) -> Self {
         Self {
-            cpu: Cpu { a: 0, f: 0, b: 0, c: 0, d: 0, e: 0, h: 0, l: 0, sp: 0, pc: 0x100 },
+            cpu: Cpu { a: 0x01, f: 0xB0, b: 0x00, c: 0x13, d: 0x00, e: 0xD8, h: 0x01, l: 0x4D, sp: 0xFFFE, pc: 0x100 },
             halt: false,
             halt_bug: false,
             intr: InterruptHandler::init(),

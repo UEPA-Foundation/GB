@@ -23,8 +23,8 @@ extern crate sdl2;
 extern crate snafu;
 
 const PATH: &str = "src/test/gb-test-roms/halt_bug.gb";
-const DEBUG: bool = false;
-const PALETTE: [[u8; 4]; 3] = [[15, 48, 139, 155], [56, 98, 172, 188], [15, 48, 15, 15]];
+const DEBUG: bool = true;
+const PALLETE: [[u8; 4]; 3] = [[15, 48, 139, 155], [56, 98, 172, 188], [15, 48, 15, 15]];
 
 fn main() {
     let mut gb = GameBoy::init(PATH);
@@ -72,9 +72,9 @@ fn update_tex(tex: &mut Texture, gb: &GameBoy) {
     let mut tex_buf = [0; 160 * 144 * 3];
 
     for (i, pixel) in fb.iter().enumerate() {
-        tex_buf[(i * 3) + 0] = PALETTE[0][*pixel as usize];
-        tex_buf[(i * 3) + 1] = PALETTE[1][*pixel as usize];
-        tex_buf[(i * 3) + 2] = PALETTE[2][*pixel as usize];
+        tex_buf[(i * 3) + 0] = PALLETE[0][*pixel as usize];
+        tex_buf[(i * 3) + 1] = PALLETE[1][*pixel as usize];
+        tex_buf[(i * 3) + 2] = PALLETE[2][*pixel as usize];
     }
 
     tex.update(None, &tex_buf, 144 * 3).unwrap();

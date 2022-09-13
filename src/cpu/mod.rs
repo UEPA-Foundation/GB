@@ -93,10 +93,9 @@ impl Cpu {
 
 impl GameBoy {
     pub fn cpu_step(&mut self) {
+        self.advance_cycles(4);
+        if self.handle_intr() { return };
         if !self.halt {
-            self.advance_cycles(4);
-            self.handle_intr();
-
             let opcode = self.dpc(0);
             if self.halt_bug {
                 self.halt_bug = false;
@@ -106,14 +105,11 @@ impl GameBoy {
 
             let handler = OPCODES[opcode as usize];
             handler(self);
-        } else {
-            self.advance_cycles(1);
-            self.handle_intr();
         }
     }
 
     #[inline(always)]
-    fn handle_intr(&mut self) {
+    fn handle_intr(&mut self) -> bool {
         let ime = self.intr.current_ime();
 
         match self.intr.fetch() {
@@ -121,7 +117,7 @@ impl GameBoy {
                 self.halt = false;
 
                 if ime {
-                    self.advance_cycles(8);
+                    self.advance_cycles(4);
 
                     // store current pc addr in stack
                     let addr = u16::to_le_bytes(self.cpu.pc);
@@ -136,10 +132,14 @@ impl GameBoy {
 
                     self.intr.reset(intr);
                     self.intr.disable();
+
+                    return true;
                 }
             }
             None => {}
         }
+
+        false
     }
 }
 
