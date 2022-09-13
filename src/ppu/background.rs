@@ -2,7 +2,7 @@ use super::fifo::{FifoError, FifoState, PixelFifo};
 
 pub struct Background {
     tile_id: u8,
-    tile_line: u8,
+        tile_line: u16,
     tile_x: u8,
 
     data_lo: u8,
@@ -25,7 +25,7 @@ impl super::Ppu {
     pub(super) fn init_scanline_bg(&mut self) {
         self.lx = 0;
         self.bg.tile_x = (self.scx / 8) % 32;
-        self.bg.tile_line = (self.ly + self.scy) % 8;
+        self.bg.tile_line = (self.ly as u16 + self.scy as u16) % 8;
         self.bg.fifo.state = FifoState::INDEX;
         self.bg.fifo.clear();
     }
@@ -33,7 +33,7 @@ impl super::Ppu {
     pub(super) fn cycle_bg(&mut self) {
         match self.bg.fifo.state {
             FifoState::INDEX => {
-                let addr = self.bg_tilemap_addr() + ((self.ly + self.scy) as u16 / 8) * 32 + self.bg.tile_x as u16;
+                let addr = self.bg_tilemap_addr() + ((self.ly as u16 + self.scy as u16) / 8) * 32 + self.bg.tile_x as u16;
                 self.bg.tile_id = self.read(addr);
                 self.bg.fifo.state = FifoState::DATALOW;
             }
@@ -74,8 +74,8 @@ impl super::Ppu {
 
     fn get_tile_addr(&self) -> u16 {
         match self.lcdc_bit(4) {
-            true => 0x8000 + (self.bg.tile_id as u16) * 16 + self.bg.tile_line as u16 * 2,
-            false => (0x9000 + (self.bg.tile_id as i8) as i32 * 16) as u16 + self.bg.tile_line as u16 * 2,
+            true => 0x8000 + (self.bg.tile_id as u16) * 16 + self.bg.tile_line * 2,
+            false => (0x9000 + (self.bg.tile_id as i8) as i32 * 16) as u16 + self.bg.tile_line * 2,
         }
     }
 }
