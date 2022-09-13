@@ -124,7 +124,7 @@ impl Ppu {
         self.mode = mode;
     }
 
-    fn update_stat_line(&mut self) {
+    fn update_stat(&mut self) {
         let old_stat_line = self.stat_line;
         let lyc_line = self.stat_bit(6) && self.ly == self.lyc;
         let mode_line = match self.mode {
@@ -136,6 +136,12 @@ impl Ppu {
         // rising edge detection
         if !old_stat_line && self.stat_line {
             self.stat_intr = true;
+        }
+
+        if lyc_line {
+            self.stat |= 0x04;
+        } else {
+            self.stat &= !0x04;
         }
     }
 
@@ -159,7 +165,7 @@ impl Ppu {
                     } else {
                         self.set_mode(PpuMode::OAMSCAN);
                     }
-                    self.update_stat_line();
+                    self.update_stat();
                 }
             }
             PpuMode::VBLANK => {
@@ -173,7 +179,7 @@ impl Ppu {
                         self.ly = 0;
                         self.set_mode(PpuMode::OAMSCAN);
                     }
-                    self.update_stat_line();
+                    self.update_stat();
                 }
             }
             PpuMode::OAMSCAN => {
@@ -196,7 +202,7 @@ impl Ppu {
 
                 if self.lx == 160 {
                     self.set_mode(PpuMode::HBLANK);
-                    self.update_stat_line();
+                    self.update_stat();
                 }
             }
         };

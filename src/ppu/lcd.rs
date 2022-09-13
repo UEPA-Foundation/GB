@@ -44,14 +44,15 @@ impl Ppu {
 
     #[inline(always)]
     pub fn write_lcdc(&mut self, val: u8) {
-        () // TODO: lcdc
+        // TODO: lots of behavior for each bit
+        self.lcdc = val;
     }
 
     #[inline(always)]
     pub fn write_stat(&mut self, val: u8) {
         self.stat &= !0xF8;
         self.stat |= val & 0xF8;
-        self.update_stat_line();
+        self.update_stat();
     }
 
     #[inline(always)]
@@ -62,7 +63,7 @@ impl Ppu {
     #[inline(always)]
     pub fn write_lyc(&mut self, val: u8) {
         self.lyc = val;
-        self.update_stat_line();
+        self.update_stat();
     }
 
     #[inline(always)]
