@@ -1180,7 +1180,7 @@ macro_rules! ret {
 
 fn reti(gb: &mut GameBoy) {
     _ret(gb);
-    gb.intr.enable_imediate();
+    gb.intr.enable_immediate();
 }
 
 macro_rules! rst {
