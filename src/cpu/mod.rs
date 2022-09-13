@@ -97,7 +97,11 @@ impl GameBoy {
         if self.handle_intr() { return };
         if !self.halt {
             let opcode = self.dpc(0);
-            self.cpu.pc.inc();
+            if self.halt_bug {
+                self.halt_bug = false;
+            } else {
+                self.cpu.pc.inc();
+            }
 
             let handler = OPCODES[opcode as usize];
             handler(self);
