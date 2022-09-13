@@ -40,13 +40,15 @@ impl PixelFifo {
             self.len += num_pushed;
             Ok(())
         }
-    }
+   }
 
     pub fn pop(&mut self) -> Result<u8, FifoError> {
         if self.len <= 0 {
             Err(FifoError::Empty)
         } else {
             let pixel = ((self.pixels_lo & 0x80) >> 7) | ((self.pixels_hi & 0x80) >> 6);
+            if self.pixels_lo != 0 && self.pixels_hi != 0 {
+            }
             self.pixels_lo <<= 1;
             self.pixels_hi <<= 1;
             self.len -= 1;

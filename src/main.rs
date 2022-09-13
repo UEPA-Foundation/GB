@@ -77,7 +77,7 @@ fn update_tex(tex: &mut Texture, gb: &GameBoy) {
         tex_buf[(i * 3) + 2] = PALETTE[2][*pixel as usize];
     }
 
-    tex.update(None, &tex_buf, 144 * 3).unwrap();
+    tex.update(None, &tex_buf, 160 * 3).unwrap();
 }
 
 #[inline(always)]

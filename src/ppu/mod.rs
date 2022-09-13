@@ -194,8 +194,10 @@ impl Ppu {
                 }
 
                 _ = self.bg.pop().and_then(|pixel| {
-                    let idx = self.ly as usize * 160 + self.lx as usize;
-                    self.framebuffer[idx] = pixel;
+                    if self.lx >= self.scx % 8 {
+                        let idx = self.ly as usize * 160 + self.lx as usize;
+                        self.framebuffer[idx] = pixel;
+                    }
                     self.lx += 1;
                     Ok(())
                 });
