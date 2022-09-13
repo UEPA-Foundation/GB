@@ -74,8 +74,8 @@ impl super::Ppu {
 
     fn get_tile_addr(&self) -> u16 {
         match self.lcdc_bit(4) {
-            true => 0x8800 + (self.bg.tile_id as u16) * 16 + self.bg.tile_line as u16 * 2,
-            false => (0x9000 + (self.bg.tile_id as i32 * 16)) as u16 + self.bg.tile_line as u16 * 2,
+            true => 0x8000 + (self.bg.tile_id as u16) * 16 + self.bg.tile_line as u16 * 2,
+            false => (0x9000 + (self.bg.tile_id as i8) as i32 * 16) as u16 + self.bg.tile_line as u16 * 2,
         }
     }
 }
