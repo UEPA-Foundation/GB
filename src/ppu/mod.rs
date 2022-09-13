@@ -66,7 +66,6 @@ impl GameBoy {
         if self.ppu.vblank_intr {
             self.intr.request(Interrupt::VBLANK);
             self.ppu.vblank_intr = false;
-            println!("VBLANK");
         }
     }
 
@@ -157,7 +156,6 @@ impl Ppu {
                     self.ly += 1;
                     if self.ly == 144 {
                         self.set_mode(PpuMode::VBLANK);
-                        self.vblank_intr = true;
                     } else {
                         self.set_mode(PpuMode::OAMSCAN);
                     }
@@ -165,6 +163,9 @@ impl Ppu {
                 }
             }
             PpuMode::VBLANK => {
+                if self.ly == 144 && self.cycles == 4 {
+                    self.vblank_intr = true;
+                }
                 if self.cycles == 456 {
                     self.cycles = 0;
                     self.ly += 1;

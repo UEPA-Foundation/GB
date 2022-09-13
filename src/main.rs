@@ -23,8 +23,11 @@ extern crate sdl2;
 extern crate snafu;
 
 const PATH: &str = "src/test/gb-test-roms/halt_bug.gb";
+<<<<<<< Updated upstream
 const DEBUG: bool = false;
 const PALLETE: [[u8; 4]; 3] = [[15, 48, 139, 155], [56, 98, 172, 188], [15, 48, 15, 15]];
+=======
+>>>>>>> Stashed changes
 
 fn main() {
     let mut gb = GameBoy::init(PATH);
