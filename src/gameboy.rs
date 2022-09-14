@@ -55,6 +55,7 @@ impl GameBoy {
     pub fn advance_cycles(&mut self, cycles: u8) {
         self.cycle_timer(cycles);
         self.cycle_joypad(cycles);
+        self.cycle_ppu(cycles);
     }
 
     #[inline(always)]

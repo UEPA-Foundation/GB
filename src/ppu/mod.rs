@@ -1,3 +1,4 @@
+use crate::gameboy::GameBoy;
 
 use oam::Oam;
 use vram::VRam;
@@ -29,8 +30,28 @@ pub struct Ppu {
     pub vram: VRam,
     pub oam: Oam,
 
+    mode: PpuMode,
+    cycles: u32,
+
     framebuffer: [u8; NCOL * NLIN],
 }
+
+#[derive(Copy, Clone, Debug)]
+enum PpuMode {
+    HBLANK = 0,
+    VBLANK = 1,
+    OAMSCAN = 2,
+    DRAW = 3,
+}
+
+impl GameBoy {
+    pub fn cycle_ppu(&mut self, cycles: u8) {
+        for _ in 0..cycles {
+            self.ppu.cycle();
+        }
+    }
+}
+
 impl Ppu {
     pub fn init() -> Self {
         Self {
@@ -51,7 +72,23 @@ impl Ppu {
             vram: VRam::init(),
             oam: Oam::init(),
 
+            mode: PpuMode::OAMSCAN,
+            cycles: 0,
+
             framebuffer: [0; NLIN * NCOL],
         }
+    }
+    fn cycle(&mut self) {
+        self.cycles += 1;
+        match self.mode {
+            PpuMode::HBLANK => {
+            }
+            PpuMode::VBLANK => {
+            }
+            PpuMode::OAMSCAN => {
+            }
+            PpuMode::DRAW => {
+            }
+        };
     }
 }
