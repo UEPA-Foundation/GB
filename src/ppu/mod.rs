@@ -1,4 +1,10 @@
+
+use oam::Oam;
+use vram::VRam;
+
 mod lcd;
+mod oam;
+mod vram;
 
 const NCOL: usize = 160;
 const NLIN: usize = 144;
@@ -18,6 +24,11 @@ pub struct Ppu {
     obp1: u8,
     wy: u8,
     wx: u8,
+
+    // Mem controlled by PPU
+    pub vram: VRam,
+    pub oam: Oam,
+
     framebuffer: [u8; NCOL * NLIN],
 }
 impl Ppu {
@@ -36,6 +47,9 @@ impl Ppu {
             obp1: 0,
             wy: 0,
             wx: 0,
+
+            vram: VRam::init(),
+            oam: Oam::init(),
 
             framebuffer: [0; NLIN * NCOL],
         }

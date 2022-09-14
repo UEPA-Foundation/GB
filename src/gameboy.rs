@@ -4,8 +4,8 @@ use crate::{
     mmu::{
         cart,
         cart::Cartridge,
-        mem::{hram::HRam, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX, MemoryUnit},
         io::{joypad::Joypad, serial::SerialLink, timer::Timer},
+        mem::{hram::HRam, unused::Unused, wram0::WRam0, wramx::WRamX, MemoryUnit},
     },
     ppu::Ppu,
 };
@@ -18,10 +18,8 @@ pub struct GameBoy {
     pub intr: InterruptHandler,
 
     pub cart: Box<dyn Cartridge>,
-    pub vram: VRam,
     pub wram0: WRam0,
     pub wramx: WRamX,
-    pub oam: Oam,
     pub _unused: Unused, // Currently unused, but will be needed for CGB implementation
     pub hram: HRam,
 
@@ -43,8 +41,6 @@ impl GameBoy {
             cart: cart::load_rom_file(path),
             wram0: MemoryUnit::init(),
             wramx: MemoryUnit::init(),
-            vram: MemoryUnit::init(),
-            oam: MemoryUnit::init(),
             _unused: MemoryUnit::init(),
             hram: MemoryUnit::init(),
 
