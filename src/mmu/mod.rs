@@ -39,18 +39,18 @@ impl GameBoy {
             0xFF10..=0xFF26 => 0xFF, // sound
             0xFF27..=0xFF2F => 0xFF,
             0xFF30..=0xFF3F => 0xFF, // wave pattern
-            0xFF40 => self.lcd.read_lcdc(),
-            0xFF41 => self.lcd.read_stat(),
-            0xFF42 => self.lcd.read_scy(),
-            0xFF43 => self.lcd.read_scx(),
-            0xFF44 => self.lcd.read_ly(),
-            0xFF45 => self.lcd.read_lyc(),
-            0xFF46 => self.lcd.read_dma(),
-            0xFF47 => self.lcd.read_bgp(),
-            0xFF48 => self.lcd.read_obp0(),
-            0xFF49 => self.lcd.read_obp1(),
-            0xFF4A => self.lcd.read_wy(),
-            0xFF4B => self.lcd.read_wx(),
+            0xFF40 => self.ppu.read_lcdc(),
+            0xFF41 => self.ppu.read_stat(),
+            0xFF42 => self.ppu.read_scy(),
+            0xFF43 => self.ppu.read_scx(),
+            0xFF44 => self.ppu.read_ly(),
+            0xFF45 => self.ppu.read_lyc(),
+            0xFF46 => self.ppu.read_dma(),
+            0xFF47 => self.ppu.read_bgp(),
+            0xFF48 => self.ppu.read_obp0(),
+            0xFF49 => self.ppu.read_obp1(),
+            0xFF4A => self.ppu.read_wy(),
+            0xFF4B => self.ppu.read_wx(),
             0xFF4C..=0xFF4E => 0xFF,
             0xFF4F => 0xFF,          // vram bank select (CGB)
             0xFF50 => 0xFF,          // disable boot ROM
@@ -98,18 +98,18 @@ impl GameBoy {
             0xFF10..=0xFF26 => {} // sound
             0xFF27..=0xFF2F => {}
             0xFF30..=0xFF3F => {} // wave pattern
-            0xFF40 => self.lcd.write_lcdc(val),
-            0xFF41 => self.lcd.write_stat(val),
-            0xFF42 => self.lcd.write_scy(val),
-            0xFF43 => self.lcd.write_scx(val),
-            0xFF44 => self.lcd.write_ly(val),
-            0xFF45 => self.lcd.write_lyc(val),
-            0xFF46 => self.lcd.write_dma(val),
-            0xFF47 => self.lcd.write_bgp(val),
-            0xFF48 => self.lcd.write_obp0(val),
-            0xFF49 => self.lcd.write_obp1(val),
-            0xFF4A => self.lcd.write_wy(val),
-            0xFF4B => self.lcd.write_wx(val),
+            0xFF40 => self.ppu.write_lcdc(val),
+            0xFF41 => self.ppu.write_stat(val),
+            0xFF42 => self.ppu.write_scy(val),
+            0xFF43 => self.ppu.write_scx(val),
+            0xFF44 => self.ppu.write_ly(val),
+            0xFF45 => self.ppu.write_lyc(val),
+            0xFF46 => self.ppu.write_dma(val),
+            0xFF47 => self.ppu.write_bgp(val),
+            0xFF48 => self.ppu.write_obp0(val),
+            0xFF49 => self.ppu.write_obp1(val),
+            0xFF4A => self.ppu.write_wy(val),
+            0xFF4B => self.ppu.write_wx(val),
             0xFF4C..=0xFF4E => {}
             0xFF4F => {}          // vram bank select (CGB)
             0xFF50 => {}          // disable boot ROM

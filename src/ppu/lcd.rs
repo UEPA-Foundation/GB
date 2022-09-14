@@ -1,17 +1,4 @@
-pub struct LCD {
-    lcdc: u8,
-    stat: u8,
-    scy: u8,
-    scx: u8,
-    ly: u8,
-    lyc: u8,
-    dma: u8,
-    bgp: u8,
-    obp0: u8,
-    obp1: u8,
-    wy: u8,
-    wx: u8,
-}
+use super::Ppu;
 
 // generates read methods for regs with trivial reads
 macro_rules! read_simple {
@@ -41,48 +28,52 @@ macro_rules! write_simple {
     };
 }
 
-impl LCD {
-    pub fn init() -> Self {
-        Self { lcdc: 0, stat: 0, scy: 0, scx: 0, ly: 0, lyc: 0, dma: 0, bgp: 0, obp0: 0, obp1: 0, wy: 0, wx: 0 }
-    }
-
+impl Ppu {
     read_simple!(lcdc, scy, scx, ly, lyc, dma, bgp, obp0, obp1, wy, wx);
 
     #[inline(always)]
     pub fn read_stat(&self) -> u8 {
-        // TODO: stat logic
-        self.stat
+        self.stat | 0x80
     }
 
     write_simple!(scy, scx, bgp, obp0, obp1, wx);
 
     #[inline(always)]
     pub fn write_lcdc(&mut self, val: u8) {
-        () // TODO: lcdc
+        // TODO: lots of behavior for each bit
+        self.lcdc = val;
     }
 
     #[inline(always)]
     pub fn write_stat(&mut self, val: u8) {
-        () // TODO: stat
+        self.stat &= !0xF8;
+        self.stat |= val & 0xF8;
+        self.update_stat();
     }
 
     #[inline(always)]
-    pub fn write_ly(&mut self, val: u8) {
+    pub fn write_ly(&mut self, _: u8) {
         () // LY is read only
     }
 
     #[inline(always)]
     pub fn write_lyc(&mut self, val: u8) {
-        () // TODO: LYC
+        self.lyc = val;
+        self.update_stat();
     }
 
     #[inline(always)]
-    pub fn write_dma(&mut self, val: u8) {
+    pub fn write_dma(&mut self, _val: u8) {
         () // TODO: DMA
     }
 
     #[inline(always)]
     pub fn write_wy(&mut self, val: u8) {
         self.wy = val; // TODO: more behavior in wy
+    }
+
+    #[inline(always)]
+    fn is_enabled(&self) -> bool {
+        self.lcdc & 0x80 != 0
     }
 }
