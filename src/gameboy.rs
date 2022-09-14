@@ -7,6 +7,7 @@ use crate::{
         io::{joypad::Joypad, lcd::LCD, serial::SerialLink, timer::Timer},
         mem::{hram::HRam, oam::Oam, unused::Unused, vram::VRam, wram0::WRam0, wramx::WRamX, MemoryUnit},
     },
+    ppu::Ppu,
 };
 
 pub struct GameBoy {
@@ -23,6 +24,8 @@ pub struct GameBoy {
     pub oam: Oam,
     pub _unused: Unused, // Currently unused, but will be needed for CGB implementation
     pub hram: HRam,
+
+    pub ppu: Ppu,
 
     pub joypad: Joypad,
     pub serial: SerialLink,
@@ -44,6 +47,9 @@ impl GameBoy {
             oam: MemoryUnit::init(),
             _unused: MemoryUnit::init(),
             hram: MemoryUnit::init(),
+
+            ppu: Ppu::init(),
+
             joypad: Joypad::init(),
             timer: Timer::init(),
             serial: SerialLink::init(),
