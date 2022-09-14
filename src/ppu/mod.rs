@@ -3,6 +3,7 @@ use crate::gameboy::GameBoy;
 use oam::Oam;
 use vram::VRam;
 
+mod fifo;
 mod lcd;
 mod oam;
 mod vram;
