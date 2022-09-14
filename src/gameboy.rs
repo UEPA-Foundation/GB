@@ -3,7 +3,7 @@ use crate::{
     intr::InterruptHandler,
     mmu::{
         cart,
-        cart::Cartridge,
+        cart::CartridgeEnum,
         io::{joypad::Joypad, serial::SerialLink, timer::Timer},
         mem::{hram::HRam, unused::Unused, wram0::WRam0, wramx::WRamX, MemoryUnit},
     },
@@ -17,7 +17,7 @@ pub struct GameBoy {
 
     pub intr: InterruptHandler,
 
-    pub cart: Box<dyn Cartridge>,
+    pub cart: CartridgeEnum,
     pub wram0: WRam0,
     pub wramx: WRamX,
     pub _unused: Unused, // Currently unused, but will be needed for CGB implementation

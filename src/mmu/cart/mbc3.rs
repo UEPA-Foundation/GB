@@ -1,6 +1,6 @@
 // TODO: Implement the MBC30 variant. Required if we want to play Pokémon Crystal.
 // We want to play Pokémon Crystal.
-use crate::mmu::cart::{Cartridge, CartridgeError, RamBank, RomBank, BLANK_RAM, BLANK_ROM};
+use crate::mmu::cart::{CartridgeError, CartridgeTrait, RamBank, RomBank, BLANK_RAM, BLANK_ROM};
 
 pub struct Mbc3 {
     rom: Vec<RomBank>,
@@ -73,7 +73,7 @@ impl Mbc3 {
     }
 }
 
-impl Cartridge for Mbc3 {
+impl CartridgeTrait for Mbc3 {
     fn init_rom_banks(&mut self, nbanks: u16, raw_rom: &Vec<u8>) -> Result<(), CartridgeError> {
         if nbanks > 128 {
             return Err(CartridgeError::InvalidCombination {
