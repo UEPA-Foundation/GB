@@ -16,12 +16,6 @@ mod mmu;
 mod ppu;
 mod test;
 
-extern crate num;
-extern crate num_derive;
-extern crate paste;
-extern crate sdl2;
-extern crate snafu;
-
 const PATH: &str = "src/test/dmg-acid2.gb";
 const DEBUG: bool = false;
 const PALETTE: [[u8; 4]; 3] = [[15, 48, 139, 155], [56, 98, 172, 188], [15, 48, 15, 15]];
@@ -30,9 +24,15 @@ fn main() {
     let mut gb = GameBoy::init(PATH);
     let (sdl, mut canvas) = init_renderer();
 
+    let timer = sdl.timer().unwrap();
+
     let tex_creator = canvas.texture_creator();
     let mut tex = tex_creator.create_texture(PixelFormatEnum::RGB24, TextureAccess::Streaming, 160, 144).unwrap();
     update_tex(&mut tex, &gb);
+
+    let mut prv_time = timer.ticks();
+    let mut elapsed = 0;
+    let mut cycles = 0;
 
     match DEBUG {
         true => {
@@ -51,6 +51,16 @@ fn main() {
             update_tex(&mut tex, &gb);
             canvas.copy(&tex, None, None).unwrap();
             canvas.present();
+
+            let cur_time = timer.ticks();
+            elapsed += cur_time - prv_time;
+            prv_time = cur_time;
+
+            if elapsed > 1000 {
+                println!("Clock Rate: {}", gb.cycles - cycles);
+                elapsed = 0;
+                cycles = gb.cycles;
+            }
         },
     }
 }

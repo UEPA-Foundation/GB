@@ -28,6 +28,8 @@ pub struct GameBoy {
     pub joypad: Joypad,
     pub serial: SerialLink,
     pub timer: Timer,
+
+    pub cycles: u64,
 }
 
 impl GameBoy {
@@ -49,10 +51,13 @@ impl GameBoy {
             joypad: Joypad::init(),
             timer: Timer::init(),
             serial: SerialLink::init(),
+
+            cycles: 0,
         }
     }
 
     pub fn advance_cycles(&mut self, cycles: u8) {
+        self.cycles += cycles as u64;
         self.cycle_timer(cycles);
         self.cycle_joypad(cycles);
         self.cycle_ppu(cycles);
