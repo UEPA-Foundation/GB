@@ -94,24 +94,8 @@ impl Cpu {
 impl GameBoy {
     pub fn cpu_step(&mut self) {
         self.advance_cycles(4);
-        if self.handle_intr() { return };
-        if !self.halt {
-            let opcode = self.dpc(0);
-            if self.halt_bug {
-                self.halt_bug = false;
-            } else {
-                self.cpu.pc.inc();
-            }
 
-            let handler = OPCODES[opcode as usize];
-            handler(self);
-        }
-    }
-
-    #[inline(always)]
-    fn handle_intr(&mut self) -> bool {
         let ime = self.intr.current_ime();
-
         match self.intr.fetch() {
             Some(intr) => {
                 self.halt = false;
@@ -133,13 +117,23 @@ impl GameBoy {
                     self.intr.reset(intr);
                     self.intr.disable();
 
-                    return true;
+                    return;
                 }
             }
             None => {}
         }
 
-        false
+        if !self.halt {
+            let opcode = self.dpc(0);
+            if self.halt_bug {
+                self.halt_bug = false;
+            } else {
+                self.cpu.pc.inc();
+            }
+
+            let handler = OPCODES[opcode as usize];
+            handler(self);
+        }
     }
 }
 
