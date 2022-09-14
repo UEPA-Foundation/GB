@@ -70,6 +70,10 @@ impl GameBoy {
             self.ppu.vblank_intr = false;
         }
     }
+
+    pub fn borrow_framebuffer(&self) -> &[u8; NCOL * NLIN] {
+        &self.ppu.framebuffer
+    }
 }
 
 impl Ppu {
