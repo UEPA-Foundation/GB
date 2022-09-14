@@ -7,7 +7,7 @@ pub struct InterruptHandler {
 #[derive(Clone, Copy, num_derive::FromPrimitive)]
 pub enum Interrupt {
     VBLANK = 0,
-    LCD = 1,
+    STAT = 1,
     TIMER = 2,
     SERIAL = 3,
     JOYPAD = 4,
