@@ -1,4 +1,4 @@
-use snafu::prelude::*;
+use {enum_dispatch::enum_dispatch, mbc1::Mbc1, mbc2::Mbc2, mbc3::Mbc3, mbc5::Mbc5, no_mbc::NoMbc, snafu::Snafu};
 
 mod mbc1;
 mod mbc2;
@@ -12,6 +12,15 @@ pub const BLANK_ROM: RomBank = [0; 0x4000];
 pub type RamBank = [u8; 0x2000];
 pub const BLANK_RAM: RamBank = [0; 0x2000];
 
+#[enum_dispatch]
+pub enum CartridgeEnum {
+    Mbc1,
+    Mbc2,
+    Mbc3,
+    Mbc5,
+    NoMbc,
+}
+
 #[derive(Snafu, Debug)]
 pub enum CartridgeError {
     #[snafu(display("Cartridge type {:02X?} is not supported", tp))]
@@ -24,7 +33,8 @@ pub enum CartridgeError {
     OutOfRomBanks { nbanks: u16, rom_size: usize },
 }
 
-pub trait Cartridge {
+#[enum_dispatch(CartridgeEnum)]
+pub trait CartridgeTrait {
     fn init_rom_banks(&mut self, nbanks: u16, raw_rom: &Vec<u8>) -> Result<(), CartridgeError>;
     fn init_ram_banks(&mut self, nbanks: u16) -> Result<(), CartridgeError>;
 
@@ -37,7 +47,7 @@ pub trait Cartridge {
     fn sram_write(&mut self, addr: u16, val: u8);
 }
 
-pub fn load_rom_file(path: &str) -> Box<dyn Cartridge> {
+pub fn load_rom_file(path: &str) -> CartridgeEnum {
     let raw_rom = match std::fs::read(path) {
         Ok(content) => content,
         Err(e) => panic!("{}", e),
@@ -115,24 +125,24 @@ pub fn load_rom_file(path: &str) -> Box<dyn Cartridge> {
     rom
 }
 
-fn boxed_cartridge(code: u8) -> Result<Box<dyn Cartridge>, CartridgeError> {
+fn boxed_cartridge(code: u8) -> Result<CartridgeEnum, CartridgeError> {
     // Some cartridges include batteries, but it doesn't seem to make a
     // difference from the emulator perspective, might be wise to keep an eye on
     // this if bugs arise.
     Ok(match code {
-        0x00 => Box::new(no_mbc::NoMbc::init(false)),
-        0x01 => Box::new(mbc1::Mbc1::init(false)),
-        0x02 | 0x03 => Box::new(mbc1::Mbc1::init(true)),
-        0x05 | 0x06 => Box::new(mbc2::Mbc2::init()),
-        0x08 | 0x09 => Box::new(no_mbc::NoMbc::init(true)),
-        0x0F => Box::new(mbc3::Mbc3::init(false, true)),
-        0x10 => Box::new(mbc3::Mbc3::init(true, true)),
-        0x11 => Box::new(mbc3::Mbc3::init(false, false)),
-        0x12 | 0x13 => Box::new(mbc3::Mbc3::init(true, false)),
-        0x19 => Box::new(mbc5::Mbc5::init(false, false)),
-        0x1A | 0x1B => Box::new(mbc5::Mbc5::init(true, false)),
-        0x1C => Box::new(mbc5::Mbc5::init(false, true)),
-        0x1D | 0x1E => Box::new(mbc5::Mbc5::init(false, false)),
+        0x00 => no_mbc::NoMbc::init(false).into(),
+        0x01 => mbc1::Mbc1::init(false).into(),
+        0x02 | 0x03 => mbc1::Mbc1::init(true).into(),
+        0x05 | 0x06 => mbc2::Mbc2::init().into(),
+        0x08 | 0x09 => no_mbc::NoMbc::init(true).into(),
+        0x0F => mbc3::Mbc3::init(false, true).into(),
+        0x10 => mbc3::Mbc3::init(true, true).into(),
+        0x11 => mbc3::Mbc3::init(false, false).into(),
+        0x12 | 0x13 => mbc3::Mbc3::init(true, false).into(),
+        0x19 => mbc5::Mbc5::init(false, false).into(),
+        0x1A | 0x1B => mbc5::Mbc5::init(true, false).into(),
+        0x1C => mbc5::Mbc5::init(false, true).into(),
+        0x1D | 0x1E => mbc5::Mbc5::init(false, false).into(),
         val => return Err(CartridgeError::InvalidType { tp: val }),
     })
 }

@@ -1,4 +1,4 @@
-use crate::mmu::cart::{Cartridge, CartridgeError, RamBank, RomBank, BLANK_RAM, BLANK_ROM};
+use crate::mmu::cart::{CartridgeError, CartridgeTrait, RamBank, RomBank, BLANK_RAM, BLANK_ROM};
 
 pub struct Mbc1 {
     rom: Vec<RomBank>,
@@ -26,7 +26,7 @@ impl Mbc1 {
     }
 }
 
-impl Cartridge for Mbc1 {
+impl CartridgeTrait for Mbc1 {
     fn init_rom_banks(&mut self, nbanks: u16, raw_rom: &Vec<u8>) -> Result<(), CartridgeError> {
         if nbanks > 128 {
             return Err(CartridgeError::InvalidCombination {

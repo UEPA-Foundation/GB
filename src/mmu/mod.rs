@@ -1,5 +1,6 @@
 use crate::gameboy::GameBoy;
-use crate::mmu::mem::MemoryUnit;
+use cart::CartridgeTrait;
+use mem::MemoryUnit;
 
 pub mod cart;
 pub mod io;

@@ -1,4 +1,4 @@
-use crate::mmu::cart::{Cartridge, CartridgeError, RamBank, RomBank, BLANK_RAM, BLANK_ROM};
+use crate::mmu::cart::{CartridgeError, CartridgeTrait, RamBank, RomBank, BLANK_RAM, BLANK_ROM};
 
 pub struct NoMbc {
     rom0: RomBank,
@@ -21,7 +21,7 @@ impl NoMbc {
     }
 }
 
-impl Cartridge for NoMbc {
+impl CartridgeTrait for NoMbc {
     fn init_rom_banks(&mut self, nbanks: u16, raw_rom: &Vec<u8>) -> Result<(), CartridgeError> {
         if nbanks != 2 {
             return Err(CartridgeError::InvalidCombination {
