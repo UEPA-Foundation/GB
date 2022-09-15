@@ -28,6 +28,9 @@ pub struct GameBoy {
     pub joypad: Joypad,
     pub serial: SerialLink,
     pub timer: Timer,
+
+    pub cycles: u64,
+    pub ahead_cycles: u64,
 }
 
 impl GameBoy {
@@ -49,10 +52,23 @@ impl GameBoy {
             joypad: Joypad::init(),
             timer: Timer::init(),
             serial: SerialLink::init(),
+
+            cycles: 0,
+            ahead_cycles: 0,
         }
     }
 
+    pub fn step_ms(&mut self, time: u64) {
+        let pending_cycles = (time << 22) / 1000 - self.ahead_cycles;
+        let start_cycle = self.cycles;
+        while pending_cycles >= self.cycles - start_cycle {
+            self.cpu_step();
+        }
+        self.ahead_cycles = (self.cycles - start_cycle) - pending_cycles;
+    }
+
     pub fn advance_cycles(&mut self, cycles: u8) {
+        self.cycles += cycles as u64;
         self.cycle_timer(cycles);
         self.cycle_joypad(cycles);
         self.cycle_ppu(cycles);

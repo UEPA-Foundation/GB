@@ -30,10 +30,15 @@ fn main() {
     let mut gb = GameBoy::init(PATH);
     let (sdl, mut canvas) = init_renderer();
 
+    let timer = sdl.timer().unwrap();
+
     let tex_creator = canvas.texture_creator();
     let mut tex = tex_creator.create_texture(PixelFormatEnum::RGB24, TextureAccess::Streaming, 160, 144).unwrap();
     update_tex(&mut tex, &gb);
 
+    let mut old_time = timer.ticks();
+    let mut elapsed = 0;
+    let mut old_cycles = 0;
     match DEBUG {
         true => {
             let mut dbg = Debugger::init();
@@ -46,11 +51,28 @@ fn main() {
             }
         }
         false => loop {
-            gb.cpu_step();
+            let cur_time = timer.ticks();
+            let dt = cur_time - old_time;
+            old_time = cur_time;
+            elapsed += dt;
+
+            gb.step_ms(dt as u64);
+
             handle_events(&sdl, &mut gb);
             update_tex(&mut tex, &gb);
             canvas.copy(&tex, None, None).unwrap();
             canvas.present();
+
+            if elapsed > 1000 {
+                let total_cycles = gb.cycles - old_cycles;
+                println!(
+                    "Clock rate: {} ({:.1}%)",
+                    total_cycles,
+                    100.0 * (total_cycles as f64 / ((1 << 22) as f64) - 1.0)
+                );
+                old_cycles = gb.cycles;
+                elapsed = 0;
+            }
         },
     }
 }
