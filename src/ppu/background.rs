@@ -5,6 +5,10 @@ pub struct Background {
     tile_line: u16,
     tile_x: u8,
 
+    pub win_mode: bool,
+    in_win_y: bool,
+    win_line: u16,
+
     data_lo: u8,
     data_hi: u8,
 
@@ -13,7 +17,7 @@ pub struct Background {
 
 impl Background {
     pub fn init() -> Self {
-        Self { tile_id: 0, tile_line: 0, tile_x: 0, data_lo: 0, data_hi: 0, fifo: PixelFifo::init() }
+        Self { tile_id: 0, tile_line: 0, tile_x: 0, win_mode: false, in_win_y: false, win_line: 0, data_lo: 0, data_hi: 0, fifo: PixelFifo::init() }
     }
 
     pub fn pop(&mut self) -> Result<u8, FifoError> {
@@ -26,14 +30,22 @@ impl super::Ppu {
         self.lx = 0;
         self.bg.tile_x = (self.scx / 8) % 32;
         self.bg.tile_line = (self.ly as u16 + self.scy as u16) % 8;
+        self.bg.win_mode = false;
         self.bg.fifo.clear();
+    }
+
+    pub(super) fn init_frame_bg(&mut self) {
+        self.bg.in_win_y = false;
+        self.bg.win_line = 0;
     }
 
     pub(super) fn cycle_bg(&mut self) {
         match self.bg.fifo.state {
             FifoState::INDEX => {
-                let offset = ((self.ly as u16 + self.scy as u16) / 8) * 32 + self.bg.tile_x as u16;
-                let addr = self.bg_tilemap_addr() + offset;
+                let addr = match self.bg.win_mode {
+                    false => self.bg_tilemap_addr() + ((self.ly as u16 + self.scy as u16) / 8) * 32 + self.bg.tile_x as u16,
+                    true => self.win_tilemap_addr() + ((self.bg.win_line - 1) / 8) * 32 + self.bg.tile_x as u16,
+                };
                 self.bg.tile_id = self.read(addr);
                 self.bg.fifo.state = FifoState::DATALOW;
             }
@@ -84,5 +96,27 @@ impl super::Ppu {
         };
         let offset = index * 16 + self.bg.tile_line * 2;
         base_addr + offset
+    }
+
+    pub(super) fn check_in_win(&mut self) {
+        if !self.bg.win_mode && self.lcdc_bit(5) && self.in_win_x() && self.bg.in_win_y {
+            self.bg.win_mode = true;
+            self.bg.tile_line = self.bg.win_line % 8;
+            self.bg.tile_x = 0;
+            self.bg.win_line += 1;
+            self.bg.fifo.clear();
+        }
+    }
+
+    #[inline(always)]
+    fn in_win_x(&self) -> bool {
+        self.lx >= u8::wrapping_sub(self.wx, 7)
+    }
+
+    #[inline(always)]
+    pub(super) fn check_in_win_y(&mut self) {
+        if self.ly == self.wy {
+            self.bg.in_win_y = true;
+        }
     }
 }

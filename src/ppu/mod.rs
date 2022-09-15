@@ -163,6 +163,7 @@ impl Ppu {
                     self.cycles = 0;
                     self.ly += 1;
                     if self.ly == 144 {
+                        self.init_frame_bg();
                         self.set_mode(PpuMode::VBLANK);
                     } else {
                         self.set_mode(PpuMode::OAMSCAN);
@@ -185,6 +186,9 @@ impl Ppu {
                 }
             }
             PpuMode::OAMSCAN => {
+                if self.cycles == 1 {
+                    self.check_in_win_y();
+                }
                 if self.cycles == 80 {
                     self.init_scanline_bg();
                     self.set_mode(PpuMode::DRAW);
@@ -196,11 +200,12 @@ impl Ppu {
                 }
 
                 _ = self.bg.pop().and_then(|pixel| {
-                    if self.lx >= self.scx % 8 {
+                    if self.bg.win_mode || self.lx >= self.scx % 8 {
                         let idx = self.ly as usize * 160 + self.lx as usize;
                         self.framebuffer[idx] = pixel;
                     }
                     self.lx += 1;
+                    self.check_in_win();
                     Ok(())
                 });
 
