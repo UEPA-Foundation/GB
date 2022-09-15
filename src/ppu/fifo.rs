@@ -72,5 +72,6 @@ impl PixelFifo {
         self.pixels_hi = 0;
         self.flags = 0;
         self.len = 0;
+        self.state = FifoState::INDEX;
     }
 }

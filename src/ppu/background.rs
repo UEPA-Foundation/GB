@@ -26,7 +26,6 @@ impl super::Ppu {
         self.lx = 0;
         self.bg.tile_x = (self.scx / 8) % 32;
         self.bg.tile_line = (self.ly as u16 + self.scy as u16) % 8;
-        self.bg.fifo.state = FifoState::INDEX;
         self.bg.fifo.clear();
     }
 
