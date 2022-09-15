@@ -199,7 +199,7 @@ impl Ppu {
                     self.cycle_bg();
                 }
 
-                _ = self.bg.pop().and_then(|pixel| {
+                _ = self.bg_pop().and_then(|pixel| {
                     if self.bg.win_mode || self.lx >= self.scx % 8 {
                         let idx = self.ly as usize * 160 + self.lx as usize;
                         self.framebuffer[idx] = pixel;

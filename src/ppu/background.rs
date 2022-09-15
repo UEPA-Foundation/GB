@@ -19,10 +19,6 @@ impl Background {
     pub fn init() -> Self {
         Self { tile_id: 0, tile_line: 0, tile_x: 0, win_mode: false, in_win_y: false, win_line: 0, data_lo: 0, data_hi: 0, fifo: PixelFifo::init() }
     }
-
-    pub fn pop(&mut self) -> Result<u8, FifoError> {
-        self.fifo.pop()
-    }
 }
 
 impl super::Ppu {
@@ -119,4 +115,14 @@ impl super::Ppu {
             self.bg.in_win_y = true;
         }
     }
+
+    #[inline(always)]
+    pub fn bg_pop(&mut self) -> Result<u8, FifoError> {
+        match (self.bg.fifo.pop(), self.lcdc_bit(0)) {
+            (Ok(pixel), true) => Ok(pixel),
+            (Ok(pixel), false) => Ok(0),
+            (Err(e), _) => Err(e),
+        }
+    }
+
 }
