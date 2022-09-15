@@ -17,7 +17,17 @@ pub struct Background {
 
 impl Background {
     pub fn init() -> Self {
-        Self { tile_id: 0, tile_line: 0, tile_x: 0, win_mode: false, in_win_y: false, win_line: 0, data_lo: 0, data_hi: 0, fifo: PixelFifo::init() }
+        Self {
+            tile_id: 0,
+            tile_line: 0,
+            tile_x: 0,
+            win_mode: false,
+            in_win_y: false,
+            win_line: 0,
+            data_lo: 0,
+            data_hi: 0,
+            fifo: PixelFifo::init(),
+        }
     }
 }
 
@@ -39,7 +49,9 @@ impl super::Ppu {
         match self.bg.fifo.state {
             FifoState::INDEX => {
                 let addr = match self.bg.win_mode {
-                    false => self.bg_tilemap_addr() + ((self.ly as u16 + self.scy as u16) / 8) * 32 + self.bg.tile_x as u16,
+                    false => {
+                        self.bg_tilemap_addr() + ((self.ly as u16 + self.scy as u16) / 8) * 32 + self.bg.tile_x as u16
+                    }
                     true => self.win_tilemap_addr() + ((self.bg.win_line - 1) / 8) * 32 + self.bg.tile_x as u16,
                 };
                 self.bg.tile_id = self.read(addr);
@@ -120,9 +132,8 @@ impl super::Ppu {
     pub fn bg_pop(&mut self) -> Result<u8, FifoError> {
         match (self.bg.fifo.pop(), self.lcdc_bit(0)) {
             (Ok(pixel), true) => Ok(pixel),
-            (Ok(pixel), false) => Ok(0),
+            (Ok(_), false) => Ok(0),
             (Err(e), _) => Err(e),
         }
     }
-
 }

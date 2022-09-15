@@ -81,7 +81,9 @@ macro_rules! test_blargg_sram {
             let mut i = 0;
             loop {
                 let byte = gb.read(0xA004 + i);
-                if byte == 0 { break; };
+                if byte == 0 {
+                    break;
+                };
                 out.push(byte);
                 i += 1;
             }

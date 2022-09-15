@@ -1,6 +1,8 @@
 use crate::gameboy::GameBoy;
 use crate::intr::Interrupt;
 use background::Background;
+use fifo::FifoError;
+use sprites::Sprites;
 
 use oam::Oam;
 use vram::VRam;
@@ -9,6 +11,7 @@ mod background;
 mod fifo;
 mod lcd;
 mod oam;
+mod sprites;
 mod vram;
 
 const NCOL: usize = 160;
@@ -40,6 +43,7 @@ pub struct Ppu {
     pub oam: Oam,
 
     bg: Background,
+    sp: Sprites,
 
     mode: PpuMode,
     cycles: u32,
@@ -101,6 +105,7 @@ impl Ppu {
             oam: Oam::init(),
 
             bg: Background::init(),
+            sp: Sprites::init(),
 
             mode: PpuMode::OAMSCAN,
             cycles: 0,
@@ -197,17 +202,10 @@ impl Ppu {
             PpuMode::DRAW => {
                 if self.cycles % 2 == 0 {
                     self.cycle_bg();
+                    self.cycle_sp();
                 }
 
-                _ = self.bg_pop().and_then(|pixel| {
-                    if self.bg.win_mode || self.lx >= self.scx % 8 {
-                        let idx = self.ly as usize * 160 + self.lx as usize;
-                        self.framebuffer[idx] = pixel;
-                    }
-                    self.lx += 1;
-                    self.check_in_win();
-                    Ok(())
-                });
+                self.draw_pixel();
 
                 if self.lx == 160 {
                     self.set_mode(PpuMode::HBLANK);
@@ -215,5 +213,29 @@ impl Ppu {
                 }
             }
         };
+    }
+
+    fn draw_pixel(&mut self) {
+        _ = self.mix_pixel().and_then(|pixel| {
+            if self.bg.win_mode || self.lx >= self.scx % 8 {
+                let idx = self.ly as usize * 160 + self.lx as usize;
+                self.framebuffer[idx] = pixel;
+            }
+            self.lx += 1;
+            self.check_in_win();
+            Ok(())
+        });
+    }
+
+    fn mix_pixel(&mut self) -> Result<u8, FifoError> {
+        let bg_pixel = self.bg_pop()?;
+        let sp_pixel = self.sp_pop().unwrap_or(0);
+
+        let bg_to_obj_priority = false; // TODO: actually fetch this
+        if sp_pixel == 0 || (bg_to_obj_priority && bg_pixel != 0) {
+            return Ok(bg_pixel);
+        }
+
+        Ok(sp_pixel)
     }
 }
