@@ -39,6 +39,11 @@ fn main() {
 
     let (ctrl, mut controllers) = init_ctrl(&sdl);
 
+    let timer = sdl.timer().unwrap();
+    let mut old_t = timer.ticks();
+    let mut dt = 0;
+    let mut cycle_count = 0;
+
     match DEBUG {
         true => {
             let mut dbg = Debugger::init();
@@ -51,11 +56,28 @@ fn main() {
             }
         }
         false => loop {
-            gb.cpu_step();
+            gb.cycles = 0;
+            while gb.cycles < 70224 {
+                gb.cpu_step();
+            }
             handle_events(&sdl, &ctrl, &mut gb, &mut controllers);
             update_tex(&mut tex, &gb);
             canvas.copy(&tex, None, None).unwrap();
             canvas.present();
+
+            cycle_count += gb.cycles;
+            let t = timer.ticks();
+            dt += t - old_t;
+            old_t = t;
+            if dt >= 1000 {
+                println!(
+                    "Clock rate: {} ({:.1}%)",
+                    cycle_count,
+                    100.0 * (cycle_count as f64 / ((1 << 22) as f64) - 1.0)
+                );
+                dt = 0;
+                cycle_count = 0;
+            }
         },
     }
 }
@@ -65,7 +87,7 @@ fn init_renderer() -> (Sdl, Canvas<Window>) {
     let video = sdl.video().unwrap();
     let window = video.window("UEPA-GB", 640, 576).position_centered().build().unwrap();
 
-    let mut canvas = window.into_canvas().build().unwrap();
+    let mut canvas = window.into_canvas().accelerated().present_vsync().build().unwrap();
     canvas.set_draw_color(Color::RGB(0, 0, 0));
 
     (sdl, canvas)

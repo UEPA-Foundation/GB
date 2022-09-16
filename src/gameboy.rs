@@ -11,6 +11,8 @@ use crate::{
 };
 
 pub struct GameBoy {
+    pub cycles: u32,
+
     pub cpu: Cpu,
     pub halt: bool,
     pub halt_bug: bool,
@@ -33,6 +35,8 @@ pub struct GameBoy {
 impl GameBoy {
     pub fn init(path: &str) -> Self {
         Self {
+            cycles: 0,
+
             cpu: Cpu { a: 0x01, f: 0xB0, b: 0x00, c: 0x13, d: 0x00, e: 0xD8, h: 0x01, l: 0x4D, sp: 0xFFFE, pc: 0x100 },
             halt: false,
             halt_bug: false,
@@ -53,6 +57,7 @@ impl GameBoy {
     }
 
     pub fn advance_cycles(&mut self, cycles: u8) {
+        self.cycles += cycles as u32;
         self.cycle_timer(cycles);
         self.cycle_joypad(cycles);
         self.cycle_ppu(cycles);
