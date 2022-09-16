@@ -19,7 +19,7 @@ pub enum Button {
 
 impl Joypad {
     pub fn init() -> Self {
-        Self { joyp: 0x20, buttons: 0 }
+        Self { joyp: 0x0F, buttons: 0xFF }
     }
 
     pub fn read(&self) -> u8 {
