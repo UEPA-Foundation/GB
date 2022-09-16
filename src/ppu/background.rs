@@ -48,12 +48,7 @@ impl super::Ppu {
     pub(super) fn cycle_bg(&mut self) {
         match self.bg.fifo.state {
             FifoState::INDEX => {
-                let addr = match self.bg.win_mode {
-                    false => {
-                        self.bg_tilemap_addr() + ((self.ly as u16 + self.scy as u16) / 8) * 32 + self.bg.tile_x as u16
-                    }
-                    true => self.win_tilemap_addr() + ((self.bg.win_line - 1) / 8) * 32 + self.bg.tile_x as u16,
-                };
+                let addr = self.tilemap_addr();
                 self.bg.tile_id = self.read(addr);
                 self.bg.fifo.state = FifoState::DATALOW;
             }
@@ -77,19 +72,15 @@ impl super::Ppu {
     }
 
     #[inline(always)]
-    fn bg_tilemap_addr(&self) -> u16 {
-        match self.lcdc_bit(3) {
-            false => 0x9800,
-            true => 0x9C00,
-        }
-    }
-
-    #[inline(always)]
-    fn win_tilemap_addr(&self) -> u16 {
-        match self.lcdc_bit(6) {
-            false => 0x9800,
-            true => 0x9C00,
-        }
+    fn tilemap_addr(&self) -> u16 {
+        let (base, y_offset) = match (self.bg.win_mode, self.lcdc_bit(3), self.lcdc_bit(6)) {
+            (false, false, _) => (0x9800, self.ly as u16 + self.scy as u16),
+            (false, true, _) => (0x9C00, self.ly as u16 + self.scy as u16),
+            (true, _, false) => (0x9800, (self.bg.win_line - 1)),
+            (true, _, true) => (0x9C00, (self.bg.win_line - 1)),
+        };
+        let offset = (y_offset / 8) * 32 + self.bg.tile_x as u16;
+        base + offset
     }
 
     fn get_tile_addr(&self) -> u16 {
