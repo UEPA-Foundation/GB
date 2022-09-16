@@ -57,8 +57,8 @@ impl GameBoy {
 
     pub fn set_button(&mut self, button: Button, state: bool) {
         match state {
-            true => self.joypad.buttons |= button as u8,
-            false => self.joypad.buttons &= !(button as u8),
+            false => self.joypad.buttons |= button as u8,
+            true => self.joypad.buttons &= !(button as u8),
         }
     }
 }
