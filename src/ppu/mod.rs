@@ -190,6 +190,9 @@ impl Ppu {
                 }
             }
             PpuMode::OAMSCAN => {
+                if self.cycles % 2 == 0 {
+                    self.fetch_object();
+                }
                 if self.cycles == 1 {
                     self.check_in_win_y();
                 } else if self.cycles == 80 {
