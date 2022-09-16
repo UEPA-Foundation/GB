@@ -1,12 +1,15 @@
 use crate::{debug::Debugger, gameboy::GameBoy, mmu::io::joypad::Button};
 use sdl2::{
+    controller,
+    controller::GameController,
     event::Event,
     keyboard::Keycode,
     pixels::{Color, PixelFormatEnum},
     render::{Canvas, Texture, TextureAccess},
     video::Window,
-    Sdl,
+    GameControllerSubsystem, Sdl,
 };
+use std::collections::HashMap;
 
 mod cpu;
 mod debug;
@@ -34,12 +37,14 @@ fn main() {
     let mut tex = tex_creator.create_texture(PixelFormatEnum::RGB24, TextureAccess::Streaming, 160, 144).unwrap();
     update_tex(&mut tex, &gb);
 
+    let (ctrl, mut controllers) = init_ctrl(&sdl);
+
     match DEBUG {
         true => {
             let mut dbg = Debugger::init();
             loop {
                 dbg.prompt(&mut gb);
-                handle_events(&sdl, &mut gb);
+                handle_events(&sdl, &ctrl, &mut gb, &mut controllers);
                 update_tex(&mut tex, &gb);
                 canvas.copy(&tex, None, None).unwrap();
                 canvas.present();
@@ -47,7 +52,7 @@ fn main() {
         }
         false => loop {
             gb.cpu_step();
-            handle_events(&sdl, &mut gb);
+            handle_events(&sdl, &ctrl, &mut gb, &mut controllers);
             update_tex(&mut tex, &gb);
             canvas.copy(&tex, None, None).unwrap();
             canvas.present();
@@ -66,6 +71,13 @@ fn init_renderer() -> (Sdl, Canvas<Window>) {
     (sdl, canvas)
 }
 
+fn init_ctrl(sdl: &Sdl) -> (GameControllerSubsystem, HashMap<u32, GameController>) {
+    let ctrl = sdl.game_controller().unwrap();
+    ctrl.load_mappings("gamecontrollerdb.txt").unwrap();
+    let controllers = HashMap::new();
+    (ctrl, controllers)
+}
+
 #[inline(always)]
 fn update_tex(tex: &mut Texture, gb: &GameBoy) {
     let fb = gb.borrow_framebuffer();
@@ -81,7 +93,12 @@ fn update_tex(tex: &mut Texture, gb: &GameBoy) {
 }
 
 #[inline(always)]
-fn handle_events(sdl: &Sdl, gb: &mut GameBoy) {
+fn handle_events(
+    sdl: &Sdl,
+    ctrl: &GameControllerSubsystem,
+    gb: &mut GameBoy,
+    controllers: &mut HashMap<u32, GameController>,
+) {
     for event in sdl.event_pump().unwrap().poll_iter() {
         match event {
             Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => std::process::exit(0),
@@ -103,6 +120,45 @@ fn handle_events(sdl: &Sdl, gb: &mut GameBoy) {
             Event::KeyUp { keycode: Some(Keycode::Down), .. } => gb.set_button(Button::DOWN, false),
             Event::KeyUp { keycode: Some(Keycode::Left), .. } => gb.set_button(Button::LEFT, false),
             Event::KeyUp { keycode: Some(Keycode::Right), .. } => gb.set_button(Button::RIGHT, false),
+
+            Event::ControllerButtonDown { button: controller::Button::A, .. } => gb.set_button(Button::A, true),
+            Event::ControllerButtonDown { button: controller::Button::B, .. } => gb.set_button(Button::B, true),
+            Event::ControllerButtonDown { button: controller::Button::Start, .. } => gb.set_button(Button::START, true),
+            Event::ControllerButtonDown { button: controller::Button::Back, .. } => gb.set_button(Button::SELECT, true),
+            Event::ControllerButtonDown { button: controller::Button::DPadUp, .. } => gb.set_button(Button::UP, true),
+            Event::ControllerButtonDown { button: controller::Button::DPadDown, .. } => {
+                gb.set_button(Button::DOWN, true)
+            }
+            Event::ControllerButtonDown { button: controller::Button::DPadLeft, .. } => {
+                gb.set_button(Button::LEFT, true)
+            }
+            Event::ControllerButtonDown { button: controller::Button::DPadRight, .. } => {
+                gb.set_button(Button::RIGHT, true)
+            }
+
+            Event::ControllerButtonUp { button: controller::Button::A, .. } => gb.set_button(Button::A, false),
+            Event::ControllerButtonUp { button: controller::Button::B, .. } => gb.set_button(Button::B, false),
+            Event::ControllerButtonUp { button: controller::Button::Start, .. } => gb.set_button(Button::START, false),
+            Event::ControllerButtonUp { button: controller::Button::Back, .. } => gb.set_button(Button::SELECT, false),
+            Event::ControllerButtonUp { button: controller::Button::DPadUp, .. } => gb.set_button(Button::UP, false),
+            Event::ControllerButtonUp { button: controller::Button::DPadDown, .. } => {
+                gb.set_button(Button::DOWN, false)
+            }
+            Event::ControllerButtonUp { button: controller::Button::DPadLeft, .. } => {
+                gb.set_button(Button::LEFT, false)
+            }
+            Event::ControllerButtonUp { button: controller::Button::DPadRight, .. } => {
+                gb.set_button(Button::RIGHT, false)
+            }
+
+            Event::ControllerDeviceAdded { which, .. } => {
+                controllers.insert(which, ctrl.open(which).unwrap());
+                println!("Inserted controller {}", which);
+            }
+            Event::ControllerDeviceRemoved { which, .. } => {
+                controllers.remove(&which);
+                println!("Removed controller {}", which);
+            }
 
             _ => {}
         }
