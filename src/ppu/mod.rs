@@ -179,8 +179,7 @@ impl Ppu {
             PpuMode::VBLANK => {
                 if self.ly == 144 && self.cycles == 4 {
                     self.vblank_intr = true;
-                }
-                if self.cycles == 456 {
+                } else if self.cycles == 456 {
                     self.cycles = 0;
                     self.ly += 1;
                     if self.ly == 154 {
@@ -193,8 +192,7 @@ impl Ppu {
             PpuMode::OAMSCAN => {
                 if self.cycles == 1 {
                     self.check_in_win_y();
-                }
-                if self.cycles == 80 {
+                } else if self.cycles == 80 {
                     self.init_scanline_bg();
                     self.set_mode(PpuMode::DRAW);
                 }
