@@ -104,5 +104,16 @@ mod mbc2 {
     test_mooneye!(rom_512kb, "emulator-only/mbc2/rom_512kb.gb");
     test_mooneye!(ram, "emulator-only/mbc2/ram.gb");
 }   
-    
+
+mod mbc5 {
+    test_mooneye!(rom_512kb, "emulator-only/mbc5/rom_512kb.gb");
+    test_mooneye!(rom_1mb, "emulator-only/mbc5/rom_1Mb.gb");
+    test_mooneye!(rom_2mb, "emulator-only/mbc5/rom_2Mb.gb");
+    test_mooneye!(rom_4mb, "emulator-only/mbc5/rom_4Mb.gb");
+    test_mooneye!(rom_8mb, "emulator-only/mbc5/rom_8Mb.gb");
+    test_mooneye!(rom_16mb, "emulator-only/mbc5/rom_16Mb.gb");
+    test_mooneye!(rom_32mb, "emulator-only/mbc5/rom_32Mb.gb");
+    test_mooneye!(rom_64mb, "emulator-only/mbc5/rom_64Mb.gb");
+}
+
 test_mooneye!(instr_daa, "acceptance/instr/daa.gb");
