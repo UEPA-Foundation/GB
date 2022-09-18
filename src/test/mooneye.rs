@@ -84,16 +84,25 @@ mod mbc1 {
     test_mooneye!(bits_bank2, "emulator-only/mbc1/bits_bank2.gb");
     test_mooneye!(bits_mode, "emulator-only/mbc1/bits_mode.gb");
     test_mooneye!(bits_ramg, "emulator-only/mbc1/bits_ramg.gb");
-    test_mooneye!(multicart_rom_8Mb, "emulator-only/mbc1/multicart_rom_8Mb.gb");
+    test_mooneye!(multicart_rom_8mb, "emulator-only/mbc1/multicart_rom_8Mb.gb");
     test_mooneye!(ram_256kb, "emulator-only/mbc1/ram_256kb.gb");
     test_mooneye!(ram_64kb, "emulator-only/mbc1/ram_64kb.gb");
-    test_mooneye!(rom_16Mb, "emulator-only/mbc1/rom_16Mb.gb");
-    test_mooneye!(rom_1Mb, "emulator-only/mbc1/rom_1Mb.gb");
-    test_mooneye!(rom_2Mb, "emulator-only/mbc1/rom_2Mb.gb");
-    test_mooneye!(rom_4Mb, "emulator-only/mbc1/rom_4Mb.gb");
+    test_mooneye!(rom_16mb, "emulator-only/mbc1/rom_16Mb.gb");
+    test_mooneye!(rom_1mb, "emulator-only/mbc1/rom_1Mb.gb");
+    test_mooneye!(rom_2mb, "emulator-only/mbc1/rom_2Mb.gb");
+    test_mooneye!(rom_4mb, "emulator-only/mbc1/rom_4Mb.gb");
     test_mooneye!(rom_512kb, "emulator-only/mbc1/rom_512kb.gb");
-    test_mooneye!(rom_8Mb, "emulator-only/mbc1/rom_8Mb.gb");
+    test_mooneye!(rom_8mb, "emulator-only/mbc1/rom_8Mb.gb");
 }
 
-// daa
+mod mbc2 {
+    test_mooneye!(bits_ramg, "emulator-only/mbc2/bits_ramg.gb");
+    test_mooneye!(rom_1mb, "emulator-only/mbc2/rom_1Mb.gb");
+    test_mooneye!(bits_romb, "emulator-only/mbc2/bits_romb.gb");
+    test_mooneye!(rom_2mb, "emulator-only/mbc2/rom_2Mb.gb");
+    test_mooneye!(bits_unused, "emulator-only/mbc2/bits_unused.gb");
+    test_mooneye!(rom_512kb, "emulator-only/mbc2/rom_512kb.gb");
+    test_mooneye!(ram, "emulator-only/mbc2/ram.gb");
+}   
+    
 test_mooneye!(instr_daa, "acceptance/instr/daa.gb");
