@@ -5,6 +5,8 @@ pub struct Background {
     tile_line: u16,
     tile_x: u8,
 
+    num_scrolled: u8,
+
     pub win_mode: bool,
     in_win_y: bool,
     win_line: u16,
@@ -21,6 +23,7 @@ impl Background {
             tile_id: 0,
             tile_line: 0,
             tile_x: 0,
+            num_scrolled: 0,
             win_mode: false,
             in_win_y: false,
             win_line: 0,
@@ -34,6 +37,7 @@ impl Background {
 impl super::Ppu {
     pub(super) fn init_scanline_bg(&mut self) {
         self.lx = 0;
+        self.bg.num_scrolled = 0;
         self.bg.tile_x = (self.scx / 8) % 32;
         self.bg.tile_line = (self.ly as u16 + self.scy as u16) % 8;
         self.bg.win_mode = false;
@@ -120,11 +124,15 @@ impl super::Ppu {
     }
 
     #[inline(always)]
-    pub fn bg_pop(&mut self) -> Result<u8, FifoError> {
-        match (self.bg.fifo.pop(), self.lcdc_bit(0)) {
-            (Ok(pixel), true) => Ok(pixel),
-            (Ok(_), false) => Ok(0),
-            (Err(e), _) => Err(e),
+    pub fn bg_pop(&mut self) -> Option<u8> {
+        match (self.bg.fifo.pop(), self.lcdc_bit(0), self.bg.win_mode || self.bg.num_scrolled >= self.scx % 8) {
+            (Ok(pixel), true, true) => Some(pixel),
+            (Ok(_), true, false) => {
+                self.bg.num_scrolled += 1;
+                None
+            }
+            (Ok(_), false, _) => Some(0),
+            (Err(_), _, _) => None,
         }
     }
 }

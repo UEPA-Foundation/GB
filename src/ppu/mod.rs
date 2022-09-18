@@ -218,25 +218,23 @@ impl Ppu {
 
     fn draw_pixel(&mut self) {
         _ = self.mix_pixel().and_then(|pixel| {
-            if self.bg.win_mode || self.lx >= self.scx % 8 {
-                let idx = self.ly as usize * 160 + self.lx as usize;
-                self.framebuffer[idx] = pixel;
-            }
+            let idx = self.ly as usize * 160 + self.lx as usize;
+            self.framebuffer[idx] = pixel;
             self.lx += 1;
             self.check_in_win();
-            Ok(())
+            Some(())
         });
     }
 
-    fn mix_pixel(&mut self) -> Result<u8, FifoError> {
+    fn mix_pixel(&mut self) -> Option<u8> {
         let bg_pixel = self.bg_pop()?;
         let sp_pixel = self.sp_pop().unwrap_or(0);
 
         let bg_to_obj_priority = false; // TODO: actually fetch this
         if sp_pixel == 0 || (bg_to_obj_priority && bg_pixel != 0) {
-            return Ok(bg_pixel);
+            return Some(bg_pixel);
         }
 
-        Ok(sp_pixel)
+        Some(sp_pixel)
     }
 }
