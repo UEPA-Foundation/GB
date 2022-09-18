@@ -3,7 +3,7 @@ macro_rules! test_mooneye {
         #[test]
         fn $rom() {
             let mut gb = crate::gameboy::GameBoy::init(concat!("./src/test/mooneye/", $path));
-            for _ in 0..1000000 {
+            for _ in 0..10000000 {
                 gb.cpu_step();
 
                 if gb.dpc(0) == 0x40 {
@@ -77,6 +77,22 @@ mod timer {
 mod oam {
     test_mooneye!(oam_dma_restart, "acceptance/oam_dma_restart.gb");
     test_mooneye!(oam_dma_start, "acceptance/oam_dma_start.gb");
+}
+
+mod mbc1 {
+    test_mooneye!(bits_bank1, "emulator-only/mbc1/bits_bank1.gb");
+    test_mooneye!(bits_bank2, "emulator-only/mbc1/bits_bank2.gb");
+    test_mooneye!(bits_mode, "emulator-only/mbc1/bits_mode.gb");
+    test_mooneye!(bits_ramg, "emulator-only/mbc1/bits_ramg.gb");
+    test_mooneye!(multicart_rom_8Mb, "emulator-only/mbc1/multicart_rom_8Mb.gb");
+    test_mooneye!(ram_256kb, "emulator-only/mbc1/ram_256kb.gb");
+    test_mooneye!(ram_64kb, "emulator-only/mbc1/ram_64kb.gb");
+    test_mooneye!(rom_16Mb, "emulator-only/mbc1/rom_16Mb.gb");
+    test_mooneye!(rom_1Mb, "emulator-only/mbc1/rom_1Mb.gb");
+    test_mooneye!(rom_2Mb, "emulator-only/mbc1/rom_2Mb.gb");
+    test_mooneye!(rom_4Mb, "emulator-only/mbc1/rom_4Mb.gb");
+    test_mooneye!(rom_512kb, "emulator-only/mbc1/rom_512kb.gb");
+    test_mooneye!(rom_8Mb, "emulator-only/mbc1/rom_8Mb.gb");
 }
 
 // daa
