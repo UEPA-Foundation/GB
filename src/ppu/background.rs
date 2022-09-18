@@ -1,4 +1,4 @@
-use super::fifo::{FifoError, FifoState, PixelFifo};
+use super::fifo::{FifoState, PixelFifo};
 
 pub struct Background {
     tile_id: u8,

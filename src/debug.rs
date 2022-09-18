@@ -587,5 +587,4 @@ pub const OPCODES_CB_STR: [&str; 256] = [
 // Terminal utilities
 
 const RESET: &str = "\x1b[0m";
-const BOLD: &str = "\x1b[1m";
 const ULINE: &str = "\x1b[4m";

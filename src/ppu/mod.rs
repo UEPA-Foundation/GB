@@ -1,7 +1,6 @@
 use crate::gameboy::GameBoy;
 use crate::intr::Interrupt;
 use background::Background;
-use fifo::FifoError;
 use sprites::Sprites;
 
 use oam::Oam;
