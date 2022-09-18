@@ -70,7 +70,7 @@ impl CartridgeTrait for Mbc2 {
                 self.bank = 1;
             }
         } else {
-            self.ram_enable = val == 0x0A;
+            self.ram_enable = val & 0x0F == 0x0A;
         }
     }
 
