@@ -6,11 +6,12 @@ pub struct Mbc2 {
 
     ram_enable: bool,
     bank: u8,
+    bank_mask: u8,
 }
 
 impl Mbc2 {
     pub fn init() -> Self {
-        Self { rom: vec![], ram: [0xF0; 512], ram_enable: false, bank: 1 }
+        Self { rom: vec![], ram: [0xF0; 512], ram_enable: false, bank: 1, bank_mask: 0}
     }
 }
 
@@ -34,6 +35,8 @@ impl CartridgeTrait for Mbc2 {
                 self.rom[i][j] = raw_rom[(i * 0x4000) + j];
             }
         }
+        
+        self.bank_mask = (nbanks - 1) as u8;
 
         Ok(())
     }
@@ -53,7 +56,7 @@ impl CartridgeTrait for Mbc2 {
     }
 
     fn romx_read(&self, addr: u16) -> u8 {
-        self.rom[self.bank as usize][(addr - 0x4000) as usize]
+        self.rom[(self.bank & self.bank_mask) as usize][(addr - 0x4000) as usize]
     }
 
     fn sram_read(&self, addr: u16) -> u8 {
