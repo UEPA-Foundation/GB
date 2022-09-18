@@ -6,6 +6,7 @@ pub struct Mbc5 {
 
     rom_bank_lo: u8,
     rom_bank_hi: u8,
+    rom_bank_mask: u16,
     ram_bank: u8,
     ram_enable: bool,
 }
@@ -25,7 +26,7 @@ impl Mbc5 {
             (false, true) => Extras::Rumble,
             (true, true) => Extras::RamRumble(vec![]),
         };
-        Self { rom: vec![], extras, rom_bank_lo: 0, rom_bank_hi: 0, ram_bank: 0, ram_enable: false }
+        Self { rom: vec![], extras, rom_bank_lo: 1, rom_bank_hi: 0, rom_bank_mask: 0, ram_bank: 0, ram_enable: false }
     }
 }
 
@@ -49,6 +50,8 @@ impl CartridgeTrait for Mbc5 {
                 self.rom[i][j] = raw_rom[(i * 0x4000) + j];
             }
         }
+
+        self.rom_bank_mask = (nbanks - 1) as u16;
 
         Ok(())
     }
@@ -82,7 +85,7 @@ impl CartridgeTrait for Mbc5 {
     }
 
     fn romx_read(&self, addr: u16) -> u8 {
-        let rom_bank = (((self.rom_bank_hi as u16) << 8) | (self.rom_bank_lo as u16)) as usize;
+        let rom_bank = ((((self.rom_bank_hi as u16) << 8) | (self.rom_bank_lo as u16)) & self.rom_bank_mask) as usize;
         self.rom[rom_bank][(addr - 0x4000) as usize]
     }
 
