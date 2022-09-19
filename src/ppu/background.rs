@@ -78,8 +78,8 @@ impl super::Ppu {
     #[inline(always)]
     fn tilemap_addr(&self) -> u16 {
         let (base, y_offset) = match (self.bg.win_mode, self.lcdc_bit(3), self.lcdc_bit(6)) {
-            (false, false, _) => (0x9800, self.ly as u16 + self.scy as u16),
-            (false, true, _) => (0x9C00, self.ly as u16 + self.scy as u16),
+            (false, false, _) => (0x9800, (self.ly as u16 + self.scy as u16) & 0xFF),
+            (false, true, _) => (0x9C00, (self.ly as u16 + self.scy as u16) & 0xFF),
             (true, _, false) => (0x9800, (self.bg.win_line - 1)),
             (true, _, true) => (0x9C00, (self.bg.win_line - 1)),
         };
