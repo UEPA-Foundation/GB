@@ -113,7 +113,7 @@ impl super::Ppu {
 
     #[inline(always)]
     fn in_win_x(&self) -> bool {
-        self.lx >= u8::wrapping_sub(self.wx, 7)
+        self.lx >= u8::saturating_sub(self.wx, 7)
     }
 
     #[inline(always)]
