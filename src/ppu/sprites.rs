@@ -69,6 +69,13 @@ impl super::Ppu {
         }
     }
 
+    pub(super) fn init_scanline_sp(&mut self) {
+        self.sp.fifo.clear();
+        if self.sp.fetcher.len == 0 {
+            self.sp.fifo.state = FifoState::SLEEP;
+        }
+    }
+
     pub(super) fn cycle_sp(&mut self) {
         match self.sp.fifo.state {
             FifoState::INDEX => {

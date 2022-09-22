@@ -192,10 +192,13 @@ impl Ppu {
                 if self.cycles % 2 == 0 {
                     self.fetch_object();
                 }
+
                 if self.cycles == 1 {
                     self.check_in_win_y();
                 } else if self.cycles == 80 {
+                    self.lx = 0;
                     self.init_scanline_bg();
+                    self.init_scanline_sp();
                     self.set_mode(PpuMode::DRAW);
                 }
             }

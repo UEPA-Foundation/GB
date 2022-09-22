@@ -36,7 +36,6 @@ impl Background {
 
 impl super::Ppu {
     pub(super) fn init_scanline_bg(&mut self) {
-        self.lx = 0;
         self.bg.num_scrolled = 0;
         self.bg.tile_x = (self.scx / 8) % 32;
         self.bg.tile_line = (self.ly as u16 + self.scy as u16) % 8;
