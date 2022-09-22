@@ -2,9 +2,7 @@
 use super::fifo::{FifoError, FifoState, PixelFifo};
 
 pub struct Sprites {
-    tile_id: u8,
-    tile_line: u16,
-    tile_x: u8,
+    obj: Object,
 
     data_lo: u8,
     data_hi: u8,
@@ -36,9 +34,7 @@ struct Object {
 impl Sprites {
     pub fn init() -> Self {
         Self {
-            tile_id: 0,
-            tile_line: 0,
-            tile_x: 0,
+            obj: Object { x: 0, y: 0, id: 0, flags: 0 },
             data_lo: 0,
             data_hi: 0,
             fetcher: Fetcher::init(),
@@ -56,6 +52,7 @@ impl super::Ppu {
             id: self.read(obj_addr + 2),
             flags: self.read(obj_addr + 3),
         };
+        self.sp.fetcher.cur += 1;
 
         let obj_height = 8; // TODO: check tall sprite mode
         if (obj.x == 0) || (self.ly + 16 < obj.y) || (self.ly + 16 >= obj.y + obj_height) {
@@ -69,6 +66,12 @@ impl super::Ppu {
         }
     }
 
+    pub(super) fn clear_sp_fetcher(&mut self) {
+        self.sp.fetcher.cur = 0;
+        self.sp.fetcher.len = 0;
+        self.sp.fetcher.buffer = [Object { x: 0, y: 0, id: 0, flags: 0 }; 10];
+    }
+
     pub(super) fn init_scanline_sp(&mut self) {
         self.sp.fifo.clear();
         if self.sp.fetcher.len == 0 {
@@ -79,19 +82,33 @@ impl super::Ppu {
     pub(super) fn cycle_sp(&mut self) {
         match self.sp.fifo.state {
             FifoState::INDEX => {
-                self.sp.fifo.state = FifoState::DATALOW;
+                for obj in self.sp.fetcher.buffer[..self.sp.fetcher.len as usize].into_iter() {
+                    if self.lx + 8 <= obj.x && obj.x < self.lx + 16 {
+                        self.sp.obj = *obj;
+                        self.sp.fifo.state = FifoState::DATALOW;
+                    }
+                }
             }
             FifoState::DATALOW => {
+                self.sp.data_lo = self.read(self.get_sprite_addr());
                 self.sp.fifo.state = FifoState::DATAHIGH;
             }
             FifoState::DATAHIGH => {
+                self.sp.data_hi = self.read(self.get_sprite_addr() + 1);
                 self.sp.fifo.state = FifoState::PUSH;
             }
             FifoState::PUSH => {
-                self.sp.fifo.state = FifoState::SLEEP;
+                let push_amnt = u8::min(u8::saturating_sub(self.sp.obj.x, 8), 8);
+                self.sp.fifo.push(self.sp.data_lo, self.sp.data_hi, push_amnt);
+                self.sp.fifo.state = FifoState::INDEX;
             }
             FifoState::SLEEP => {}
         }
+    }
+
+    fn get_sprite_addr(&self) -> u16 {
+        let tile_addr = 0x8000 + (self.sp.obj.id as u16 * 16);
+        tile_addr + 2 * ((self.ly as u16 + self.scy as u16) % 8)
     }
 
     #[inline(always)]

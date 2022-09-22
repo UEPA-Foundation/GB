@@ -170,6 +170,7 @@ impl Ppu {
                         self.init_frame_bg();
                         self.set_mode(PpuMode::VBLANK);
                     } else {
+                        self.clear_sp_fetcher();
                         self.set_mode(PpuMode::OAMSCAN);
                     }
                     self.update_stat();
@@ -183,6 +184,7 @@ impl Ppu {
                     self.ly += 1;
                     if self.ly == 154 {
                         self.ly = 0;
+                        self.clear_sp_fetcher();
                         self.set_mode(PpuMode::OAMSCAN);
                     }
                     self.update_stat();
