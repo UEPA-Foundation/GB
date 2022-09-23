@@ -48,6 +48,7 @@ pub struct Ppu {
     cycles: u32,
 
     framebuffer: [u8; NCOL * NLIN],
+    lcd_status: LCDStatus,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -56,6 +57,12 @@ enum PpuMode {
     VBLANK = 1,
     OAMSCAN = 2,
     DRAW = 3,
+}
+
+enum LCDStatus {
+    ON,
+    OFF,
+    STARTUP,
 }
 
 impl GameBoy {
@@ -110,6 +117,7 @@ impl Ppu {
             cycles: 0,
 
             framebuffer: [0; NLIN * NCOL],
+            lcd_status: LCDStatus::OFF,
         }
     }
 
@@ -160,6 +168,9 @@ impl Ppu {
     }
 
     fn cycle(&mut self) {
+        if let LCDStatus::OFF = self.lcd_status {
+            return;
+        };
         self.cycles += 1;
         match self.mode {
             PpuMode::HBLANK => {
@@ -185,6 +196,7 @@ impl Ppu {
                     if self.ly == 154 {
                         self.ly = 0;
                         self.clear_sp_fetcher();
+                        self.lcd_status = LCDStatus::ON;
                         self.set_mode(PpuMode::OAMSCAN);
                     }
                     self.update_stat();
@@ -223,7 +235,10 @@ impl Ppu {
     fn draw_pixel(&mut self) {
         _ = self.mix_pixel().and_then(|pixel| {
             let idx = self.ly as usize * 160 + self.lx as usize;
-            self.framebuffer[idx] = pixel;
+            //first frame after turning lcd on gets skipped
+            if let LCDStatus::ON = self.lcd_status {
+                self.framebuffer[idx] = pixel;
+            }
             self.lx += 1;
             self.check_in_win();
             Some(())

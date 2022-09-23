@@ -1,4 +1,4 @@
-use super::Ppu;
+use super::{Ppu, PpuMode, LCDStatus, NCOL, NLIN};
 
 // generates read methods for regs with trivial reads
 macro_rules! read_simple {
@@ -41,6 +41,21 @@ impl Ppu {
     #[inline(always)]
     pub fn write_lcdc(&mut self, val: u8) {
         // TODO: lots of behavior for each bit
+        match (&self.lcd_status, val & 0x80 != 0) {
+            (LCDStatus::OFF, true) => {
+                // we leave stat alone: mode bits stay 0 during first OAM Scan
+                self.lcd_status = LCDStatus::STARTUP;
+            },
+            (LCDStatus::ON | LCDStatus::STARTUP, false) => {
+                self.lcd_status = LCDStatus::OFF;
+                self.mode = PpuMode::OAMSCAN;
+                self.cycles = 0;
+                self.ly = 0;
+                self.stat &= !0x03; // stat's mode bits are 0 when off
+                self.framebuffer = [0; NLIN * NCOL];
+            },
+            _ => {},
+        }
         self.lcdc = val;
     }
 
@@ -70,10 +85,5 @@ impl Ppu {
     #[inline(always)]
     pub fn write_wy(&mut self, val: u8) {
         self.wy = val; // TODO: more behavior in wy
-    }
-
-    #[inline(always)]
-    fn is_enabled(&self) -> bool {
-        self.lcdc & 0x80 != 0
     }
 }
