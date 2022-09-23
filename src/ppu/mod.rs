@@ -117,7 +117,7 @@ impl Ppu {
             cycles: 0,
 
             framebuffer: [0; NLIN * NCOL],
-            lcd_status: LCDStatus::OFF,
+            lcd_status: LCDStatus::ON,
         }
     }
 
