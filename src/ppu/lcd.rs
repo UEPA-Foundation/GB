@@ -49,6 +49,7 @@ impl Ppu {
             (LCDStatus::ON | LCDStatus::STARTUP, false) => {
                 self.lcd_status = LCDStatus::OFF;
                 self.mode = PpuMode::OAMSCAN;
+                self.clear_sp_fetcher();
                 self.cycles = 0;
                 self.ly = 0;
                 self.stat &= !0x03; // stat's mode bits are 0 when off
