@@ -41,6 +41,8 @@ pub struct Ppu {
     pub vram: VRam,
     pub oam: Oam,
 
+    oam_dma: DmaStatus,
+
     bg: Background,
     sp: Sprites,
 
@@ -48,7 +50,7 @@ pub struct Ppu {
     cycles: u32,
 
     framebuffer: [u8; NCOL * NLIN],
-    lcd_status: LCDStatus,
+    lcd_status: LcdStatus,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -59,15 +61,22 @@ enum PpuMode {
     DRAW = 3,
 }
 
-enum LCDStatus {
+enum LcdStatus {
     ON,
     OFF,
     STARTUP,
 }
 
+#[derive(Copy, Clone, Debug)]
+enum DmaStatus {
+    INACTIVE,
+    ACTIVE(u16),
+}
+
 impl GameBoy {
     pub fn cycle_ppu(&mut self, cycles: u8) {
         for _ in 0..cycles {
+            self.cycle_dma();
             self.ppu.cycle();
         }
 
@@ -79,6 +88,19 @@ impl GameBoy {
             self.intr.request(Interrupt::VBLANK);
             self.ppu.vblank_intr = false;
         }
+    }
+
+    fn cycle_dma(&mut self) {
+        if let DmaStatus::ACTIVE(count) = self.ppu.oam_dma {
+            let addr = ((self.ppu.dma as u16) << 8) + count;
+            let val = self.read(addr);
+            self.ppu.oam.write(count, val);
+            if count + 1 > 0x9F {
+                self.ppu.oam_dma = DmaStatus::INACTIVE;
+            } else {
+                self.ppu.oam_dma = DmaStatus::ACTIVE(count + 1);
+            }
+        };
     }
 
     pub fn borrow_framebuffer(&self) -> &[u8; NCOL * NLIN] {
@@ -110,6 +132,8 @@ impl Ppu {
             vram: VRam::init(),
             oam: Oam::init(),
 
+            oam_dma: DmaStatus::INACTIVE,
+
             bg: Background::init(),
             sp: Sprites::init(),
 
@@ -117,7 +141,7 @@ impl Ppu {
             cycles: 0,
 
             framebuffer: [0; NLIN * NCOL],
-            lcd_status: LCDStatus::ON,
+            lcd_status: LcdStatus::ON,
         }
     }
 
@@ -161,34 +185,34 @@ impl Ppu {
 
     pub fn vram_read(&self, addr: u16) -> u8 {
         match (&self.lcd_status, self.mode) {
-            (LCDStatus::ON, PpuMode::DRAW) => 0xFF,
+            (LcdStatus::ON, PpuMode::DRAW) => 0xFF,
             _ => self.vram.read(addr),
         }
     }
 
     pub fn oam_read(&self, addr: u16) -> u8 {
         match (&self.lcd_status, self.mode) {
-            (LCDStatus::ON, PpuMode::DRAW | PpuMode::OAMSCAN) => 0xFF,
+            (LcdStatus::ON, PpuMode::DRAW | PpuMode::OAMSCAN) => 0xFF,
             _ => self.oam.read(addr),
         }
     }
 
     pub fn vram_write(&mut self, addr: u16, val: u8) {
         match (&self.lcd_status, self.mode) {
-            (LCDStatus::ON, PpuMode::DRAW) => (),
+            (LcdStatus::ON, PpuMode::DRAW) => (),
             _ => self.vram.write(addr, val),
         }
     }
 
     pub fn oam_write(&mut self, addr: u16, val: u8) {
         match (&self.lcd_status, self.mode) {
-            (LCDStatus::ON, PpuMode::DRAW | PpuMode::OAMSCAN) => (),
+            (LcdStatus::ON, PpuMode::DRAW | PpuMode::OAMSCAN) => (),
             _ => self.oam.write(addr, val),
         }
     }
 
     fn cycle(&mut self) {
-        if let LCDStatus::OFF = self.lcd_status {
+        if let LcdStatus::OFF = self.lcd_status {
             return;
         };
         self.cycles += 1;
@@ -216,7 +240,7 @@ impl Ppu {
                     if self.ly == 154 {
                         self.ly = 0;
                         self.clear_sp_fetcher();
-                        self.lcd_status = LCDStatus::ON;
+                        self.lcd_status = LcdStatus::ON;
                         self.set_mode(PpuMode::OAMSCAN);
                     }
                     self.update_stat();
@@ -256,7 +280,7 @@ impl Ppu {
         _ = self.mix_pixel().and_then(|pixel| {
             let idx = self.ly as usize * 160 + self.lx as usize;
             //first frame after turning lcd on gets skipped
-            if let LCDStatus::ON = self.lcd_status {
+            if let LcdStatus::ON = self.lcd_status {
                 self.framebuffer[idx] = pixel;
             }
             self.lx += 1;
