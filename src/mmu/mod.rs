@@ -13,7 +13,7 @@ impl GameBoy {
             0x0000..=0x3FFF => self.cart.rom0_read(addr),
             0x4000..=0x7FFF => self.cart.romx_read(addr),
             // vram
-            0x8000..=0x9FFF => self.ppu.vram.read(addr),
+            0x8000..=0x9FFF => self.ppu.vram_read(addr),
             // cart
             0xA000..=0xBFFF => self.cart.sram_read(addr),
             // wram
@@ -23,7 +23,7 @@ impl GameBoy {
             0xE000..=0xEFFF => self.wram0.read(addr),
             0xF000..=0xFDFF => self.wramx.read(addr),
             // oam
-            0xFE00..=0xFE9F => self.ppu.oam.read(addr),
+            0xFE00..=0xFE9F => self.ppu.oam_read(addr),
             // unused
             0xFEA0..=0xFEFF => self._unused.read(addr),
             // io
@@ -72,7 +72,7 @@ impl GameBoy {
             0x0000..=0x3FFF => self.cart.rom0_write(addr, val),
             0x4000..=0x7FFF => self.cart.romx_write(addr, val),
             // vram
-            0x8000..=0x9FFF => self.ppu.vram.write(addr, val),
+            0x8000..=0x9FFF => self.ppu.vram_write(addr, val),
             // cart
             0xA000..=0xBFFF => self.cart.sram_write(addr, val),
             // wram
@@ -82,7 +82,7 @@ impl GameBoy {
             0xE000..=0xEFFF => self.wram0.write(addr, val),
             0xF000..=0xFDFF => self.wramx.write(addr, val),
             // oam
-            0xFE00..=0xFE9F => self.ppu.oam.write(addr, val),
+            0xFE00..=0xFE9F => self.ppu.oam_write(addr, val),
             // unused
             0xFEA0..=0xFEFF => self._unused.write(addr, val),
             // io

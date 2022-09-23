@@ -47,10 +47,10 @@ impl super::Ppu {
     pub(super) fn fetch_object(&mut self) {
         let obj_addr = 0xFE00 + (self.sp.fetcher.cur as u16 * 4);
         let obj = Object {
-            y: self.read(obj_addr + 0),
-            x: self.read(obj_addr + 1),
-            id: self.read(obj_addr + 2),
-            flags: self.read(obj_addr + 3),
+            y: self.oam.read(obj_addr + 0),
+            x: self.oam.read(obj_addr + 1),
+            id: self.oam.read(obj_addr + 2),
+            flags: self.oam.read(obj_addr + 3),
         };
         self.sp.fetcher.cur += 1;
 
@@ -90,11 +90,11 @@ impl super::Ppu {
                 }
             }
             FifoState::DATALOW => {
-                self.sp.data_lo = self.read(self.get_sprite_addr());
+                self.sp.data_lo = self.vram.read(self.get_sprite_addr());
                 self.sp.fifo.state = FifoState::DATAHIGH;
             }
             FifoState::DATAHIGH => {
-                self.sp.data_hi = self.read(self.get_sprite_addr() + 1);
+                self.sp.data_hi = self.vram.read(self.get_sprite_addr() + 1);
                 self.sp.fifo.state = FifoState::PUSH;
             }
             FifoState::PUSH => {

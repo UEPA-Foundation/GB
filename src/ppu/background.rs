@@ -52,15 +52,15 @@ impl super::Ppu {
         match self.bg.fifo.state {
             FifoState::INDEX => {
                 let addr = self.tilemap_addr();
-                self.bg.tile_id = self.read(addr);
+                self.bg.tile_id = self.vram.read(addr);
                 self.bg.fifo.state = FifoState::DATALOW;
             }
             FifoState::DATALOW => {
-                self.bg.data_lo = self.read(self.get_tile_addr());
+                self.bg.data_lo = self.vram.read(self.get_tile_addr());
                 self.bg.fifo.state = FifoState::DATAHIGH;
             }
             FifoState::DATAHIGH => {
-                self.bg.data_hi = self.read(self.get_tile_addr() + 1);
+                self.bg.data_hi = self.vram.read(self.get_tile_addr() + 1);
                 self.bg.fifo.state = FifoState::PUSH;
             }
             FifoState::PUSH => {

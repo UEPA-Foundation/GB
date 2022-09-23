@@ -159,11 +159,31 @@ impl Ppu {
         }
     }
 
-    fn read(&self, addr: u16) -> u8 {
-        match addr {
-            0x8000..=0x9FFF => self.vram.read(addr),
-            0xFE00..=0xFE9F => self.oam.read(addr),
-            _ => panic!("Addr {:02X} not owned by PPU", addr),
+    pub fn vram_read(&self, addr: u16) -> u8 {
+        match (&self.lcd_status, self.mode) {
+            (LCDStatus::ON, PpuMode::DRAW) => 0xFF,
+            _ => self.vram.read(addr),
+        }
+    }
+
+    pub fn oam_read(&self, addr: u16) -> u8 {
+        match (&self.lcd_status, self.mode) {
+            (LCDStatus::ON, PpuMode::DRAW | PpuMode::OAMSCAN) => 0xFF,
+            _ => self.oam.read(addr),
+        }
+    }
+
+    pub fn vram_write(&mut self, addr: u16, val: u8) {
+        match (&self.lcd_status, self.mode) {
+            (LCDStatus::ON, PpuMode::DRAW) => (),
+            _ => self.vram.write(addr, val),
+        }
+    }
+
+    pub fn oam_write(&mut self, addr: u16, val: u8) {
+        match (&self.lcd_status, self.mode) {
+            (LCDStatus::ON, PpuMode::DRAW | PpuMode::OAMSCAN) => (),
+            _ => self.oam.write(addr, val),
         }
     }
 
