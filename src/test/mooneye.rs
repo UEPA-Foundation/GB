@@ -74,6 +74,21 @@ mod timer {
     test_mooneye!(tma_write_reloading, "acceptance/timer/tma_write_reloading.gb");
 }
 
+mod ppu {
+    test_mooneye!(hblank_ly_scx_timing_gs, "acceptance/ppu/hblank_ly_scx_timing-GS.gb");
+    test_mooneye!(intr_1_2_timing_gs, "acceptance/ppu/intr_1_2_timing-GS.gb");
+    test_mooneye!(intr_2_0_timing, "acceptance/ppu/intr_2_0_timing.gb");
+    test_mooneye!(intr_2_mode0_timing, "acceptance/ppu/intr_2_mode0_timing.gb");
+    test_mooneye!(intr_2_mode0_timing_sprites, "acceptance/ppu/intr_2_mode0_timing_sprites.gb");
+    test_mooneye!(intr_2_mode3_timing, "acceptance/ppu/intr_2_mode3_timing.gb");
+    test_mooneye!(intr_2_oam_ok_timing, "acceptance/ppu/intr_2_oam_ok_timing.gb");
+    test_mooneye!(lcdon_timing_gs, "acceptance/ppu/lcdon_timing-GS.gb");
+    test_mooneye!(lcdon_write_timing_gs, "acceptance/ppu/lcdon_write_timing-GS.gb");
+    test_mooneye!(stat_irq_blocking, "acceptance/ppu/stat_irq_blocking.gb");
+    test_mooneye!(stat_lyc_onoff, "acceptance/ppu/stat_lyc_onoff.gb");
+    test_mooneye!(vblank_stat_intr_gs, "acceptance/ppu/vblank_stat_intr-GS.gb");
+}
+
 mod oam {
     test_mooneye!(oam_dma_restart, "acceptance/oam_dma_restart.gb");
     test_mooneye!(oam_dma_start, "acceptance/oam_dma_start.gb");
