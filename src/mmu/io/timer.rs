@@ -136,10 +136,6 @@ impl Timer {
 impl GameBoy {
     pub fn cycle_timer(&mut self, cycles: u8) {
         for _ in 0..cycles {
-            if self.timer.int_occurred() {
-                self.intr.request(Interrupt::TIMER);
-            }
-
             self.timer.update_tima_state();
 
             let mask = self.timer.div_tima_mask();
@@ -151,6 +147,10 @@ impl GameBoy {
             // falling edge detect
             if enabled && orig_bit && self.timer.div & mask == 0 {
                 self.timer.increment_tima();
+            }
+
+            if self.timer.int_occurred() {
+                self.intr.request(Interrupt::TIMER);
             }
         }
     }
