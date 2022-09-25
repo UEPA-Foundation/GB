@@ -144,7 +144,7 @@ impl Debugger {
 
     fn continue_cmd(&mut self, gb: &mut GameBoy) {
         for i in 0..self.watchpoints.len() {
-            self.watchpoints[i].last_val = gb.read(self.watchpoints[i].addr);
+            self.watchpoints[i].last_val = gb.pure_read(self.watchpoints[i].addr);
         }
 
         loop {
@@ -152,7 +152,7 @@ impl Debugger {
 
             let mut changes = vec![];
             for i in 0..self.watchpoints.len() {
-                let val = gb.read(self.watchpoints[i].addr);
+                let val = gb.pure_read(self.watchpoints[i].addr);
                 if val != self.watchpoints[i].last_val {
                     changes.push((i + 1, val, self.watchpoints[i].addr))
                 }
@@ -214,7 +214,7 @@ impl Debugger {
             if i % 16 == 0 {
                 s += &format!("${:04X}: ", u16::wrapping_add(addr, i));
             }
-            s += &format!("{:02X} ", gb.read(u16::wrapping_add(addr, i)));
+            s += &format!("{:02X} ", gb.pure_read(u16::wrapping_add(addr, i)));
             if i % 16 == 15 {
                 s += "\n";
             }
@@ -257,7 +257,7 @@ impl Debugger {
                 println!("Watchpoint already at ${:04X}", addr);
             }
             Err(pos) => {
-                self.watchpoints.insert(pos, WatchPoint { addr, last_val: gb.read(addr) });
+                self.watchpoints.insert(pos, WatchPoint { addr, last_val: gb.pure_read(addr) });
                 println!("Watchpoint set at ${:04X}", addr);
             }
         }
@@ -461,29 +461,29 @@ impl Debugger {
     }
 
     pub fn disassemble(&self, gb: &mut GameBoy, addr: u16) -> (String, u8) {
-        let opcode = gb.read(addr);
+        let opcode = gb.pure_read(addr);
         let mut mnemonic = OPCODES_STR[opcode as usize].to_string();
 
         if mnemonic == "CB" {
-            let param = gb.read(u16::wrapping_add(addr, 1));
+            let param = gb.pure_read(u16::wrapping_add(addr, 1));
             return (OPCODES_CB_STR[param as usize].to_string(), 2);
         }
 
         if mnemonic.contains("U8") {
-            let param = gb.read(u16::wrapping_add(addr, 1));
+            let param = gb.pure_read(u16::wrapping_add(addr, 1));
             mnemonic = mnemonic.replace("U8", &format!("${:02X}", param));
             return (mnemonic, 2);
         }
 
         if mnemonic.contains("U16") {
-            let param1 = gb.read(u16::wrapping_add(addr, 1));
-            let param2 = gb.read(u16::wrapping_add(addr, 2));
+            let param1 = gb.pure_read(u16::wrapping_add(addr, 1));
+            let param2 = gb.pure_read(u16::wrapping_add(addr, 2));
             mnemonic = mnemonic.replace("U16", &format!("${:04X}", (((param2 as u16) << 8) + param1 as u16)));
             return (mnemonic, 3);
         }
 
         if mnemonic.contains("I8") {
-            let param = gb.read(u16::wrapping_add(addr, 1));
+            let param = gb.pure_read(u16::wrapping_add(addr, 1));
             mnemonic = mnemonic.replace("I8", &format!("${:02X}", param));
             mnemonic += " (";
             if param as i8 > 0 {
