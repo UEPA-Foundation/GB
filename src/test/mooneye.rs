@@ -97,6 +97,12 @@ mod oam {
     test_mooneye!(sources_gs, "acceptance/oam_dma/sources-GS.gb");
 }
 
+mod bits {
+    test_mooneye!(mem_oam, "acceptance/bits/mem_oam.gb");
+    test_mooneye!(reg_f, "acceptance/bits/reg_f.gb");
+    test_mooneye!(unused_hwio_gs, "acceptance/bits/unused_hwio-GS.gb");
+}
+
 mod mbc1 {
     test_mooneye!(bits_bank1, "emulator-only/mbc1/bits_bank1.gb");
     test_mooneye!(bits_bank2, "emulator-only/mbc1/bits_bank2.gb");
