@@ -8,6 +8,20 @@ pub mod mem;
 
 impl GameBoy {
     pub fn read(&self, addr: u16) -> u8 {
+        match self.dma_conflict(addr) {
+            Some(byte) => byte,
+            None => self.pure_read(addr),
+        }
+    }
+
+    pub fn write(&mut self, addr: u16, val: u8) {
+        match self.dma_conflict(addr) {
+            Some(_) => {},
+            _ => self.pure_write(addr, val),
+        }
+    }
+
+    pub fn pure_read(&self, addr: u16) -> u8 {
         match addr {
             // cart
             0x0000..=0x3FFF => self.cart.rom0_read(addr),
@@ -66,7 +80,7 @@ impl GameBoy {
         }
     }
 
-    pub fn write(&mut self, addr: u16, val: u8) {
+    pub fn pure_write(&mut self, addr: u16, val: u8) {
         match addr {
             // cart
             0x0000..=0x3FFF => self.cart.rom0_write(addr, val),
