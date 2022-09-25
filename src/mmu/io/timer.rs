@@ -40,7 +40,7 @@ impl Timer {
 
     #[inline(always)]
     pub fn read_tac(&self) -> u8 {
-        self.tac
+        self.tac | 0xF8
     }
 
     #[inline(always)]
