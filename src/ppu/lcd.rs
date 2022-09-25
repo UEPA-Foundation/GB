@@ -81,8 +81,9 @@ impl Ppu {
     #[inline(always)]
     pub fn write_dma(&mut self, val: u8) {
         self.dma = val;
-        if val <= 0xDF {
-            self.oam_dma = DmaStatus::ACTIVE(0);
+        match self.oam_dma {
+            DmaStatus::ACTIVE(byte) => self.oam_dma = DmaStatus::RESTARTING(byte),
+            _ => self.oam_dma = DmaStatus::STARTING,
         }
     }
 

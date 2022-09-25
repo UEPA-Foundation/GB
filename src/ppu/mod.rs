@@ -42,6 +42,7 @@ pub struct Ppu {
     pub oam: Oam,
 
     oam_dma: DmaStatus,
+    dma_cycles: u16,
 
     bg: Background,
     sp: Sprites,
@@ -61,6 +62,7 @@ enum PpuMode {
     DRAW = 3,
 }
 
+#[derive(Copy, Clone, Debug)]
 enum LcdStatus {
     ON,
     OFF,
@@ -70,7 +72,11 @@ enum LcdStatus {
 #[derive(Copy, Clone, Debug)]
 enum DmaStatus {
     INACTIVE,
-    ACTIVE(u16),
+    STARTING,
+    RESTARTING(u8),
+    FIRSTREAD,
+    RESTARTFIRSTREAD,
+    ACTIVE(u8),
 }
 
 impl GameBoy {
@@ -91,16 +97,67 @@ impl GameBoy {
     }
 
     fn cycle_dma(&mut self) {
-        if let DmaStatus::ACTIVE(count) = self.ppu.oam_dma {
-            let addr = ((self.ppu.dma as u16) << 8) + count;
-            let val = self.read(addr);
-            self.ppu.oam.write(count, val);
-            if count + 1 > 0x9F {
-                self.ppu.oam_dma = DmaStatus::INACTIVE;
-            } else {
-                self.ppu.oam_dma = DmaStatus::ACTIVE(count + 1);
+        if let DmaStatus::INACTIVE = self.ppu.oam_dma {
+            return;
+        }
+
+        self.ppu.dma_cycles += 1;
+        if self.ppu.dma_cycles % 4 == 0 {
+            let count = self.ppu.dma_cycles / 4;
+            match self.ppu.oam_dma {
+                DmaStatus::STARTING => {
+                    self.ppu.oam_dma = DmaStatus::FIRSTREAD;
+                }
+                DmaStatus::RESTARTING(byte) => {
+                    self.ppu.oam.write(count - 1, byte);
+                    self.ppu.oam_dma = DmaStatus::RESTARTFIRSTREAD;
+                }
+                DmaStatus::FIRSTREAD => {
+                    self.ppu.dma_cycles = 0;
+                    let byte = self.oam_dma_fetch();
+                    self.ppu.oam_dma = DmaStatus::ACTIVE(byte);
+                }
+                DmaStatus::RESTARTFIRSTREAD => {
+                    self.ppu.dma_cycles = 0;
+                    let byte = self.oam_dma_fetch();
+                    self.ppu.oam_dma = DmaStatus::ACTIVE(byte);
+                }
+                DmaStatus::ACTIVE(byte) => {
+                    self.ppu.oam.write(count - 1, byte);
+                    if count >= 0xA0 {
+                        self.ppu.dma_cycles = 0;
+                        self.ppu.oam_dma = DmaStatus::INACTIVE;
+                    } else {
+                        let new_byte = self.oam_dma_fetch();
+                        self.ppu.oam_dma = DmaStatus::ACTIVE(new_byte);
+                    }
+                }
+                _ => {}
             }
-        };
+        }
+    }
+
+    fn oam_dma_fetch(&self) -> u8 {
+        match self.ppu.dma <= 0xDF {
+            true => self.pure_read(((self.ppu.dma as u16) << 8) + self.ppu.dma_cycles / 4),
+            false => self.pure_read((((self.ppu.dma as u16) << 8) + self.ppu.dma_cycles / 4) - 0x2000),
+        }
+    }
+
+    pub fn dma_conflict(&self, addr: u16) -> Option<u8> {
+        match (self.ppu.oam_dma, self.ppu.dma, addr) {
+            (
+                DmaStatus::ACTIVE(_) | DmaStatus::FIRSTREAD | DmaStatus::RESTARTFIRSTREAD | DmaStatus::RESTARTING(_),
+                0x00..=0x7F | 0xA0..=0xFF,
+                0x0000..=0x7FFF | 0xA000..=0xDFFF,
+            ) => Some(self.oam_dma_fetch()), // rom/sram/wram bus conflict: the CPU reads the byte being read by DMA
+            (
+                DmaStatus::ACTIVE(_) | DmaStatus::FIRSTREAD | DmaStatus::RESTARTFIRSTREAD | DmaStatus::RESTARTING(_),
+                0x80..=0x9F,
+                0x8000..=0x9FFF,
+            ) => Some(self.oam_dma_fetch()), // vram bus conflict: the CPU reads the byte being read by DMA
+            _ => None,
+        }
     }
 
     pub fn borrow_framebuffer(&self) -> &[u8; NCOL * NLIN] {
@@ -133,6 +190,7 @@ impl Ppu {
             oam: Oam::init(),
 
             oam_dma: DmaStatus::INACTIVE,
+            dma_cycles: 0,
 
             bg: Background::init(),
             sp: Sprites::init(),
@@ -191,8 +249,9 @@ impl Ppu {
     }
 
     pub fn oam_read(&self, addr: u16) -> u8 {
-        match (&self.lcd_status, self.mode) {
-            (LcdStatus::ON, PpuMode::DRAW | PpuMode::OAMSCAN) => 0xFF,
+        match (&self.lcd_status, self.mode, self.oam_dma) {
+            (LcdStatus::ON, PpuMode::DRAW | PpuMode::OAMSCAN, _) => 0xFF,
+            (_, _, DmaStatus::ACTIVE(_) | DmaStatus::RESTARTING(_) | DmaStatus::RESTARTFIRSTREAD) => 0xFF,
             _ => self.oam.read(addr),
         }
     }
@@ -205,8 +264,9 @@ impl Ppu {
     }
 
     pub fn oam_write(&mut self, addr: u16, val: u8) {
-        match (&self.lcd_status, self.mode) {
-            (LcdStatus::ON, PpuMode::DRAW | PpuMode::OAMSCAN) => (),
+        match (&self.lcd_status, self.mode, self.oam_dma) {
+            (LcdStatus::ON, PpuMode::DRAW | PpuMode::OAMSCAN, _) => (),
+            (_, _, DmaStatus::ACTIVE(_) | DmaStatus::RESTARTING(_) | DmaStatus::RESTARTFIRSTREAD) => (),
             _ => self.oam.write(addr, val),
         }
     }
