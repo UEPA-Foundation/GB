@@ -92,6 +92,9 @@ mod ppu {
 mod oam {
     test_mooneye!(oam_dma_restart, "acceptance/oam_dma_restart.gb");
     test_mooneye!(oam_dma_start, "acceptance/oam_dma_start.gb");
+    test_mooneye!(basic, "acceptance/oam_dma/basic.gb");
+    test_mooneye!(reg_read, "acceptance/oam_dma/reg_read.gb");
+    test_mooneye!(sources_gs, "acceptance/oam_dma/sources-GS.gb");
 }
 
 mod mbc1 {
