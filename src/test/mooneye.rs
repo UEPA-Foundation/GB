@@ -26,6 +26,7 @@ mod intr {
     test_mooneye!(intr_timing, "acceptance/intr_timing.gb");
     test_mooneye!(if_ie_registers, "acceptance/if_ie_registers.gb");
     test_mooneye!(rapid_di_ei, "acceptance/rapid_di_ei.gb");
+    test_mooneye!(ie_push, "acceptance/interrupts/ie_push.gb");
 }
 
 mod halt {
