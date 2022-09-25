@@ -111,7 +111,7 @@ impl GameBoy {
 impl Ppu {
     pub fn init() -> Self {
         Self {
-            lcdc: 0,
+            lcdc: 0x91,
             stat: 0,
             scy: 0,
             scx: 0,
