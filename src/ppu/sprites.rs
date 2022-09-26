@@ -103,6 +103,10 @@ impl super::Ppu {
             }
             FifoState::PUSH => {
                 let push_amnt = u8::min(u8::saturating_sub(self.sp.obj.x, 8), 8);
+                if self.sp.obj.flags & 0x20 != 0 {
+                    self.sp.data_lo = mirror_byte(self.sp.data_lo);
+                    self.sp.data_hi = mirror_byte(self.sp.data_hi);
+                }
                 self.sp.fifo.push(self.sp.data_lo, self.sp.data_hi, push_amnt);
                 self.sp.fifo.state = FifoState::INDEX;
             }
@@ -119,4 +123,11 @@ impl super::Ppu {
     pub(super) fn sp_pop(&mut self) -> Result<u8, FifoError> {
         self.sp.fifo.pop()
     }
+}
+
+fn mirror_byte(mut byte: u8) -> u8 {
+    byte = (byte & 0xF0) >> 4 | (byte & 0x0F) << 4;
+    byte = (byte & 0xCC) >> 2 | (byte & 0x33) << 2;
+    byte = (byte & 0xAA) >> 1 | (byte & 0x55) << 1;
+    byte
 }
