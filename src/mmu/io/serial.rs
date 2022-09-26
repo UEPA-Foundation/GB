@@ -13,7 +13,7 @@ impl SerialLink {
     }
 
     pub fn read_control(&self) -> u8 {
-        self.sc
+        self.sc | 0x7E
     }
 
     pub fn write_data(&mut self, val: u8) {
