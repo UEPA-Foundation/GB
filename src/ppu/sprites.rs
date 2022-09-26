@@ -116,7 +116,7 @@ impl super::Ppu {
 
     fn get_sprite_addr(&self) -> u16 {
         let tile_addr = 0x8000 + (self.sp.obj.id as u16 * 16);
-        tile_addr + 2 * ((self.ly as u16 + self.scy as u16) % 8)
+        tile_addr + 2 * ((self.ly as u16 + 16 - self.sp.obj.y as u16) % 8)
     }
 
     #[inline(always)]
