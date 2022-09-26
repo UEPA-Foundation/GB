@@ -100,14 +100,16 @@ impl super::Ppu {
         base_addr + offset
     }
 
-    pub(super) fn check_in_win(&mut self) {
+    pub(super) fn check_in_win(&mut self) -> bool {
         if !self.bg.win_mode && self.lcdc_bit(5) && self.in_win_x() && self.bg.in_win_y {
             self.bg.win_mode = true;
             self.bg.tile_line = self.bg.win_line % 8;
             self.bg.tile_x = 0;
             self.bg.win_line += 1;
             self.bg.fifo.clear();
+            return true;
         }
+        false
     }
 
     #[inline(always)]
