@@ -353,8 +353,8 @@ impl Ppu {
         let bg_pixel = self.bg_pop()?;
         let sp_pixel = self.sp_pop().unwrap_or(0);
 
-        let bg_to_obj_priority = false; // TODO: actually fetch this
-        if sp_pixel == 0 || (bg_to_obj_priority && bg_pixel != 0) {
+        let bg_priority = self.sp.bg_priority();
+        if sp_pixel == 0 || (bg_priority && bg_pixel != 0) {
             return Some(bg_pixel);
         }
 

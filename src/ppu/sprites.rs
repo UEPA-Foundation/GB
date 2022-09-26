@@ -41,6 +41,10 @@ impl Sprites {
             fifo: PixelFifo::init(),
         }
     }
+
+    pub fn bg_priority(&self) -> bool {
+        self.obj.flags & 0x80 != 0
+    }
 }
 
 impl super::Ppu {
