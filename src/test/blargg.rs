@@ -11,7 +11,7 @@ macro_rules! test_blargg_serial {
             for _ in 0..30000000 {
                 gb.cpu_step();
 
-                if gb.read(0xFF02) == 0x81 {
+                if gb.read(0xFF02) == 0xFF {
                     out.push(gb.read(0xFF01));
                 }
 
