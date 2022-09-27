@@ -1,12 +1,14 @@
-use super::fifo::{FifoError, FifoState, PixelFifo};
+use fifo::Fifo;
+mod fifo;
 
 pub struct Sprites {
+    state: State,
     obj: Object,
 
     data_lo: u8,
     data_hi: u8,
 
-    fifo: PixelFifo,
+    fifo: Fifo,
     fetcher: Fetcher,
 }
 
@@ -14,12 +16,6 @@ struct Fetcher {
     cur: u8,
     buffer: [Object; 10],
     len: u8,
-}
-
-impl Fetcher {
-    fn init() -> Self {
-        Self { cur: 0, buffer: [Object { x: 0, y: 0, id: 0, flags: 0 }; 10], len: 0 }
-    }
 }
 
 #[derive(Clone, Copy)]
@@ -30,14 +26,23 @@ struct Object {
     flags: u8,
 }
 
+enum State {
+    INDEX,
+    DATALOW,
+    DATAHIGH,
+    PUSH,
+    SLEEP,
+}
+
 impl Sprites {
     pub fn init() -> Self {
         Self {
+            state: State::SLEEP,
             obj: Object { x: 0, y: 0, id: 0, flags: 0 },
             data_lo: 0,
             data_hi: 0,
-            fetcher: Fetcher::init(),
-            fifo: PixelFifo::init(),
+            fifo: Fifo::init(),
+            fetcher: Fetcher { cur: 0, buffer: [Object { x: 0, y: 0, id: 0, flags: 0 }; 10], len: 0 },
         }
     }
 
@@ -77,39 +82,37 @@ impl super::Ppu {
 
     pub(super) fn init_scanline_sp(&mut self) {
         self.sp.fifo.clear();
-        if self.sp.fetcher.len == 0 {
-            self.sp.fifo.state = FifoState::SLEEP;
-        }
+        self.sp.state = if self.sp.fetcher.len == 0 { State::SLEEP } else { State::INDEX };
     }
 
     pub(super) fn cycle_sp(&mut self) {
-        match self.sp.fifo.state {
-            FifoState::INDEX => {
+        match self.sp.state {
+            State::INDEX => {
                 for obj in self.sp.fetcher.buffer[..self.sp.fetcher.len as usize].into_iter() {
                     if self.lx + 8 <= obj.x && obj.x < self.lx + 16 {
                         self.sp.obj = *obj;
-                        self.sp.fifo.state = FifoState::DATALOW;
+                        self.sp.state = State::DATALOW;
                     }
                 }
             }
-            FifoState::DATALOW => {
+            State::DATALOW => {
                 self.sp.data_lo = self.vram.read(self.get_sprite_addr());
-                self.sp.fifo.state = FifoState::DATAHIGH;
+                self.sp.state = State::DATAHIGH;
             }
-            FifoState::DATAHIGH => {
+            State::DATAHIGH => {
                 self.sp.data_hi = self.vram.read(self.get_sprite_addr() + 1);
-                self.sp.fifo.state = FifoState::PUSH;
+                self.sp.state = State::PUSH;
             }
-            FifoState::PUSH => {
+            State::PUSH => {
                 let push_amnt = u8::min(u8::saturating_sub(self.sp.obj.x, 8), 8);
                 if self.sp.obj.flags & 0x20 != 0 {
                     self.sp.data_lo = mirror_byte(self.sp.data_lo);
                     self.sp.data_hi = mirror_byte(self.sp.data_hi);
                 }
                 self.sp.fifo.push(self.sp.data_lo, self.sp.data_hi, push_amnt);
-                self.sp.fifo.state = FifoState::INDEX;
+                self.sp.state = State::INDEX;
             }
-            FifoState::SLEEP => {}
+            State::SLEEP => {}
         }
     }
 
@@ -119,7 +122,7 @@ impl super::Ppu {
     }
 
     #[inline(always)]
-    pub(super) fn sp_pop(&mut self) -> Result<u8, FifoError> {
+    pub(super) fn sp_pop(&mut self) -> Option<u8> {
         self.sp.fifo.pop()
     }
 }
