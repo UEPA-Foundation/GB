@@ -1,3 +1,4 @@
+use super::pixel_from_palette;
 use fifo::Fifo;
 mod fifo;
 
@@ -120,7 +121,11 @@ impl super::Ppu {
     #[inline(always)]
     pub(super) fn sp_pop(&mut self) -> Option<(u8, bool)> {
         let (col_id, flags) = self.sp.fifo.pop()?;
-        Some((col_id, flags & 0x80 != 0))
+
+        let palette = if flags & 0x10 == 0 { self.obp0 } else { self.obp1 };
+        let pixel = pixel_from_palette(col_id, palette);
+
+        Some((pixel, flags & 0x80 != 0))
     }
 }
 
