@@ -1,4 +1,4 @@
-use super::{Ppu, PpuMode, DmaStatus, LcdStatus, NCOL, NLIN};
+use super::{DmaStatus, LcdStatus, Ppu, PpuMode, NCOL, NLIN};
 
 // generates read methods for regs with trivial reads
 macro_rules! read_simple {
@@ -28,6 +28,20 @@ macro_rules! write_simple {
     };
 }
 
+// generates write methods for sprite palette regs with _almost_ trivial writes
+macro_rules! write_sprite_palette {
+    ($($reg: ident),+) => {
+        $(
+            paste::paste! {
+                #[inline(always)]
+                pub fn [<write_ $reg>](&mut self, val: u8) {
+                    self.$reg = val & 0xFC;
+                }
+            }
+        )+
+    };
+}
+
 impl Ppu {
     read_simple!(lcdc, scy, scx, ly, lyc, dma, bgp, obp0, obp1, wy, wx);
 
@@ -36,7 +50,8 @@ impl Ppu {
         self.stat | 0x80
     }
 
-    write_simple!(scy, scx, bgp, obp0, obp1, wx);
+    write_simple!(scy, scx, bgp, wx);
+    write_sprite_palette!(obp0, obp1);
 
     #[inline(always)]
     pub fn write_lcdc(&mut self, val: u8) {
@@ -45,7 +60,7 @@ impl Ppu {
             (LcdStatus::OFF, true) => {
                 // we leave stat alone: mode bits stay 0 during first OAM Scan
                 self.lcd_status = LcdStatus::STARTUP;
-            },
+            }
             (LcdStatus::ON | LcdStatus::STARTUP, false) => {
                 self.lcd_status = LcdStatus::OFF;
                 self.mode = PpuMode::OAMSCAN;
@@ -54,8 +69,8 @@ impl Ppu {
                 self.ly = 0;
                 self.stat &= !0x03; // stat's mode bits are 0 when off
                 self.framebuffer = [0; NLIN * NCOL];
-            },
-            _ => {},
+            }
+            _ => {}
         }
         self.lcdc = val;
     }

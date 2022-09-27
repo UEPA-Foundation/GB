@@ -176,9 +176,9 @@ impl Ppu {
             ly: 0,
             lyc: 0,
             dma: 0,
-            obp0: 0,
-            obp1: 0,
             bgp: 0b11100100,
+            obp0: 0b11100100,
+            obp1: 0b11100100,
             wy: 0,
             wx: 0,
 
