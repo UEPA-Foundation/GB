@@ -176,9 +176,9 @@ impl Ppu {
             ly: 0,
             lyc: 0,
             dma: 0,
-            bgp: 0,
             obp0: 0,
             obp1: 0,
+            bgp: 0b11100100,
             wy: 0,
             wx: 0,
 
@@ -361,5 +361,16 @@ impl Ppu {
         }
 
         Some(sp_pixel)
+    }
+}
+
+#[inline(always)]
+fn pixel_from_palette(color: u8, palette: u8) -> u8 {
+    match color & 0x03 {
+        0 => (palette & 0b00000011) >> 0,
+        1 => (palette & 0b00001100) >> 2,
+        2 => (palette & 0b00110000) >> 4,
+        3 => (palette & 0b11000000) >> 6,
+        wtf => panic!("How can a 3 bit number be {}?", wtf),
     }
 }
