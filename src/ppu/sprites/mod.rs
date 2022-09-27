@@ -45,10 +45,6 @@ impl Sprites {
             fetcher: Fetcher { cur: 0, buffer: [Object { x: 0, y: 0, id: 0, flags: 0 }; 10], len: 0 },
         }
     }
-
-    pub fn bg_priority(&self) -> bool {
-        self.obj.flags & 0x80 != 0
-    }
 }
 
 impl super::Ppu {
@@ -109,7 +105,7 @@ impl super::Ppu {
                     self.sp.data_lo = mirror_byte(self.sp.data_lo);
                     self.sp.data_hi = mirror_byte(self.sp.data_hi);
                 }
-                self.sp.fifo.push(self.sp.data_lo, self.sp.data_hi, push_amnt);
+                self.sp.fifo.push(self.sp.data_lo, self.sp.data_hi, self.sp.obj.flags, push_amnt);
                 self.sp.state = State::INDEX;
             }
             State::SLEEP => {}
@@ -122,8 +118,9 @@ impl super::Ppu {
     }
 
     #[inline(always)]
-    pub(super) fn sp_pop(&mut self) -> Option<u8> {
-        self.sp.fifo.pop()
+    pub(super) fn sp_pop(&mut self) -> Option<(u8, bool)> {
+        let (col_id, flags) = self.sp.fifo.pop()?;
+        Some((col_id, flags & 0x80 != 0))
     }
 }
 

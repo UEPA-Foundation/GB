@@ -353,9 +353,8 @@ impl Ppu {
 
     fn mix_pixel(&mut self) -> Option<u8> {
         let bg_pixel = self.bg_pop()?;
-        let sp_pixel = self.sp_pop().unwrap_or(0);
+        let (sp_pixel, bg_priority) = self.sp_pop().unwrap_or((0, false));
 
-        let bg_priority = self.sp.bg_priority();
         if sp_pixel == 0 || (bg_priority && bg_pixel != 0) {
             return Some(bg_pixel);
         }
