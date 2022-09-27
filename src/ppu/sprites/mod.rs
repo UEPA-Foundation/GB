@@ -1,4 +1,3 @@
-#![allow(unused)]
 use super::fifo::{FifoError, FifoState, PixelFifo};
 
 pub struct Sprites {
