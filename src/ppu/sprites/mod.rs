@@ -109,8 +109,11 @@ impl super::Ppu {
     }
 
     fn get_sprite_addr(&self) -> u16 {
-        let tile_addr = 0x8000 + (self.sp.cur_obj.id as u16 * 16);
-        let obj_height = if self.lcdc_bit(2) { 16 } else { 8 };
+        let (obj_height, obj_id) = match self.lcdc_bit(2) {
+            false => (8, self.sp.cur_obj.id),
+            true => (16, self.sp.cur_obj.id & !0x01),
+        };
+        let tile_addr = 0x8000 + (obj_id as u16 * 16);
 
         let mut offset = (self.ly as u16 + 16 - self.sp.cur_obj.y as u16) % obj_height;
         if self.sp.cur_obj.flags & 0x40 != 0 {
