@@ -57,7 +57,7 @@ impl super::Ppu {
             flags: self.oam.read(obj_addr + 3),
         };
 
-        let obj_height = 8; // TODO: check tall sprite mode
+        let obj_height = if self.lcdc_bit(2) { 16 } else { 8 };
         if (obj.x == 0) || (self.ly + 16 < obj.y) || (self.ly + 16 >= obj.y + obj_height) {
             return;
         }
@@ -110,10 +110,13 @@ impl super::Ppu {
 
     fn get_sprite_addr(&self) -> u16 {
         let tile_addr = 0x8000 + (self.sp.cur_obj.id as u16 * 16);
-        let mut offset = (self.ly as u16 + 16 - self.sp.cur_obj.y as u16) % 8;
+        let obj_height = if self.lcdc_bit(2) { 16 } else { 8 };
+
+        let mut offset = (self.ly as u16 + 16 - self.sp.cur_obj.y as u16) % obj_height;
         if self.sp.cur_obj.flags & 0x40 != 0 {
-            offset = 7 - offset;
+            offset = obj_height - 1 - offset;
         }
+
         tile_addr + 2 * offset
     }
 
