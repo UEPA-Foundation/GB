@@ -342,7 +342,7 @@ impl Ppu {
                 return None;
             }
             let idx = self.ly as usize * 160 + self.lx as usize;
-            //first frame after turning lcd on gets skipped
+            // first frame after turning lcd on gets skipped
             if let LcdStatus::ON = self.lcd_status {
                 self.framebuffer[idx] = pixel;
             }

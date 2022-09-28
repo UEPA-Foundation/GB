@@ -121,6 +121,10 @@ impl super::Ppu {
     pub(super) fn sp_pop(&mut self) -> Option<(u8, bool)> {
         let (col_id, flags) = self.sp.fifo.pop()?;
 
+        if !self.lcdc_bit(1) {
+            return Some((0, false));
+        }
+
         let palette = if flags & 0x10 == 0 { self.obp0 } else { self.obp1 };
         let pixel = pixel_from_palette(col_id, palette);
 
