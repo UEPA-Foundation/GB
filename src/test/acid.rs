@@ -5,7 +5,7 @@ macro_rules! test_acid {
     ($rom: ident, $path: expr) => {
         #[test]
         fn $rom() {
-            let mut gb = GameBoy::init(concat!("./src/test/", $path));
+            let mut gb = GameBoy::init(concat!("./src/test/roms/acid/", $path));
             for _ in 0..10000000 {
                 gb.cpu_step();
 

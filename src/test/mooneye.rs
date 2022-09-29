@@ -2,7 +2,7 @@ macro_rules! test_mooneye {
     ($rom: ident, $path: expr) => {
         #[test]
         fn $rom() {
-            let mut gb = crate::gameboy::GameBoy::init(concat!("./src/test/mooneye/", $path));
+            let mut gb = crate::gameboy::GameBoy::init(concat!("./src/test/roms/mooneye/", $path));
             for _ in 0..10000000 {
                 gb.cpu_step();
 

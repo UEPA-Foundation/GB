@@ -5,7 +5,7 @@ macro_rules! test_blargg_serial {
     ($rom: ident, $path: expr) => {
         #[test]
         fn $rom() {
-            let mut gb = GameBoy::init(concat!("./src/test/gb-test-roms/", $path));
+            let mut gb = GameBoy::init(concat!("./src/test/roms/blargg/", $path));
             let mut out = vec![];
             let mut timeout = true;
             for _ in 0..30000000 {
@@ -55,7 +55,7 @@ macro_rules! test_blargg_sram {
     ($rom: ident, $path: expr) => {
         #[test]
         fn $rom() {
-            let mut gb = GameBoy::init(concat!("./src/test/gb-test-roms/", $path));
+            let mut gb = GameBoy::init(concat!("./src/test/roms/blargg/", $path));
             let mut timeout = true;
             for _ in 0..30000000 {
                 gb.cpu_step();
