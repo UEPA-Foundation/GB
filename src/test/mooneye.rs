@@ -1,11 +1,13 @@
+#![cfg(test)]
+
 macro_rules! test_mooneye {
     ($rom: ident, $path: expr) => {
         #[test]
         fn $rom() {
             let mut gb = crate::gameboy::GameBoy::init(concat!("./src/test/roms/mooneye/", $path));
+
             for _ in 0..10000000 {
                 gb.cpu_step();
-
                 if gb.dpc(0) == 0x40 {
                     match (gb.cpu.b, gb.cpu.c, gb.cpu.d, gb.cpu.e, gb.cpu.h, gb.cpu.l) {
                         (3, 5, 8, 13, 21, 34) => return,
@@ -19,7 +21,27 @@ macro_rules! test_mooneye {
     };
 }
 
-#[cfg(test)]
+#[test]
+fn sprite_priority() {
+    let mut gb = crate::gameboy::GameBoy::init("./src/test/roms/mooneye/manual-only/sprite_priority.gb");
+    let img = image::io::Reader::open("./src/test/roms/mooneye/manual-only/sprite_priority-expected.png").unwrap().decode().unwrap().into_bytes();
+    println!("{:?}", img);
+
+    for _ in 0..10000000 {
+        gb.cpu_step();
+        if gb.dpc(0) == 0x40 {
+            let fbuf = gb.borrow_framebuffer();
+            let equ = img.iter().zip(fbuf.iter()).all(|(a, b)| a == b);
+            match equ {
+                true => return,
+                false => panic!("Test failed."),
+            }
+        }
+    }
+
+    panic!("Test timed out at ${:04X}.", gb.cpu.pc);
+}
+
 mod intr {
     test_mooneye!(ei_sequence, "acceptance/ei_sequence.gb");
     test_mooneye!(ei_timing, "acceptance/ei_timing.gb");
