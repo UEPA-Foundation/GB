@@ -1,6 +1,13 @@
-use super::{
-    fifo::{FifoState, PixelFifo},
-};
+use fifo::BgFifo;
+
+mod fifo;
+
+pub enum State {
+    INDEX,
+    DATALOW,
+    DATAHIGH,
+    PUSH,
+}
 
 pub struct Background {
     tile_id: u8,
@@ -16,7 +23,8 @@ pub struct Background {
     data_lo: u8,
     data_hi: u8,
 
-    fifo: PixelFifo,
+    fifo: BgFifo,
+    state: State,
 }
 
 impl Background {
@@ -31,48 +39,49 @@ impl Background {
             win_line: 0,
             data_lo: 0,
             data_hi: 0,
-            fifo: PixelFifo::init(),
+            fifo: BgFifo::init(),
+            state: State::INDEX,
         }
     }
 }
 
 impl super::Ppu {
-    pub(super) fn init_scanline_bg(&mut self) {
+    pub fn init_scanline_bg(&mut self) {
         self.bg.num_scrolled = 0;
         self.bg.tile_x = (self.scx / 8) % 32;
         self.bg.tile_line = (self.ly as u16 + self.scy as u16) % 8;
         self.bg.win_mode = false;
         self.bg.fifo.clear();
+        self.bg.state = State::INDEX;
     }
 
-    pub(super) fn init_frame_bg(&mut self) {
+    pub fn init_frame_bg(&mut self) {
         self.bg.in_win_y = false;
         self.bg.win_line = 0;
     }
 
     pub(super) fn cycle_bg(&mut self) {
-        match self.bg.fifo.state {
-            FifoState::INDEX => {
+        match self.bg.state {
+            State::INDEX => {
                 let addr = self.tilemap_addr();
                 self.bg.tile_id = self.vram.read(addr);
-                self.bg.fifo.state = FifoState::DATALOW;
+                self.bg.state = State::DATALOW;
             }
-            FifoState::DATALOW => {
+            State::DATALOW => {
                 self.bg.data_lo = self.vram.read(self.get_tile_addr());
-                self.bg.fifo.state = FifoState::DATAHIGH;
+                self.bg.state = State::DATAHIGH;
             }
-            FifoState::DATAHIGH => {
+            State::DATAHIGH => {
                 self.bg.data_hi = self.vram.read(self.get_tile_addr() + 1);
-                self.bg.fifo.state = FifoState::PUSH;
+                self.bg.state = State::PUSH;
             }
-            FifoState::PUSH => {
+            State::PUSH => {
                 if self.bg.fifo.empty() {
-                    self.bg.fifo.push(self.bg.data_lo, self.bg.data_hi, 8).unwrap();
+                    self.bg.fifo.push(self.bg.data_lo, self.bg.data_hi);
                     self.bg.tile_x = (self.bg.tile_x + 1) % 32;
-                    self.bg.fifo.state = FifoState::INDEX;
+                    self.bg.state = State::INDEX;
                 }
             }
-            FifoState::SLEEP => {}
         }
     }
 
@@ -88,6 +97,7 @@ impl super::Ppu {
         base + offset
     }
 
+    #[inline(always)]
     fn get_tile_addr(&self) -> u16 {
         let mut index = self.bg.tile_id as u16;
         let base_addr = match (self.lcdc_bit(4), self.bg.tile_id >= 128) {
@@ -102,6 +112,7 @@ impl super::Ppu {
         base_addr + offset
     }
 
+    #[inline(always)]
     pub(super) fn check_in_win(&mut self) -> bool {
         if !self.bg.win_mode && self.lcdc_bit(5) && self.in_win_x() && self.bg.in_win_y {
             self.bg.win_mode = true;
@@ -109,6 +120,7 @@ impl super::Ppu {
             self.bg.tile_x = 0;
             self.bg.win_line += 1;
             self.bg.fifo.clear();
+            self.bg.state = State::INDEX;
             return true;
         }
         false
@@ -129,13 +141,13 @@ impl super::Ppu {
     #[inline(always)]
     pub fn bg_pop(&mut self) -> Option<u8> {
         match (self.bg.fifo.pop(), self.lcdc_bit(0), self.bg.win_mode || self.bg.num_scrolled >= self.scx % 8) {
-            (Ok(pixel), true, true) => Some(pixel),
-            (Ok(_), true, false) => {
+            (Some(pixel), true, true) => Some(pixel),
+            (Some(_), true, false) => {
                 self.bg.num_scrolled += 1;
                 None
             }
-            (Ok(_), false, _) => Some(0),
-            (Err(_), _, _) => None,
+            (Some(_), false, _) => Some(0),
+            (None, _, _) => None,
         }
     }
 }

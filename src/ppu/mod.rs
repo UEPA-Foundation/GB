@@ -7,7 +7,6 @@ use oam::Oam;
 use vram::VRam;
 
 mod background;
-mod fifo;
 mod lcd;
 mod oam;
 mod sprites;
