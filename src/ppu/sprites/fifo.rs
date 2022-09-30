@@ -10,7 +10,10 @@ impl Fifo {
         Self { pixels_lo: 0, pixels_hi: 0, bg_pri_flag: 0, palette_flag: 0 }
     }
 
-    pub fn push(&mut self, data_lo: u8, data_hi: u8, flags: u8, num_pixels: u8) {
+    pub fn push(&mut self, mut data_lo: u8, mut data_hi: u8, flags: u8, num_pixels: u8) {
+        data_lo <<= 8 - num_pixels;
+        data_hi <<= 8 - num_pixels;
+        // this mask ensures only available (non zero) pixel slots get written to
         let mask = !(self.pixels_lo | self.pixels_hi);
         self.pixels_lo |= data_lo & mask;
         self.pixels_hi |= data_hi & mask;

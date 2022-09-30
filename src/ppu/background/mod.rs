@@ -7,6 +7,7 @@ pub enum State {
     DATALOW,
     DATAHIGH,
     PUSH,
+    SLEEP,
 }
 
 pub struct Background {
@@ -42,6 +43,14 @@ impl Background {
             fifo: BgFifo::init(),
             state: State::INDEX,
         }
+    }
+
+    pub fn pause(&mut self) {
+        self.state = State::SLEEP;
+    }
+
+    pub fn resume(&mut self) {
+        self.state = State::INDEX;
     }
 }
 
@@ -82,6 +91,7 @@ impl super::Ppu {
                     self.bg.state = State::INDEX;
                 }
             }
+            State::SLEEP => {}
         }
     }
 

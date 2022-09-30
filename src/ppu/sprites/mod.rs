@@ -23,7 +23,6 @@ struct Object {
 }
 
 enum State {
-    INDEX,
     DATALOW,
     DATAHIGH,
     PUSH,
@@ -40,6 +39,13 @@ impl Sprites {
             data_lo: 0,
             data_hi: 0,
             fifo: Fifo::init(),
+        }
+    }
+
+    pub fn is_fetching(&self) -> bool {
+        match self.state {
+            State::SLEEP => false,
+            _ => true,
         }
     }
 }
@@ -73,20 +79,11 @@ impl super::Ppu {
 
     pub(super) fn init_scanline_sp(&mut self) {
         self.sp.fifo.clear();
-        self.sp.state = if self.sp.obj_buffer.len() == 0 { State::SLEEP } else { State::INDEX };
+        self.sp.state = State::SLEEP;
     }
 
     pub(super) fn cycle_sp(&mut self) {
         match self.sp.state {
-            State::INDEX => {
-                for obj in &self.sp.obj_buffer {
-                    if self.lx + 8 <= obj.x && obj.x < self.lx + 16 {
-                        self.sp.cur_obj = *obj;
-                        self.sp.state = State::DATALOW;
-                        break;
-                    }
-                }
-            }
             State::DATALOW => {
                 self.sp.data_lo = self.vram.read(self.get_sprite_addr());
                 self.sp.state = State::DATAHIGH;
@@ -96,15 +93,30 @@ impl super::Ppu {
                 self.sp.state = State::PUSH;
             }
             State::PUSH => {
-                let push_amnt = u8::min(u8::saturating_sub(self.sp.cur_obj.x, 8), 8);
+                let push_amnt = u8::min(self.sp.cur_obj.x, 8);
                 if self.sp.cur_obj.flags & 0x20 != 0 {
                     self.sp.data_lo = mirror_byte(self.sp.data_lo);
                     self.sp.data_hi = mirror_byte(self.sp.data_hi);
                 }
                 self.sp.fifo.push(self.sp.data_lo, self.sp.data_hi, self.sp.cur_obj.flags, push_amnt);
-                self.sp.state = State::INDEX;
+                self.sp.state = State::SLEEP;
+                self.bg.resume();
+                self.fetch_obj();
             }
             State::SLEEP => {}
+        }
+    }
+
+    pub fn fetch_obj(&mut self) {
+        for i in 0..self.sp.obj_buffer.len() {
+            let obj = &self.sp.obj_buffer[i];
+            if self.lx <= obj.x && obj.x <= self.lx + 8 {
+                self.sp.cur_obj = *obj;
+                self.sp.obj_buffer.remove(i);
+                self.sp.state = State::DATALOW;
+                self.bg.pause();
+                break;
+            }
         }
     }
 
@@ -136,6 +148,7 @@ impl super::Ppu {
     }
 }
 
+#[inline(always)]
 fn mirror_byte(mut byte: u8) -> u8 {
     byte = (byte & 0xF0) >> 4 | (byte & 0x0F) << 4;
     byte = (byte & 0xCC) >> 2 | (byte & 0x33) << 2;

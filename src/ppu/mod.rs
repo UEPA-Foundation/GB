@@ -336,16 +336,17 @@ impl Ppu {
     }
 
     fn draw_pixel(&mut self) {
+        if self.sp.is_fetching() || self.check_in_win() {
+            return;
+        }
         _ = self.mix_pixel().and_then(|pixel| {
-            if self.check_in_win() {
-                return None;
-            }
             let idx = self.ly as usize * 160 + self.lx as usize;
             // first frame after turning lcd on gets skipped
             if let LcdStatus::ON = self.lcd_status {
                 self.framebuffer[idx] = pixel;
             }
             self.lx += 1;
+            self.fetch_obj();
             Some(())
         });
     }
