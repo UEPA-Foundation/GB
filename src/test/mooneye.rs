@@ -24,8 +24,15 @@ macro_rules! test_mooneye {
 #[test]
 fn sprite_priority() {
     let mut gb = crate::gameboy::GameBoy::init("./src/test/roms/mooneye/manual-only/sprite_priority.gb");
-    let img = image::io::Reader::open("./src/test/roms/mooneye/manual-only/sprite_priority-expected.png").unwrap().decode().unwrap().into_bytes();
-    println!("{:?}", img);
+    let mut img = image::io::Reader::open("./src/test/roms/mooneye/manual-only/sprite_priority-expected.png").unwrap().decode().unwrap().into_bytes();
+    img = img.iter().map(|x| {
+        match x {
+            0 => 3,
+            111 => 1,
+            255 => 0,
+            _ => panic!("Invalid input image."),
+        }
+    }).collect();
 
     for _ in 0..10000000 {
         gb.cpu_step();
