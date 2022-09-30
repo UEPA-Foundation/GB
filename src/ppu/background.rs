@@ -1,6 +1,5 @@
 use super::{
     fifo::{FifoState, PixelFifo},
-    pixel_from_palette,
 };
 
 pub struct Background {
@@ -130,12 +129,12 @@ impl super::Ppu {
     #[inline(always)]
     pub fn bg_pop(&mut self) -> Option<u8> {
         match (self.bg.fifo.pop(), self.lcdc_bit(0), self.bg.win_mode || self.bg.num_scrolled >= self.scx % 8) {
-            (Ok(col_id), true, true) => Some(pixel_from_palette(col_id, self.bgp)),
+            (Ok(pixel), true, true) => Some(pixel),
             (Ok(_), true, false) => {
                 self.bg.num_scrolled += 1;
                 None
             }
-            (Ok(_), false, _) => Some(pixel_from_palette(0, self.bgp)),
+            (Ok(_), false, _) => Some(0),
             (Err(_), _, _) => None,
         }
     }

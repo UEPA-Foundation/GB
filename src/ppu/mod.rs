@@ -177,8 +177,8 @@ impl Ppu {
             lyc: 0,
             dma: 0,
             bgp: 0b11100100,
-            obp0: 0b11100100,
-            obp1: 0b11100100,
+            obp0: 0b11111111,
+            obp1: 0b11111111,
             wy: 0,
             wx: 0,
 
@@ -353,23 +353,23 @@ impl Ppu {
 
     fn mix_pixel(&mut self) -> Option<u8> {
         let bg_pixel = self.bg_pop()?;
-        let (sp_pixel, bg_priority) = self.sp_pop().unwrap_or((0, false));
+        let (sp_pixel, bg_priority, sp_palette) = self.sp_pop().unwrap_or((0, false, 0));
 
         if sp_pixel == 0 || (bg_priority && bg_pixel != 0) {
-            return Some(bg_pixel);
+            return Some(apply_palette(bg_pixel, self.bgp));
         }
 
-        Some(sp_pixel)
+        Some(apply_palette(sp_pixel, sp_palette))
     }
 }
 
 #[inline(always)]
-fn pixel_from_palette(color: u8, palette: u8) -> u8 {
+fn apply_palette(color: u8, palette: u8) -> u8 {
     match color & 0x03 {
         0 => (palette & 0b00000011) >> 0,
         1 => (palette & 0b00001100) >> 2,
         2 => (palette & 0b00110000) >> 4,
         3 => (palette & 0b11000000) >> 6,
-        wtf => panic!("How can a 3 bit number be {}?", wtf),
+        wtf => panic!("How can a 2 bit number be {}?", wtf),
     }
 }

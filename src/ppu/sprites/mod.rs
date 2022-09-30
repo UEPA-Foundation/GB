@@ -1,4 +1,3 @@
-use super::pixel_from_palette;
 use fifo::Fifo;
 mod fifo;
 
@@ -84,6 +83,7 @@ impl super::Ppu {
                     if self.lx + 8 <= obj.x && obj.x < self.lx + 16 {
                         self.sp.cur_obj = *obj;
                         self.sp.state = State::DATALOW;
+                        break;
                     }
                 }
             }
@@ -124,17 +124,15 @@ impl super::Ppu {
     }
 
     #[inline(always)]
-    pub(super) fn sp_pop(&mut self) -> Option<(u8, bool)> {
-        let (col_id, flags) = self.sp.fifo.pop()?;
+    pub(super) fn sp_pop(&mut self) -> Option<(u8, bool, u8)> {
+        let (pixel, bg_priority, palette_flag) = self.sp.fifo.pop()?;
 
         if !self.lcdc_bit(1) {
-            return Some((0, false));
+            return Some((0, false, 0));
         }
 
-        let palette = if flags & 0x10 == 0 { self.obp0 } else { self.obp1 };
-        let pixel = pixel_from_palette(col_id, palette);
-
-        Some((pixel, flags & 0x80 != 0))
+        let palette = if palette_flag { self.obp1 } else { self.obp0 };
+        Some((pixel, bg_priority, palette))
     }
 }
 
