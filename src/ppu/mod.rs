@@ -287,7 +287,6 @@ impl Ppu {
                         self.clear_sp_fetcher();
                         self.set_mode(PpuMode::OAMSCAN);
                     }
-                    self.update_stat();
                 }
             }
             PpuMode::VBLANK => {
@@ -302,7 +301,6 @@ impl Ppu {
                         self.lcd_status = LcdStatus::ON;
                         self.set_mode(PpuMode::OAMSCAN);
                     }
-                    self.update_stat();
                 }
             }
             PpuMode::OAMSCAN => {
@@ -329,10 +327,10 @@ impl Ppu {
 
                 if self.lx == 160 {
                     self.set_mode(PpuMode::HBLANK);
-                    self.update_stat();
                 }
             }
         };
+        self.update_stat();
     }
 
     fn draw_pixel(&mut self) {

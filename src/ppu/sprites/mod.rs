@@ -35,7 +35,7 @@ impl Sprites {
             state: State::SLEEP,
             cur_obj: Object { x: 0, y: 0, id: 0, flags: 0 },
             fetcher_idx: 0,
-            obj_buffer: vec![Object { x: 0, y: 0, id: 0, flags: 0 }; 10],
+            obj_buffer: vec![],
             data_lo: 0,
             data_hi: 0,
             fifo: Fifo::init(),
