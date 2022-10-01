@@ -223,8 +223,10 @@ impl Ppu {
         let old_stat_line = self.stat_line;
         let lyc_line = self.stat_bit(6) && self.ly == self.lyc;
         let mode_line = match self.mode {
+            PpuMode::HBLANK => self.stat & 0x08 != 0,
+            PpuMode::VBLANK => (self.stat & 0x10 != 0) || (self.ly == 144 && self.cycles == 4 && self.stat & 0x20 != 0),
+            PpuMode::OAMSCAN => self.stat & 0x20 != 0,
             PpuMode::DRAW => false,
-            _ => self.stat & (8 << (self.mode as u8)) != 0,
         };
         self.stat_line = lyc_line || mode_line;
 
