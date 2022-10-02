@@ -617,6 +617,7 @@ dependencies = [
 name = "uepa"
 version = "0.1.0"
 dependencies = [
+ "bitflags",
  "enum_dispatch",
  "image",
  "num",
