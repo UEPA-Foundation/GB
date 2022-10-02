@@ -1,6 +1,7 @@
 use crate::gameboy::GameBoy;
 use crate::intr::Interrupt;
 use background::Background;
+use bitflags::bitflags;
 use sprites::Sprites;
 
 use oam::Oam;
@@ -17,7 +18,7 @@ const NLIN: usize = 144;
 
 pub struct Ppu {
     // Registers
-    lcdc: u8,
+    lcdc: Lcdc,
     stat: u8,
     scy: u8,
     scx: u8,
@@ -53,7 +54,20 @@ pub struct Ppu {
     lcd_status: LcdStatus,
 }
 
-#[derive(Copy, Clone, Debug)]
+bitflags! {
+    struct Lcdc : u8 {
+        const BG_ENBL   = 0b00000001;
+        const SP_ENBL   = 0b00000010;
+        const SP_SIZE   = 0b00000100;
+        const BG_TM_SEL = 0b00001000;
+        const TD_SEL    = 0b00010000;
+        const WN_ENBL   = 0b00100000;
+        const WN_TM_SEL = 0b01000000;
+        const LCD_ENBL  = 0b10000000;
+    }
+}
+
+#[derive(Copy, Clone)]
 enum PpuMode {
     HBLANK = 0,
     VBLANK = 1,
@@ -167,7 +181,7 @@ impl GameBoy {
 impl Ppu {
     pub fn init() -> Self {
         Self {
-            lcdc: 0x91,
+            lcdc: Lcdc { bits: 0x91 },
             stat: 0,
             scy: 0,
             scx: 0,
@@ -200,11 +214,6 @@ impl Ppu {
             framebuffer: [0; NLIN * NCOL],
             lcd_status: LcdStatus::ON,
         }
-    }
-
-    #[inline(always)]
-    fn lcdc_bit(&self, bit: u8) -> bool {
-        self.lcdc & 1 << bit != 0
     }
 
     #[inline(always)]

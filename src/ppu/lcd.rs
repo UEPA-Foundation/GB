@@ -43,7 +43,11 @@ macro_rules! write_sprite_palette {
 }
 
 impl Ppu {
-    read_simple!(lcdc, scy, scx, ly, lyc, dma, bgp, obp0, obp1, wy, wx);
+    read_simple!(scy, scx, ly, lyc, dma, bgp, obp0, obp1, wy, wx);
+
+    pub fn read_lcdc(&self) -> u8 {
+        self.lcdc.bits()
+    }
 
     #[inline(always)]
     pub fn read_stat(&self) -> u8 {
@@ -72,7 +76,7 @@ impl Ppu {
             }
             _ => {}
         }
-        self.lcdc = val;
+        self.lcdc = super::Lcdc::from_bits(val).unwrap();
     }
 
     #[inline(always)]

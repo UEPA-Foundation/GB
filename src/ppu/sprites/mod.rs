@@ -1,3 +1,4 @@
+use super::Lcdc;
 use fifo::Fifo;
 mod fifo;
 
@@ -35,7 +36,7 @@ impl Sprites {
             state: State::SLEEP,
             cur_obj: Object { x: 0, y: 0, id: 0, flags: 0 },
             fetcher_idx: 0,
-            obj_buffer: vec![],
+            obj_buffer: Vec::with_capacity(10),
             data_lo: 0,
             data_hi: 0,
             fifo: Fifo::init(),
@@ -62,7 +63,7 @@ impl super::Ppu {
             flags: self.oam.read(obj_addr + 3),
         };
 
-        let obj_height = if self.lcdc_bit(2) { 16 } else { 8 };
+        let obj_height = if self.lcdc.contains(Lcdc::SP_SIZE) { 16 } else { 8 };
         if (obj.x == 0) || (self.ly + 16 < obj.y) || (self.ly + 16 >= obj.y + obj_height) {
             return;
         }
@@ -121,7 +122,7 @@ impl super::Ppu {
     }
 
     fn get_sprite_addr(&self) -> u16 {
-        let (obj_height, obj_id) = match self.lcdc_bit(2) {
+        let (obj_height, obj_id) = match self.lcdc.contains(Lcdc::SP_SIZE) {
             false => (8, self.sp.cur_obj.id),
             true => (16, self.sp.cur_obj.id & !0x01),
         };
@@ -139,7 +140,7 @@ impl super::Ppu {
     pub(super) fn sp_pop(&mut self) -> Option<(u8, bool, u8)> {
         let (pixel, bg_priority, palette_flag) = self.sp.fifo.pop()?;
 
-        if !self.lcdc_bit(1) {
+        if !self.lcdc.contains(Lcdc::SP_ENBL) {
             return Some((0, false, 0));
         }
 
