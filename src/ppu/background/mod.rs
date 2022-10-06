@@ -97,7 +97,7 @@ impl super::Ppu {
 
     #[inline(always)]
     fn tilemap_addr(&self) -> u16 {
-        let (base, y_offset) = match (self.bg.win_mode, self.lcdc_bit(3), self.lcdc_bit(6)) {
+        let (base, y_offset) = match (self.bg.win_mode, self.lcdc_bg_tm_sel(), self.lcdc_wn_tm_sel()) {
             (false, false, _) => (0x9800, (self.ly as u16 + self.scy as u16) & 0xFF),
             (false, true, _) => (0x9C00, (self.ly as u16 + self.scy as u16) & 0xFF),
             (true, _, false) => (0x9800, (self.bg.win_line - 1)),
@@ -110,7 +110,7 @@ impl super::Ppu {
     #[inline(always)]
     fn get_tile_addr(&self) -> u16 {
         let mut index = self.bg.tile_id as u16;
-        let base_addr = match (self.lcdc_bit(4), self.bg.tile_id >= 128) {
+        let base_addr = match (self.lcdc_td_sel(), self.bg.tile_id >= 128) {
             (true, _) => 0x8000,
             (false, false) => 0x9000,
             (false, true) => {
@@ -124,7 +124,7 @@ impl super::Ppu {
 
     #[inline(always)]
     pub(super) fn check_in_win(&mut self) -> bool {
-        if !self.bg.win_mode && self.lcdc_bit(5) && self.in_win_x() && self.bg.in_win_y {
+        if !self.bg.win_mode && self.lcdc_wn_enbl() && self.in_win_x() && self.bg.in_win_y {
             self.bg.win_mode = true;
             self.bg.tile_line = self.bg.win_line % 8;
             self.bg.tile_x = 0;
@@ -150,7 +150,7 @@ impl super::Ppu {
 
     #[inline(always)]
     pub fn bg_pop(&mut self) -> Option<u8> {
-        match (self.bg.fifo.pop(), self.lcdc_bit(0), self.bg.win_mode || self.bg.num_scrolled >= self.scx % 8) {
+        match (self.bg.fifo.pop(), self.lcdc_bg_enbl(), self.bg.win_mode || self.bg.num_scrolled >= self.scx % 8) {
             (Some(pixel), true, true) => Some(pixel),
             (Some(_), true, false) => {
                 self.bg.num_scrolled += 1;

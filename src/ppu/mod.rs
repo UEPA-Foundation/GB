@@ -164,6 +164,17 @@ impl GameBoy {
     }
 }
 
+macro_rules! bit_access {
+    ($reg: ident, $bit_name: ident, $bit: expr) => {
+        paste::paste! {
+            #[inline(always)]
+            fn [<$reg _ $bit_name>](&self) -> bool {
+                self.$reg & (1 << $bit) != 0
+            }
+        }
+    };
+}
+
 impl Ppu {
     pub fn init() -> Self {
         Self {
@@ -202,10 +213,14 @@ impl Ppu {
         }
     }
 
-    #[inline(always)]
-    fn lcdc_bit(&self, bit: u8) -> bool {
-        self.lcdc & 1 << bit != 0
-    }
+    bit_access!(lcdc, bg_enbl, 0);
+    bit_access!(lcdc, sp_enbl, 1);
+    bit_access!(lcdc, sp_size, 2);
+    bit_access!(lcdc, bg_tm_sel, 3);
+    bit_access!(lcdc, td_sel, 4);
+    bit_access!(lcdc, wn_enbl, 5);
+    bit_access!(lcdc, wn_tm_sel, 6);
+    // bit_access!(lcdc, lcd_enbl, 7);
 
     #[inline(always)]
     fn stat_bit(&self, bit: u8) -> bool {
