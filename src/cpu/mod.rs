@@ -97,25 +97,32 @@ impl GameBoy {
 
         let ime = self.intr.current_ime();
         match self.intr.fetch() {
-            Some(intr) => {
+            Some(_) => {
                 self.halt = false;
 
                 if ime {
                     self.advance_cycles(4);
+                    self.intr.disable();
 
-                    // store current pc addr in stack
                     let addr = u16::to_le_bytes(self.cpu.pc);
                     self.cpu.sp.dec();
                     self.cycle_write(self.cpu.sp, addr[1]);
+
+                    // Second fetch to check if intr should be cancelled
+                    let jp_addr = match self.intr.fetch() {
+                        Some(intr) => {
+                            self.intr.reset(intr);
+                            (intr as u16) * 8 + 0x40
+                        }
+                        None => 0,
+                    };
+
                     self.cpu.sp.dec();
                     self.cycle_write(self.cpu.sp, addr[0]);
 
                     // jump to intr handler addr
-                    self.cpu.pc = (intr as u16) * 8 + 0x40;
+                    self.cpu.pc = jp_addr;
                     self.advance_cycles(4);
-
-                    self.intr.reset(intr);
-                    self.intr.disable();
 
                     return;
                 }
